@@ -64,7 +64,7 @@ databaseChangeLog:
                   name: effective_end_date
                   type: DATETIME
               - column:
-                  name: is_billable
+                  name: billable
                   type: BOOLEAN
                   constraints:
                     nullable: false
@@ -630,63 +630,6 @@ databaseChangeLog:
         - addForeignKeyConstraint:
             constraintName: fk_rateplan_minimum
             baseTableName: rate_plan_minimum_commitment
-            baseColumnNames: rate_plan_id
-            referencedTableName: aforo_rate_plan
-            referencedColumnNames: rate_plan_id
-
-        - createTable:
-            tableName: rate_plan_reset_period
-            columns:
-              - column:
-                  name: id
-                  type: BIGINT
-                  autoIncrement: true
-                  constraints:
-                    primaryKey: true
-                    nullable: false
-              - column:
-                  name: rate_plan_id
-                  type: BIGINT
-                  constraints:
-                    nullable: false
-              - column:
-                  name: reset_frequency
-                  type: VARCHAR(20)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: reset_day
-                  type: INTEGER
-                  constraints:
-                    nullable: false
-              - column:
-                  name: description
-                  type: VARCHAR(255)
-              - column:
-                  name: is_active
-                  type: BOOLEAN
-              - column:
-                  name: is_deleted
-                  type: BOOLEAN
-              - column:
-                  name: version
-                  type: INTEGER
-              - column:
-                  name: created_by
-                  type: VARCHAR(100)
-              - column:
-                  name: created_at
-                  type: TIMESTAMP
-              - column:
-                  name: updated_by
-                  type: VARCHAR(100)
-              - column:
-                  name: updated_at
-                  type: TIMESTAMP
-
-        - addForeignKeyConstraint:
-            constraintName: fk_rateplan_reset
-            baseTableName: rate_plan_reset_period
             baseColumnNames: rate_plan_id
             referencedTableName: aforo_rate_plan
             referencedColumnNames: rate_plan_id

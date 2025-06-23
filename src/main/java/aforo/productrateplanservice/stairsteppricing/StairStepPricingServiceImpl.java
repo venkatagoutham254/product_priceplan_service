@@ -1,10 +1,11 @@
 package aforo.productrateplanservice.stairsteppricing;
 
+import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import aforo.productrateplanservice.rate_plan.RatePlanType;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,53 +18,83 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
     private final StairStepPricingMapper mapper;
 
     @Override
-    public StairStepPricingDTO create(StairStepPricingDTO dto) {
-        validateRatePlanExists(dto.getRatePlanId());
-        StairStepPricing entity = mapper.toEntity(dto);
-        entity.setCreatedAt(LocalDateTime.now());
-        entity.setCreatedBy("system");
-        return mapper.toDTO(repository.save(entity));
+public StairStepPricingDTO create(Long ratePlanId, StairStepPricingCreateUpdateDTO dto) {
+    RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+            .orElseThrow(() -> new IllegalArgumentException("RatePlan not found"));
+
+    if (ratePlan.getRatePlanType() != RatePlanType.STAIRSTEP) {
+        throw new IllegalArgumentException("Invalid RatePlanType. Expected STAIR_STEP but found " + ratePlan.getRatePlanType());
     }
 
+    String bracket = dto.getUsageThresholdStart() + "-" +
+            (dto.getUsageThresholdEnd() == null ? "Unlimited" : dto.getUsageThresholdEnd());
+
+    StairStepPricing entity = StairStepPricing.builder()
+            .ratePlan(ratePlan)
+            .usageThresholdStart(dto.getUsageThresholdStart())
+            .usageThresholdEnd(dto.getUsageThresholdEnd())
+            .monthlyCharge(dto.getMonthlyCharge())
+            .stairBracket(bracket)
+            .build();
+
+    return mapper.toDTO(repository.save(entity));
+}
+
+
+@Override
+public StairStepPricingDTO update(Long ratePlanId, Long id, StairStepPricingCreateUpdateDTO dto) {
+    StairStepPricing entity = repository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Stair Step not found"));
+
+    if (!entity.getRatePlan().getRatePlanId().equals(ratePlanId)) {
+        throw new IllegalArgumentException("RatePlan ID mismatch");
+    }
+
+    if (entity.getRatePlan().getRatePlanType() != RatePlanType.STAIRSTEP) {
+        throw new IllegalArgumentException("Invalid RatePlanType. Expected STAIR_STEP but found " + entity.getRatePlan().getRatePlanType());
+    }
+
+    String bracket = dto.getUsageThresholdStart() + "-" +
+            (dto.getUsageThresholdEnd() == null ? "Unlimited" : dto.getUsageThresholdEnd());
+
+    entity.setUsageThresholdStart(dto.getUsageThresholdStart());
+    entity.setUsageThresholdEnd(dto.getUsageThresholdEnd());
+    entity.setMonthlyCharge(dto.getMonthlyCharge());
+    entity.setStairBracket(bracket);
+
+    return mapper.toDTO(repository.save(entity));
+}
+
+
     @Override
-    public StairStepPricingDTO update(Long id, StairStepPricingDTO dto) {
-        validateRatePlanExists(dto.getRatePlanId());
+    public void delete(Long ratePlanId, Long id) {
         StairStepPricing entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("StairStepPricing not found"));
-        mapper.updateEntity(entity, dto);
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setUpdatedBy("system");
-        return mapper.toDTO(repository.save(entity));
+                .orElseThrow(() -> new IllegalArgumentException("Stair Step not found"));
+
+        if (!entity.getRatePlan().getRatePlanId().equals(ratePlanId)) {
+            throw new IllegalArgumentException("RatePlan ID mismatch");
+        }
+
+        repository.delete(entity);
     }
 
     @Override
-    public void delete(Long id) {
-        StairStepPricing entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("StairStepPricing not found"));
-        entity.setIsDeleted(true);
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setUpdatedBy("system");
-        repository.save(entity);
-    }
-
-    @Override
-    public StairStepPricingDTO getById(Long id) {
-        StairStepPricing entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("StairStepPricing not found"));
-        return mapper.toDTO(entity);
-    }
-
-    @Override
-    public List<StairStepPricingDTO> getAll() {
-        return repository.findAll().stream()
-                .filter(e -> !Boolean.TRUE.equals(e.getIsDeleted()))
+    public List<StairStepPricingDTO> getByRatePlanId(Long ratePlanId) {
+        return repository.findByRatePlanRatePlanId(ratePlanId)
+                .stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    private void validateRatePlanExists(Long ratePlanId) {
-        if (!ratePlanRepository.existsById(ratePlanId)) {
-            throw new IllegalArgumentException("Invalid ratePlanId: " + ratePlanId);
+    @Override
+    public StairStepPricingDTO getById(Long ratePlanId, Long id) {
+        StairStepPricing entity = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Stair Step not found"));
+
+        if (!entity.getRatePlan().getRatePlanId().equals(ratePlanId)) {
+            throw new IllegalArgumentException("RatePlan ID mismatch");
         }
+
+        return mapper.toDTO(entity);
     }
 }

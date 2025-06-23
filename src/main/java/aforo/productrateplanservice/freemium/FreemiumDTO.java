@@ -1,18 +1,19 @@
 package aforo.productrateplanservice.freemium;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+import aforo.productrateplanservice.freemium.FreemiumType;
 
 import java.time.LocalDate;
 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class FreemiumDTO {
-    private Long ratePlanId;
+
+    private Long id;
     private FreemiumType freemiumType;
-    private String eligibility;
+    private Integer freeUnits;
+    private Integer freeTrialDuration;
     private LocalDate startDate;
     private LocalDate endDate;
 }

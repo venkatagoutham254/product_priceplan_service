@@ -1,78 +1,75 @@
 package aforo.productrateplanservice.minimumcommitment;
 
-import aforo.productrateplanservice.exception.ResourceNotFoundException;
+import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MinimumCommitmentServiceImpl implements MinimumCommitmentService {
 
     private final MinimumCommitmentRepository repository;
-    private final RatePlanRepository ratePlanRepository;
     private final MinimumCommitmentMapper mapper;
+    private final RatePlanRepository ratePlanRepository;
 
     @Override
-    public void create(MinimumCommitmentDTO dto) {
-        RatePlan ratePlan = ratePlanRepository.findById(dto.getRatePlanId())
-                .orElseThrow(() -> new ResourceNotFoundException("RatePlan not found"));
+    public MinimumCommitmentDTO create(Long ratePlanId, MinimumCommitmentCreateUpdateDTO dto) {
+        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new NotFoundException("RatePlan not found"));
+    
+        // ❗ Validation: Only one MinimumCommitment per RatePlan
+        List<MinimumCommitment> existing = repository.findByRatePlan_RatePlanId(ratePlanId);
+        if (!existing.isEmpty()) {
+            throw new IllegalStateException("Minimum Commitment already exists for this RatePlan. Please update the existing one.");
+        }
+    
         MinimumCommitment entity = mapper.toEntity(dto, ratePlan);
-        repository.save(entity);
+        return mapper.toDTO(repository.save(entity));
     }
-
+    
     @Override
-    public List<MinimumCommitmentDTO> getAll() {
-        return repository.findByIsDeletedFalse()
+    public List<MinimumCommitmentDTO> getAllByRatePlanId(Long ratePlanId) {
+        return repository.findByRatePlan_RatePlanId(ratePlanId)
                 .stream()
-                .map(this::toDTO)
-                .toList();
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public MinimumCommitmentDTO getById(Long id) {
-        MinimumCommitment entity = repository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Minimum Commitment not found"));
-        return toDTO(entity);
+    public MinimumCommitmentDTO getById(Long ratePlanId, Long id) {
+        MinimumCommitment entity = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Minimum Commitment not found"));
+        if (!entity.getRatePlan().getRatePlanId().equals(ratePlanId)) {
+            throw new IllegalArgumentException("RatePlan ID mismatch");
+        }
+        return mapper.toDTO(entity);
     }
 
     @Override
-    public void update(Long id, MinimumCommitmentDTO dto) {
-        MinimumCommitment entity = repository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Minimum Commitment not found"));
-
-        entity.setMinimumCommitment(dto.getMinimumCommitment());
-        entity.setCommitmentDuration(dto.getCommitmentDuration());
-        entity.setCommitmentUnit(dto.getCommitmentUnit());
-        entity.setUpdatedBy("system");
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setVersion(entity.getVersion() + 1);
-        repository.save(entity);
+    public MinimumCommitmentDTO update(Long ratePlanId, Long id, MinimumCommitmentCreateUpdateDTO dto) {
+        MinimumCommitment existing = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Minimum Commitment not found"));
+        mapper.updateEntity(existing, dto);
+        return mapper.toDTO(repository.save(existing));
     }
 
     @Override
-    public void delete(Long id) {
-        MinimumCommitment entity = repository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Minimum Commitment not found"));
-
-        entity.setIsDeleted(true);
-        entity.setIsActive(false);
-        entity.setUpdatedBy("system");
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setVersion(entity.getVersion() + 1);
-        repository.save(entity);
+    public MinimumCommitmentDTO partialUpdate(Long ratePlanId, Long id, MinimumCommitmentCreateUpdateDTO dto) {
+        MinimumCommitment existing = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Minimum Commitment not found"));
+        mapper.partialUpdate(existing, dto);
+        return mapper.toDTO(repository.save(existing));
     }
 
-    private MinimumCommitmentDTO toDTO(MinimumCommitment entity) {
-        return MinimumCommitmentDTO.builder()
-                .ratePlanId(entity.getRatePlan().getRatePlanId())
-                .minimumCommitment(entity.getMinimumCommitment())
-                .commitmentDuration(entity.getCommitmentDuration())
-                .commitmentUnit(entity.getCommitmentUnit())
-                .build();
+    @Override
+    public void delete(Long ratePlanId, Long id) {
+        MinimumCommitment entity = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Minimum Commitment not found"));
+        repository.delete(entity);
     }
 }

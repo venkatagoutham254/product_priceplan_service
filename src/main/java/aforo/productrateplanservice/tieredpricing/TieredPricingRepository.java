@@ -1,8 +1,9 @@
 package aforo.productrateplanservice.tieredpricing;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
-@Repository
+import java.util.List;
+
 public interface TieredPricingRepository extends JpaRepository<TieredPricing, Long> {
+    List<TieredPricing> findByRatePlan_RatePlanId(Long ratePlanId);
 }

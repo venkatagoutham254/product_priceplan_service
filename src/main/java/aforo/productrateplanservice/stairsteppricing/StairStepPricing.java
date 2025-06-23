@@ -1,11 +1,10 @@
 package aforo.productrateplanservice.stairsteppricing;
 
+import aforo.productrateplanservice.rate_plan.RatePlan;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Table(name = "rate_plan_stair_step_pricing")
@@ -20,45 +19,19 @@ public class StairStepPricing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "rate_plan_id", nullable = false)
-    private Long ratePlanId;
-
     @Column(name = "usage_threshold_start", nullable = false)
-    private Long usageThresholdStart;
+    private Integer usageThresholdStart;
 
-    @Column(name = "usage_threshold_end", nullable = false)
-    private Long usageThresholdEnd;
+    @Column(name = "usage_threshold_end")
+    private Integer usageThresholdEnd;
 
     @Column(name = "monthly_charge", nullable = false)
     private BigDecimal monthlyCharge;
 
-    @Column(name = "currency", nullable = false)
-    private String currency;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rate_plan_id", nullable = false)
+    private RatePlan ratePlan;
 
-    @Column(name = "start_date")
-    private Date startDate;
-
-    @Column(name = "end_date")
-    private Date endDate;
-
-    @Column(name = "is_active")
-    private Boolean isActive;
-
-    @Column(name = "version")
-    private Integer version;
-
-    @Column(name = "created_by")
-    private String createdBy;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_by")
-    private String updatedBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "is_deleted")
-    private Boolean isDeleted;
+    @Column(name = "stair_bracket", nullable = false)
+    private String stairBracket;
 }

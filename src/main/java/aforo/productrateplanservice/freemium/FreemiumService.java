@@ -3,9 +3,10 @@ package aforo.productrateplanservice.freemium;
 import java.util.List;
 
 public interface FreemiumService {
-    void create(FreemiumDTO dto);
-    List<FreemiumDTO> getAll();
-    FreemiumDTO getById(Long id);
-    void update(Long id, FreemiumDTO dto);
-    void delete(Long id);
+    FreemiumDTO create(Long ratePlanId, FreemiumCreateUpdateDTO dto);
+    FreemiumDTO update(Long ratePlanId, Long id, FreemiumCreateUpdateDTO dto);
+    FreemiumDTO partialUpdate(Long ratePlanId, Long id, FreemiumCreateUpdateDTO dto);
+    void delete(Long ratePlanId, Long id);
+    FreemiumDTO getById(Long ratePlanId, Long id);
+    List<FreemiumDTO> getAllByRatePlanId(Long ratePlanId);
 }

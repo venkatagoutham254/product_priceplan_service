@@ -1,11 +1,8 @@
 package aforo.productrateplanservice.flatfee;
 
-import java.util.List;
-
 public interface FlatFeeService {
-    FlatFeeDTO create(FlatFeeCreateUpdateDTO dto);
-    FlatFeeDTO update(Long id, FlatFeeCreateUpdateDTO dto);
-    void delete(Long id);
-    FlatFeeDTO getById(Long id);
-    List<FlatFeeDTO> getAll();
+    FlatFeeDTO create(Long ratePlanId, FlatFeeCreateUpdateDTO dto);
+    FlatFeeDTO update(Long ratePlanId, FlatFeeCreateUpdateDTO dto);
+    FlatFeeDTO getByRatePlanId(Long ratePlanId);
+    void deleteByRatePlanId(Long ratePlanId);
 }

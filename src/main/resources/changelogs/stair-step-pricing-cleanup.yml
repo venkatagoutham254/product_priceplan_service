@@ -1,0 +1,63 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-old-stair-step-pricing
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_stair_step_pricing
+      changes:
+        - dropTable:
+            tableName: rate_plan_stair_step_pricing
+            cascadeConstraints: true
+
+  - changeSet:
+      id: create-clean-stair-step-pricing
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: rate_plan_stair_step_pricing
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: usage_threshold_start
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: usage_threshold_end
+                  type: INTEGER
+
+              - column:
+                  name: monthly_charge
+                  type: DECIMAL(12,4)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: stair_bracket
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_stair_step_pricing
+            baseColumnNames: rate_plan_id
+            constraintName: fk_clean_stairstep_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE

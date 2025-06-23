@@ -25,8 +25,16 @@ public class UpdateProductRequest {
     private String uom;
     private LocalDateTime effectiveStartDate;
     private LocalDateTime effectiveEndDate;
-    private Boolean isBillable;
+    private Boolean billable;
     private List<String> linkedRatePlans;
     private Map<String, Object> labels;
     private Long auditLogId;
+
+    public Boolean getBillable() {
+        return billable;
+    }
+    
+    public void setBillable(Boolean billable) {
+        this.billable = billable;
+    }
 }

@@ -1,29 +1,18 @@
 package aforo.productrateplanservice.rate_plan;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.Builder;  
-import aforo.productrateplanservice.product.enums.RatePlanType;
-import aforo.productrateplanservice.product.enums.RatePlanStatus;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.*;
 
-
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UpdateRatePlanRequest {
 
-    private Long productId;
-
-    private String productName;
-
     private String ratePlanName;
-
     private String description;
-
     private RatePlanType ratePlanType;
-
-    private RatePlanStatus status;
+    private BillingFrequency billingFrequency;
 }
-

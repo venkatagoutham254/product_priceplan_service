@@ -4,6 +4,7 @@ package aforo.productrateplanservice.product.assembler;
 import aforo.productrateplanservice.product.dto.ProductDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import org.springframework.stereotype.Component;
+
 // ProductAssembler.java
 @Component
 public class ProductAssembler {
@@ -23,7 +24,7 @@ public class ProductAssembler {
                 .uom(product.getUom())
                 .effectiveStartDate(product.getEffectiveStartDate())
                 .effectiveEndDate(product.getEffectiveEndDate())
-                .isBillable(product.isBillable())
+                .billable(product.getBillable())
                 .linkedRatePlans(product.getLinkedRatePlans())
                 .labels(product.getLabels())
                 .auditLogId(product.getAuditLogId())
@@ -32,4 +33,3 @@ public class ProductAssembler {
                 .build();
     }
 }
-

@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class CreateProductLLMTokenRequest {
-    private Long productId;
     private TokenProvider tokenProvider;
     private String modelName;
     private BigDecimal tokenUnitCost;

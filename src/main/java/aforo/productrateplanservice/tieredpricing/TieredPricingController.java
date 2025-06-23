@@ -1,41 +1,41 @@
 package aforo.productrateplanservice.tieredpricing;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tiered-pricing")
+@RequestMapping("/api/rateplans/{ratePlanId}/tiered-pricing")
 @RequiredArgsConstructor
 public class TieredPricingController {
 
     private final TieredPricingService service;
 
     @PostMapping
-    public ResponseEntity<TieredPricingDTO> create(@RequestBody TieredPricingDTO dto) {
-        return ResponseEntity.ok(service.create(dto));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<TieredPricingDTO> update(@PathVariable Long id, @RequestBody TieredPricingDTO dto) {
-        return ResponseEntity.ok(service.update(id, dto));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<TieredPricingDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getById(id));
+    @ResponseStatus(HttpStatus.CREATED)
+    public TieredPricingDTO create(@PathVariable Long ratePlanId, @RequestBody TieredPricingCreateUpdateDTO dto) {
+        return service.create(ratePlanId, dto);
     }
 
     @GetMapping
-    public ResponseEntity<List<TieredPricingDTO>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public List<TieredPricingDTO> getAll(@PathVariable Long ratePlanId) {
+        return service.getByRatePlanId(ratePlanId);
+    }
+
+    @PutMapping("/{id}")
+    public TieredPricingDTO update(
+            @PathVariable Long ratePlanId,
+            @PathVariable Long id,
+            @RequestBody TieredPricingCreateUpdateDTO dto
+    ) {
+        return service.update(ratePlanId, id, dto);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
         service.delete(id);
-        return ResponseEntity.noContent().build();
     }
 }

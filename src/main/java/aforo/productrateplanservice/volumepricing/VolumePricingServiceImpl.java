@@ -1,12 +1,13 @@
 package aforo.productrateplanservice.volumepricing;
 
+import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
+import aforo.productrateplanservice.exception.NotFoundException;
 import java.util.List;
 import java.util.stream.Collectors;
+import aforo.productrateplanservice.rate_plan.RatePlanType;
 
 @Service
 @RequiredArgsConstructor
@@ -17,53 +18,73 @@ public class VolumePricingServiceImpl implements VolumePricingService {
     private final VolumePricingMapper mapper;
 
     @Override
-    public VolumePricingDTO create(VolumePricingDTO dto) {
-        validateRatePlanExists(dto.getRatePlanId());
-        VolumePricing entity = mapper.toEntity(dto);
-        entity.setCreatedAt(LocalDateTime.now());
-        entity.setCreatedBy("system");
-        return mapper.toDTO(repository.save(entity));
-    }
-
-    @Override
-    public VolumePricingDTO update(Long id, VolumePricingDTO dto) {
-        validateRatePlanExists(dto.getRatePlanId());
-        VolumePricing entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("VolumePricing not found"));
-        mapper.updateEntity(entity, dto);
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setUpdatedBy("system");
-        return mapper.toDTO(repository.save(entity));
-    }
-
-    @Override
-    public void delete(Long id) {
-        VolumePricing entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("VolumePricing not found"));
-        entity.setIsDeleted(true);
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setUpdatedBy("system");
+    public VolumePricingDTO create(Long ratePlanId, VolumePricingCreateUpdateDTO dto) {
+        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new NotFoundException("RatePlan not found"));
+    
+        if (ratePlan.getRatePlanType() != RatePlanType.VOLUME_BASED) {
+            throw new IllegalArgumentException("Invalid RatePlanType. Expected VOLUME_BASED but found " + ratePlan.getRatePlanType());
+        }
+    
+        Long start = dto.getStartRange().longValue();
+        Long end = dto.getEndRange().longValue();
+    
+        if (start == null || end == null) {
+            throw new IllegalArgumentException("Start and End range cannot be null");
+        }
+    
+        String volumeBracket = start + "-" + end;
+    
+        VolumePricing entity = VolumePricing.builder()
+                .ratePlan(ratePlan)
+                .startRange(dto.getStartRange())
+                .endRange(dto.getEndRange())
+                .unitPrice(dto.getUnitPrice())
+                .volumeBracket(volumeBracket)
+                .build();
+    
         repository.save(entity);
-    }
-
-    @Override
-    public VolumePricingDTO getById(Long id) {
-        VolumePricing entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("VolumePricing not found"));
         return mapper.toDTO(entity);
     }
+    
 
     @Override
-    public List<VolumePricingDTO> getAll() {
-        return repository.findAll().stream()
-                .filter(e -> !Boolean.TRUE.equals(e.getIsDeleted()))
+    public List<VolumePricingDTO> getByRatePlanId(Long ratePlanId) {
+        return repository.findByRatePlan_RatePlanId(ratePlanId).stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    private void validateRatePlanExists(Long ratePlanId) {
-        if (!ratePlanRepository.existsById(ratePlanId)) {
-            throw new IllegalArgumentException("Invalid ratePlanId: " + ratePlanId);
-        }
+    @Override
+public VolumePricingDTO update(Long ratePlanId, Long id, VolumePricingCreateUpdateDTO dto) {
+    VolumePricing pricing = repository.findByIdAndRatePlan_RatePlanId(id, ratePlanId)
+        .orElseThrow(() -> new NotFoundException("Volume pricing not found for this rate plan"));
+
+    if (pricing.getRatePlan().getRatePlanType() != RatePlanType.VOLUME_BASED) {
+        throw new IllegalArgumentException("Invalid RatePlanType. Expected VOLUME_BASED but found " + pricing.getRatePlan().getRatePlanType());
+    }
+
+    pricing.setStartRange(dto.getStartRange());
+    pricing.setEndRange(dto.getEndRange());
+    pricing.setUnitPrice(dto.getUnitPrice());
+
+    String volumeBracket = dto.getStartRange() + "-" + dto.getEndRange();
+    pricing.setVolumeBracket(volumeBracket);
+
+    repository.save(pricing);
+    return mapper.toDTO(pricing);
+}
+
+@Override
+public void delete(Long ratePlanId, Long id) {
+    VolumePricing pricing = repository.findByIdAndRatePlan_RatePlanId(id, ratePlanId)
+        .orElseThrow(() -> new NotFoundException("Volume pricing not found for this rate plan"));
+
+    repository.delete(pricing);
+}
+
+    @Override
+    public void deleteByRatePlanId(Long ratePlanId) {
+        repository.deleteByRatePlan_RatePlanId(ratePlanId);
     }
 }

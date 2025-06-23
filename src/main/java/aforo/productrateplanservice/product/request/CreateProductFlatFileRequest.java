@@ -12,7 +12,6 @@ import aforo.productrateplanservice.product.enums.CompressionFormat;
 @AllArgsConstructor
 @Builder
 public class CreateProductFlatFileRequest {
-    private Long productId;
     private FileFormat format;
     private String size;
     private DeliveryFrequency deliveryFrequency;

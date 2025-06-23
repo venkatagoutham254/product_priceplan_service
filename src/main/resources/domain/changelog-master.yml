@@ -3,3 +3,19 @@ databaseChangeLog:
       file: changelogs/2024-10-05_13-00.yml
   - include:
       file: changelogs/2025-06-04-pricing-models.yml
+  - include:
+      file: changelogs/2025-06-13-remove-status-add-billing.yml
+  - include:
+      file: changelogs/2025-06-20-rateplan-fix.yml
+  - include:
+      file: changelogs/2025-06-20-flatfee-fix.yml
+  - include:
+      file: changelogs/2025-06-21-clean-volume-pricing.yml
+  - include:
+      file: changelogs/stair-step-pricing-cleanup.yml
+  - include:
+      file: changelogs/2025-06-23-usage-based-pricing.yml
+  - include:
+      file: changelogs/clean_rateplan_extras.yaml
+  - include:
+      file: changelogs/2025-06-23-clean-tiered-pricing.yml

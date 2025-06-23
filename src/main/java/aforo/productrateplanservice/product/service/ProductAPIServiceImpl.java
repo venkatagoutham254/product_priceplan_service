@@ -1,14 +1,17 @@
 package aforo.productrateplanservice.product.service;
 
+import aforo.productrateplanservice.product.dto.ProductAPIDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.entity.ProductAPI;
 import aforo.productrateplanservice.product.enums.ProductType;
+import aforo.productrateplanservice.product.mapper.ProductAPIMapper;
 import aforo.productrateplanservice.product.repository.ProductAPIRepository;
 import aforo.productrateplanservice.product.repository.ProductRepository;
 import aforo.productrateplanservice.product.request.CreateProductAPIRequest;
 import aforo.productrateplanservice.product.request.UpdateProductAPIRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 
 import java.util.List;
 
@@ -18,6 +21,7 @@ public class ProductAPIServiceImpl implements ProductAPIService {
 
     private final ProductAPIRepository productAPIRepository;
     private final ProductRepository productRepository;
+    private final ProductAPIMapper productAPIMapper;
 
     private void validateProductType(Product product, ProductType expected) {
         if (product.getProductType() != expected) {
@@ -26,9 +30,10 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     }
 
     @Override
-    public ProductAPI createProductAPI(CreateProductAPIRequest request) {
-        Product product = productRepository.findById(request.getProductId())
+    public ProductAPIDTO create(Long productId, CreateProductAPIRequest request) {
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+
         validateProductType(product, ProductType.API);
 
         ProductAPI productAPI = ProductAPI.builder()
@@ -43,47 +48,51 @@ public class ProductAPIServiceImpl implements ProductAPIService {
                 .latencyClass(request.getLatencyClass())
                 .build();
 
-        return productAPIRepository.save(productAPI);
+        return productAPIMapper.toDTO(productAPIRepository.save(productAPI));
     }
 
     @Override
-    public ProductAPI getById(Long productId) {
-        return productAPIRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product API not found with ID: " + productId));
+    public ProductAPIDTO getByProductId(Long productId) {
+        ProductAPI api = productAPIRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product API not found for ID: " + productId));
+        return productAPIMapper.toDTO(api);
     }
 
     @Override
-    public List<ProductAPI> getAll() {
-        return productAPIRepository.findAll();
+    public List<ProductAPIDTO> getAll() {
+        return productAPIRepository.findAll()
+                .stream()
+                .map(productAPIMapper::toDTO)
+                .toList();
     }
 
-   @Override
-public ProductAPI update(Long id, UpdateProductAPIRequest request) {
-    ProductAPI existing = productAPIRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Product API not found"));
+    @Override
+    public ProductAPIDTO update(Long productId, UpdateProductAPIRequest request) {
+        ProductAPI existing = productAPIRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product API not found"));
 
-    Product product = productRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Product not found"));
-    validateProductType(product, ProductType.API);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
-    if (request.getEndpointUrl() != null) existing.setEndpointUrl(request.getEndpointUrl());
-    if (request.getAuthType() != null) existing.setAuthType(request.getAuthType());
-    if (request.getPayloadSizeMetric() != null) existing.setPayloadSizeMetric(request.getPayloadSizeMetric());
-    if (request.getRateLimitPolicy() != null) existing.setRateLimitPolicy(request.getRateLimitPolicy());
-    if (request.getMeteringGranularity() != null) existing.setMeteringGranularity(request.getMeteringGranularity());
-    if (request.getGrouping() != null) existing.setGrouping(request.getGrouping());
-    if (request.getLatencyClass() != null) existing.setLatencyClass(request.getLatencyClass());
-    if (request.getCachingFlag() != null) existing.setCachingFlag(request.getCachingFlag());
+        validateProductType(product, ProductType.API);
 
-    return productAPIRepository.save(existing);
-}
+        if (request.getEndpointUrl() != null) existing.setEndpointUrl(request.getEndpointUrl());
+        if (request.getAuthType() != null) existing.setAuthType(request.getAuthType());
+        if (request.getPayloadSizeMetric() != null) existing.setPayloadSizeMetric(request.getPayloadSizeMetric());
+        if (request.getRateLimitPolicy() != null) existing.setRateLimitPolicy(request.getRateLimitPolicy());
+        if (request.getMeteringGranularity() != null) existing.setMeteringGranularity(request.getMeteringGranularity());
+        if (request.getGrouping() != null) existing.setGrouping(request.getGrouping());
+        if (request.getLatencyClass() != null) existing.setLatencyClass(request.getLatencyClass());
 
+        if (request.getCachingFlag() != null) {
+            existing.setCachingFlag(request.getCachingFlag());
+        }
+        
+        return productAPIMapper.toDTO(productAPIRepository.save(existing));
+    }
 
     @Override
     public void delete(Long productId) {
-        if (!productAPIRepository.existsById(productId)) {
-            throw new RuntimeException("Product API not found with ID: " + productId);
-        }
         productAPIRepository.deleteById(productId);
     }
 }

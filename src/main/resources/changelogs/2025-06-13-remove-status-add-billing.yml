@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: remove-status-and-add-billing-frequency
+      author: venkatagowtham
+      changes:
+        - dropColumn:
+            tableName: aforo_rate_plan
+            columnName: status
+
+        # - dropColumn:
+        #     tableName: aforo_rate_plan
+        #     columnName: status
+
+        # - addColumn:
+        #     tableName: aforo_rate_plan
+        #     columns:
+        #       - column:
+        #           name: billing_frequency
+        #           type: VARCHAR(50)
+        #           constraints:
+        #             nullable: false

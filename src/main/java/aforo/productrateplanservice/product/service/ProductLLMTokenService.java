@@ -1,15 +1,15 @@
 package aforo.productrateplanservice.product.service;
 
-import aforo.productrateplanservice.product.entity.ProductLLMToken;
+import aforo.productrateplanservice.product.dto.ProductLLMTokenDTO;
 import aforo.productrateplanservice.product.request.CreateProductLLMTokenRequest;
 import aforo.productrateplanservice.product.request.UpdateProductLLMTokenRequest;
 
 import java.util.List;
 
 public interface ProductLLMTokenService {
-    ProductLLMToken create(CreateProductLLMTokenRequest request);
-    ProductLLMToken getById(Long id);
-    List<ProductLLMToken> getAll();
-ProductLLMToken update(Long id, UpdateProductLLMTokenRequest request);
-    void delete(Long id);
+    ProductLLMTokenDTO create(Long productId, CreateProductLLMTokenRequest request);
+    ProductLLMTokenDTO getByProductId(Long productId);
+    List<ProductLLMTokenDTO> getAll();
+    ProductLLMTokenDTO update(Long productId, UpdateProductLLMTokenRequest request);
+    void delete(Long productId);
 }

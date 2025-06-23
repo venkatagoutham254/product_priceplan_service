@@ -47,9 +47,6 @@ public class Product {
     @Column(nullable = false)
     private ProductCategory category;
 
-    @Column(nullable = false)
-    private boolean visibility = true;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductStatus status;
@@ -64,8 +61,6 @@ public class Product {
 
     private LocalDateTime effectiveEndDate;
 
-    @Column(nullable = false)
-    private boolean isBillable = true;
 
     @Convert(converter = JsonListConverter.class)
     private List<String> linkedRatePlans;
@@ -92,11 +87,12 @@ public class Product {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public boolean isBillable() {
-        return isBillable;
-    }
 
-    public void setBillable(boolean billable) {
-        this.isBillable = billable;
-    }
+    @Column(name = "visibility", nullable = false)
+    private boolean visibility;
+    
+    @Column(name = "billable", nullable = false)
+    private Boolean billable;
+    
+
 }

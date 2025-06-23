@@ -1,41 +1,39 @@
 package aforo.productrateplanservice.flatfee;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/api/flat-fees")
+@RequestMapping("/api/rateplans/{ratePlanId}/flatfee")
 @RequiredArgsConstructor
 public class FlatFeeController {
 
-    private final FlatFeeService service;
+    private final FlatFeeService flatFeeService;
 
     @PostMapping
-    public ResponseEntity<FlatFeeDTO> create(@RequestBody FlatFeeCreateUpdateDTO dto) {
-        return ResponseEntity.ok(service.create(dto));
+    public ResponseEntity<FlatFeeDTO> create(
+            @PathVariable Long ratePlanId,
+            @RequestBody @Valid FlatFeeCreateUpdateDTO dto) {
+        return ResponseEntity.ok(flatFeeService.create(ratePlanId, dto));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<FlatFeeDTO> update(@PathVariable Long id, @RequestBody FlatFeeCreateUpdateDTO dto) {
-        return ResponseEntity.ok(service.update(id, dto));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<FlatFeeDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getById(id));
+    @PutMapping
+    public ResponseEntity<FlatFeeDTO> update(
+            @PathVariable Long ratePlanId,
+            @RequestBody @Valid FlatFeeCreateUpdateDTO dto) {
+        return ResponseEntity.ok(flatFeeService.update(ratePlanId, dto));
     }
 
     @GetMapping
-    public ResponseEntity<List<FlatFeeDTO>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<FlatFeeDTO> get(@PathVariable Long ratePlanId) {
+        return ResponseEntity.ok(flatFeeService.getByRatePlanId(ratePlanId));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
+    @DeleteMapping
+    public ResponseEntity<Void> delete(@PathVariable Long ratePlanId) {
+        flatFeeService.deleteByRatePlanId(ratePlanId);
         return ResponseEntity.noContent().build();
     }
 }

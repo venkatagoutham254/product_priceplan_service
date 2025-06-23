@@ -1,10 +1,12 @@
 package aforo.productrateplanservice.tieredpricing;
 
+import aforo.productrateplanservice.exception.NotFoundException;
+import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
+import aforo.productrateplanservice.rate_plan.RatePlanType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,57 +15,68 @@ import java.util.stream.Collectors;
 public class TieredPricingServiceImpl implements TieredPricingService {
 
     private final TieredPricingRepository repository;
-    private final RatePlanRepository ratePlanRepository;
     private final TieredPricingMapper mapper;
+    private final RatePlanRepository ratePlanRepository;
 
     @Override
-    public TieredPricingDTO create(TieredPricingDTO dto) {
-        validateRatePlanExists(dto.getRatePlanId());
-        TieredPricing entity = mapper.toEntity(dto);
-        entity.setCreatedAt(LocalDateTime.now());
-        entity.setCreatedBy("system");
+    public TieredPricingDTO create(Long ratePlanId, TieredPricingCreateUpdateDTO dto) {
+        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new NotFoundException("RatePlan not found"));
+    
+        if (ratePlan.getRatePlanType() != RatePlanType.TIERED) {
+            throw new IllegalArgumentException("Invalid RatePlanType. Expected TIERED but found " + ratePlan.getRatePlanType());
+        }
+    
+        String tierBracket = dto.getStartRange() + "-" + dto.getEndRange();
+    
+        TieredPricing entity = TieredPricing.builder()
+                .ratePlan(ratePlan)
+                .startRange(dto.getStartRange())
+                .endRange(dto.getEndRange())
+                .unitPrice(dto.getUnitPrice())
+                .tierBracket(tierBracket)
+                .build();
+    
         return mapper.toDTO(repository.save(entity));
     }
-
+    
     @Override
-    public TieredPricingDTO update(Long id, TieredPricingDTO dto) {
-        validateRatePlanExists(dto.getRatePlanId());
-        TieredPricing entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("TieredPricing not found"));
-        mapper.updateEntity(entity, dto);
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setUpdatedBy("system");
-        return mapper.toDTO(repository.save(entity));
-    }
-
-    @Override
-    public void delete(Long id) {
-        TieredPricing entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("TieredPricing not found"));
-        entity.setIsDeleted(true);
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setUpdatedBy("system");
-        repository.save(entity);
-    }
-
-    @Override
-    public TieredPricingDTO getById(Long id) {
-        TieredPricing entity = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("TieredPricing not found"));
-        return mapper.toDTO(entity);
-    }
-
-    @Override
-    public List<TieredPricingDTO> getAll() {
-        return repository.findAll().stream()
-                .filter(e -> !Boolean.TRUE.equals(e.getIsDeleted()))
+    public List<TieredPricingDTO> getByRatePlanId(Long ratePlanId) {
+        return repository.findByRatePlan_RatePlanId(ratePlanId)
+                .stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    private void validateRatePlanExists(Long ratePlanId) {
-        if (!ratePlanRepository.existsById(ratePlanId)) {
-            throw new IllegalArgumentException("Invalid ratePlanId: " + ratePlanId);
+    @Override
+public TieredPricingDTO update(Long ratePlanId, Long id, TieredPricingCreateUpdateDTO dto) {
+    TieredPricing entity = repository.findById(id)
+            .orElseThrow(() -> new NotFoundException("TieredPricing not found"));
+
+    if (!entity.getRatePlan().getRatePlanId().equals(ratePlanId)) {
+        throw new IllegalArgumentException("RatePlan ID mismatch");
+    }
+
+    if (entity.getRatePlan().getRatePlanType() != RatePlanType.TIERED) {
+        throw new IllegalArgumentException("Invalid RatePlanType. Expected TIERED but found " + entity.getRatePlan().getRatePlanType());
+    }
+
+    String tierBracket = dto.getStartRange() + "-" + dto.getEndRange();
+
+    entity.setStartRange(dto.getStartRange());
+    entity.setEndRange(dto.getEndRange());
+    entity.setUnitPrice(dto.getUnitPrice());
+    entity.setTierBracket(tierBracket);
+
+    return mapper.toDTO(repository.save(entity));
+}
+
+
+    @Override
+    public void delete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new NotFoundException("TieredPricing not found");
         }
+        repository.deleteById(id);
     }
 }

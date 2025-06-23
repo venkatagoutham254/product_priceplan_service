@@ -1,0 +1,271 @@
+databaseChangeLog:
+  # -----------------------------
+  # Drop Old Tables (if they exist)
+  # -----------------------------
+  - changeSet:
+      id: drop-old-setup-fee
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_setup_fee
+      changes:
+        - dropTable:
+            tableName: rate_plan_setup_fee
+            cascadeConstraints: true
+
+  - changeSet:
+      id: drop-old-overage-charges
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_overage_charges
+      changes:
+        - dropTable:
+            tableName: rate_plan_overage_charges
+            cascadeConstraints: true
+
+  - changeSet:
+      id: drop-old-discount
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_discount
+      changes:
+        - dropTable:
+            tableName: rate_plan_discount
+            cascadeConstraints: true
+
+  - changeSet:
+      id: drop-old-freemium
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_freemium
+      changes:
+        - dropTable:
+            tableName: rate_plan_freemium
+            cascadeConstraints: true
+
+  - changeSet:
+      id: drop-old-minimum-commitment
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_minimum_commitment
+      changes:
+        - dropTable:
+            tableName: rate_plan_minimum_commitment
+            cascadeConstraints: true
+
+  - changeSet:
+      id: drop-reset
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: reset
+      changes:
+        - dropTable:
+            tableName: reset
+            cascadeConstraints: true
+
+  # -----------------------------
+  # Create New Setup Fee Table
+  # -----------------------------
+  - changeSet:
+      id: create-setup-fee
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: rate_plan_setup_fee
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: { primaryKey: true, nullable: false }
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  constraints: { nullable: false }
+              - column:
+                  name: setup_fee
+                  type: DECIMAL(12,4)
+                  constraints: { nullable: false }
+              - column:
+                  name: application_timing
+                  type: VARCHAR(100)
+                  constraints: { nullable: false }
+              - column:
+                  name: invoice_description
+                  type: VARCHAR(255)
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_setup_fee
+            baseColumnNames: rate_plan_id
+            constraintName: fk_setup_fee_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+
+  # -----------------------------
+  # Create New Overage Charges Table
+  # -----------------------------
+  - changeSet:
+      id: create-overage-charge
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: rate_plan_overage_charge
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: { primaryKey: true, nullable: false }
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  constraints: { nullable: false }
+              - column:
+                  name: overage_unit_rate
+                  type: DECIMAL(12,4)
+                  constraints: { nullable: false }
+              - column:
+                  name: grace_buffer
+                  type: INTEGER
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_overage_charge
+            baseColumnNames: rate_plan_id
+            constraintName: fk_overage_charge_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+
+  # -----------------------------
+  # Create New Discount Table
+  # -----------------------------
+  - changeSet:
+      id: create-discount
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: rate_plan_discount
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: { primaryKey: true, nullable: false }
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  constraints: { nullable: false }
+              - column:
+                  name: discount_type
+                  type: VARCHAR(30)
+                  constraints: { nullable: false }
+              - column:
+                  name: percentage_discount
+                  type: DECIMAL(12,4)
+              - column:
+                  name: flat_discount_amount
+                  type: DECIMAL(12,4)
+              - column:
+                  name: eligibility
+                  type: VARCHAR(255)
+                  constraints: { nullable: false }
+              - column:
+                  name: start_date
+                  type: DATE
+                  constraints: { nullable: false }
+              - column:
+                  name: end_date
+                  type: DATE
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_discount
+            baseColumnNames: rate_plan_id
+            constraintName: fk_discount_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+
+  # -----------------------------
+  # Create New Freemium Table
+  # -----------------------------
+  - changeSet:
+      id: create-freemium
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: rate_plan_freemium
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: { primaryKey: true, nullable: false }
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  constraints: { nullable: false }
+              - column:
+                  name: freemium_type
+                  type: VARCHAR(50)
+                  constraints: { nullable: false }
+              - column:
+                  name: free_units
+                  type: INTEGER
+              - column:
+                  name: free_trial_duration
+                  type: INTEGER
+              - column:
+                  name: start_date
+                  type: DATE
+                  constraints: { nullable: false }
+              - column:
+                  name: end_date
+                  type: DATE
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_freemium
+            baseColumnNames: rate_plan_id
+            constraintName: fk_freemium_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+
+  # -----------------------------
+  # Create New Minimum Commitment Table
+  # -----------------------------
+  - changeSet:
+      id: create-minimum-commitment
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: rate_plan_minimum_commitment
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: { primaryKey: true, nullable: false }
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  constraints: { nullable: false }
+              - column:
+                  name: minimum_usage
+                  type: INTEGER
+                  constraints: { nullable: false }
+              - column:
+                  name: minimum_charge
+                  type: INTEGER
+                  constraints: { nullable: false }
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_minimum_commitment
+            baseColumnNames: rate_plan_id
+            constraintName: fk_minimum_commitment_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id

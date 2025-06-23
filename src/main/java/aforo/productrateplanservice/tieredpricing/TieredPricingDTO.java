@@ -3,7 +3,6 @@ package aforo.productrateplanservice.tieredpricing;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -12,14 +11,8 @@ import java.util.Date;
 @Builder
 public class TieredPricingDTO {
     private Long id;
-    private Long ratePlanId;
-    private Long startRange;
-    private Long endRange;
+    private Integer startRange;
+    private Integer endRange;
     private BigDecimal unitPrice;
-    private String uom;
-    private String currency;
-    private Integer tierOrder;
-    private Date startDate;
-    private Date endDate;
-    private String description;
+    private String tierBracket;
 }

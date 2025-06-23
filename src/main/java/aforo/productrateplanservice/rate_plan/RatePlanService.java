@@ -1,16 +1,20 @@
 package aforo.productrateplanservice.rate_plan;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import java.util.List;
-import java.util.Optional;
 
 public interface RatePlanService {
+
     RatePlanDTO createRatePlan(CreateRatePlanRequest request);
-    RatePlanDTO getRatePlanById(Long id);
+
     List<RatePlanDTO> getAllRatePlans();
-    void deleteRatePlan(Long id);
-    RatePlanDTO updateRatePlan(Long id, UpdateRatePlanRequest request);
 
+    List<RatePlanDTO> getRatePlansByProductId(Long productId);
+
+    RatePlanDTO getRatePlanById(Long ratePlanId);
+
+    void deleteRatePlan(Long ratePlanId);
+
+    RatePlanDTO updateRatePlanFully(Long ratePlanId, UpdateRatePlanRequest request);
+    RatePlanDTO updateRatePlanPartially(Long ratePlanId, UpdateRatePlanRequest request);
+    
 }
-

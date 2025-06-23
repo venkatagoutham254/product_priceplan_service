@@ -9,7 +9,7 @@ import aforo.productrateplanservice.product.enums.LatencyClass;
 @AllArgsConstructor
 @Builder
 public class CreateProductAPIRequest {
-    private Long productId;
+    
     private String endpointUrl;
     private AuthType authType;
     private String payloadSizeMetric;

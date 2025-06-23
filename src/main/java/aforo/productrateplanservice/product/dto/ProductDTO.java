@@ -28,7 +28,7 @@ public class ProductDTO {
     private String uom;
     private LocalDateTime effectiveStartDate;
     private LocalDateTime effectiveEndDate;
-    private boolean isBillable;
+    private Boolean billable;
     private List<String> linkedRatePlans;
     private Map<String, Object> labels;
     private Long auditLogId;

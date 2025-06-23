@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-old-volume-pricing
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_volume_pricing
+      changes:
+        - dropTable:
+            tableName: rate_plan_volume_pricing
+            cascadeConstraints: true
+
+  - changeSet:
+      id: create-clean-volume-pricing
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: rate_plan_volume_pricing
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: volume_bracket
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: unit_price
+                  type: DECIMAL(12,4)
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_volume_pricing
+            baseColumnNames: rate_plan_id
+            constraintName: fk_clean_volume_pricing_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE

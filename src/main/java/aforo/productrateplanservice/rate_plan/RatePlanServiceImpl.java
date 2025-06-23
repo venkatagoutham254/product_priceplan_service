@@ -1,113 +1,120 @@
 package aforo.productrateplanservice.rate_plan;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.exception.ValidationException;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.repository.ProductRepository;
-import aforo.productrateplanservice.product.enums.RatePlanType;
-import java.util.EnumSet;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class RatePlanServiceImpl implements RatePlanService {
 
     private final RatePlanRepository ratePlanRepository;
     private final ProductRepository productRepository;
-    private final RatePlanAssembler ratePlanAssembler;
+    private final RatePlanMapper ratePlanMapper;
 
     @Override
-    public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
-        if (ratePlanRepository.existsByRatePlanNameIgnoreCaseTrimmed(request.getRatePlanName())) {
-            throw new ValidationException("Rate plan name must be unique.");
-        }
+public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
+    String productName = request.getProductName().trim(); // ✅ Trim spaces
 
-        if (!EnumSet.of(
-                RatePlanType.FLAT_FEE,
-                RatePlanType.VOLUME_BASED,
-                RatePlanType.TIERED_PRICING,
-                RatePlanType.STAIR_STEP_PRICING
-        ).contains(request.getRatePlanType())) {
-            throw new ValidationException("Invalid rate plan type.");
-        }
+    Product product = productRepository.findByProductNameIgnoreCase(productName)
+            .orElseThrow(() -> new NotFoundException("Product not found: " + productName));
 
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new NotFoundException("Product ID not found"));
+    ratePlanRepository.findByRatePlanNameAndProduct_ProductId(
+            request.getRatePlanName(), product.getProductId()
+    ).ifPresent(r -> {
+        throw new ValidationException("Rate plan with this name already exists for this product.");
+    });
 
-        if (!product.getProductName().trim().equalsIgnoreCase(request.getProductName().trim())) {
-            throw new ValidationException("Product ID and product name do not match.");
-        }
+    RatePlan ratePlan = RatePlan.builder()
+            .ratePlanName(request.getRatePlanName())
+            .description(request.getDescription())
+            .ratePlanType(request.getRatePlanType()) // already enum
+            .billingFrequency(request.getBillingFrequency())
+            .product(product)
+            .build();
 
-        RatePlan ratePlan = RatePlan.builder()
-                .product(product)
-                .ratePlanName(request.getRatePlanName().trim())
-                .description(request.getDescription())
-                .ratePlanType(request.getRatePlanType())
-                .status(request.getStatus())
-                .build();
-
-        RatePlan saved = ratePlanRepository.save(ratePlan);
-        return ratePlanAssembler.toDTO(saved);
-    }
-@Override
-@Transactional
-public RatePlanDTO updateRatePlan(Long id, UpdateRatePlanRequest request) {
-    RatePlan ratePlan = ratePlanRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Rate plan not found"));
-
-    if (request.getRatePlanName() != null &&
-        !request.getRatePlanName().trim().equalsIgnoreCase(ratePlan.getRatePlanName().trim())) {
-        if (ratePlanRepository.existsByRatePlanNameIgnoreCaseTrimmed(request.getRatePlanName())) {
-            throw new ValidationException("Rate plan name must be unique.");
-        }
-        ratePlan.setRatePlanName(request.getRatePlanName().trim());
-    }
-
-    if (request.getProductId() != null && request.getProductName() != null) {
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new NotFoundException("Product ID not found"));
-
-        if (!product.getProductName().trim().equalsIgnoreCase(request.getProductName().trim())) {
-            throw new ValidationException("Product ID and Product Name do not match.");
-        }
-        ratePlan.setProduct(product);
-    }
-
-    if (request.getDescription() != null) ratePlan.setDescription(request.getDescription());
-    if (request.getRatePlanType() != null) ratePlan.setRatePlanType(request.getRatePlanType());
-    if (request.getStatus() != null) ratePlan.setStatus(request.getStatus());
-
-    RatePlan updated = ratePlanRepository.save(ratePlan);
-    return ratePlanAssembler.toDTO(updated);
+    ratePlanRepository.save(ratePlan);
+    return ratePlanMapper.toDTO(ratePlan);
 }
 
-    @Override
-    public RatePlanDTO getRatePlanById(Long id) {
-        RatePlan ratePlan = ratePlanRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Rate plan not found"));
-        return ratePlanAssembler.toDTO(ratePlan);
-    }
 
     @Override
     public List<RatePlanDTO> getAllRatePlans() {
-        return ratePlanRepository.findAll().stream()
-                .map(ratePlanAssembler::toDTO)
+        return ratePlanRepository.findAll()
+                .stream()
+                .map(ratePlanMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void deleteRatePlan(Long id) {
-        ratePlanRepository.deleteById(id);
+    public List<RatePlanDTO> getRatePlansByProductId(Long productId) {
+        return ratePlanRepository.findByProduct_ProductId(productId)
+                .stream()
+                .map(ratePlanMapper::toDTO)
+                .collect(Collectors.toList());
     }
-}
+
+    @Override
+    public RatePlanDTO getRatePlanById(Long ratePlanId) {
+        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
+        return ratePlanMapper.toDTO(ratePlan);
+    }
+
+    @Override
+    public void deleteRatePlan(Long ratePlanId) {
+        if (!ratePlanRepository.existsById(ratePlanId)) {
+            throw new NotFoundException("Rate plan not found with ID: " + ratePlanId);
+        }
+        ratePlanRepository.deleteById(ratePlanId);
+    }
+
+    @Override
+    public RatePlanDTO updateRatePlanFully(Long ratePlanId, UpdateRatePlanRequest request) {
+        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
+    
+        if (request.getRatePlanName() == null || request.getBillingFrequency() == null) {
+            throw new ValidationException("All fields must be provided for full update.");
+        }
+    
+        ratePlan.setRatePlanName(request.getRatePlanName());
+        ratePlan.setDescription(request.getDescription());
+        ratePlan.setRatePlanType(request.getRatePlanType());
+        ratePlan.setBillingFrequency(request.getBillingFrequency());
+    
+        ratePlanRepository.save(ratePlan);
+        return ratePlanMapper.toDTO(ratePlan);
+    }
+    
+    @Override
+    public RatePlanDTO updateRatePlanPartially(Long ratePlanId, UpdateRatePlanRequest request) {
+        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
+    
+        if (request.getRatePlanName() != null) {
+            ratePlan.setRatePlanName(request.getRatePlanName());
+        }
+    
+        if (request.getDescription() != null) {
+            ratePlan.setDescription(request.getDescription());
+        }
+    
+        if (request.getRatePlanType() != null) {
+            ratePlan.setRatePlanType(request.getRatePlanType());
+        }
+    
+        if (request.getBillingFrequency() != null) {
+            ratePlan.setBillingFrequency(request.getBillingFrequency());
+        }
+    
+        ratePlanRepository.save(ratePlan);
+        return ratePlanMapper.toDTO(ratePlan);
+    }
+}    

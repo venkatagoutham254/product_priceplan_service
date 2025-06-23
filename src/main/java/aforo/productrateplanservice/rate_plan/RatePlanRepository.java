@@ -1,13 +1,13 @@
 package aforo.productrateplanservice.rate_plan;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
-@Repository
+import java.util.List;
+import java.util.Optional;
+
 public interface RatePlanRepository extends JpaRepository<RatePlan, Long> {
 
-    @Query("SELECT COUNT(r) > 0 FROM RatePlan r WHERE LOWER(TRIM(r.ratePlanName)) = LOWER(TRIM(:name))")
-    boolean existsByRatePlanNameIgnoreCaseTrimmed(@Param("name") String name);
+    Optional<RatePlan> findByRatePlanNameAndProduct_ProductId(String ratePlanName, Long productId);
+
+    List<RatePlan> findByProduct_ProductId(Long productId);
 }

@@ -3,20 +3,15 @@ package aforo.productrateplanservice.stairsteppricing;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.Date;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class StairStepPricingDTO {
     private Long id;
-    private Long ratePlanId;
-    private Long usageThresholdStart;
-    private Long usageThresholdEnd;
+    private Integer usageThresholdStart;
+    private Integer usageThresholdEnd;
     private BigDecimal monthlyCharge;
-    private String currency;
-    private Date startDate;
-    private Date endDate;
+    private String stairBracket;
 }

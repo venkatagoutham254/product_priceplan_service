@@ -1,17 +1,13 @@
 package aforo.productrateplanservice.minimumcommitment;
 
+import lombok.Builder;
+import lombok.Data;
 
-
-import lombok.*;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 @Builder
 public class MinimumCommitmentDTO {
+    private Long id;
     private Long ratePlanId;
-    private Double minimumCommitment;
-    private String commitmentDuration;
-    private String commitmentUnit;
+    private Integer minimumUsage;
+    private Integer minimumCharge;
 }

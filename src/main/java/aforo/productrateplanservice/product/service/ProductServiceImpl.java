@@ -10,10 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.product.assembler.ProductAssembler;
-import aforo.productrateplanservice.product.repository.ProductAPIRepository;
-import aforo.productrateplanservice.product.repository.ProductFlatFileRepository;
-import aforo.productrateplanservice.product.repository.ProductLLMTokenRepository;
-import aforo.productrateplanservice.product.repository.ProductSQLResultRepository;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import aforo.productrateplanservice.product.enums.ProductType;
@@ -71,7 +68,7 @@ public class ProductServiceImpl implements ProductService {
         if (request.getUom() != null) product.setUom(request.getUom());
         if (request.getEffectiveStartDate() != null) product.setEffectiveStartDate(request.getEffectiveStartDate());
         if (request.getEffectiveEndDate() != null) product.setEffectiveEndDate(request.getEffectiveEndDate());
-        if (request.getIsBillable() != null) product.setBillable(request.getIsBillable());
+if (request.getBillable() != null) product.setBillable(request.getBillable());
         if (request.getLinkedRatePlans() != null) product.setLinkedRatePlans(request.getLinkedRatePlans());
         if (request.getLabels() != null) product.setLabels(request.getLabels());
         if (request.getAuditLogId() != null) product.setAuditLogId(request.getAuditLogId());

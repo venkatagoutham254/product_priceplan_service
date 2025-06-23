@@ -1,8 +1,10 @@
 package aforo.productrateplanservice.product.service;
 
+import aforo.productrateplanservice.product.dto.ProductFlatFileDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.entity.ProductFlatFile;
 import aforo.productrateplanservice.product.enums.ProductType;
+import aforo.productrateplanservice.product.mapper.ProductFlatFileMapper;
 import aforo.productrateplanservice.product.repository.ProductFlatFileRepository;
 import aforo.productrateplanservice.product.repository.ProductRepository;
 import aforo.productrateplanservice.product.request.CreateProductFlatFileRequest;
@@ -16,18 +18,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductFlatFileServiceImpl implements ProductFlatFileService {
 
-    private final ProductFlatFileRepository productFlatFileRepository;
+    private final ProductFlatFileRepository repository;
     private final ProductRepository productRepository;
+    private final ProductFlatFileMapper mapper;
 
     private void validateProductType(Product product, ProductType expected) {
         if (product.getProductType() != expected) {
-            throw new RuntimeException("Invalid product type. Expected: " + expected + ", but got: " + product.getProductType());
+            throw new RuntimeException("Invalid product type. Expected: " + expected);
         }
     }
 
     @Override
-    public ProductFlatFile create(CreateProductFlatFileRequest request) {
-        Product product = productRepository.findById(request.getProductId())
+    public ProductFlatFileDTO create(Long productId, CreateProductFlatFileRequest request) {
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         validateProductType(product, ProductType.FlatFile);
 
@@ -42,42 +45,42 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
                 .compressionFormat(request.getCompressionFormat())
                 .build();
 
-        return productFlatFileRepository.save(entity);
+        return mapper.toDTO(repository.save(entity));
     }
 
     @Override
-    public ProductFlatFile getById(Long id) {
-        return productFlatFileRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Flat File Product not found with ID: " + id));
+    public ProductFlatFileDTO getByProductId(Long productId) {
+        ProductFlatFile entity = repository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("FlatFile not found"));
+        return mapper.toDTO(entity);
     }
 
     @Override
-    public List<ProductFlatFile> getAll() {
-        return productFlatFileRepository.findAll();
+    public List<ProductFlatFileDTO> getAll() {
+        return repository.findAll()
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
     }
 
     @Override
-public ProductFlatFile update(Long id, UpdateProductFlatFileRequest request) {
-    ProductFlatFile existing = productFlatFileRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("FlatFile not found"));
+    public ProductFlatFileDTO update(Long productId, UpdateProductFlatFileRequest request) {
+        ProductFlatFile existing = repository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("FlatFile not found"));
 
-    if (request.getFormat() != null) existing.setFormat(request.getFormat());
-    if (request.getSize() != null) existing.setSize(request.getSize());
-    if (request.getDeliveryFrequency() != null) existing.setDeliveryFrequency(request.getDeliveryFrequency());
-    if (request.getAccessMethod() != null) existing.setAccessMethod(request.getAccessMethod());
-    if (request.getRetentionPolicy() != null) existing.setRetentionPolicy(request.getRetentionPolicy());
-    if (request.getFileNamingConvention() != null) existing.setFileNamingConvention(request.getFileNamingConvention());
-    if (request.getCompressionFormat() != null) existing.setCompressionFormat(request.getCompressionFormat());
+        if (request.getFormat() != null) existing.setFormat(request.getFormat());
+        if (request.getSize() != null) existing.setSize(request.getSize());
+        if (request.getDeliveryFrequency() != null) existing.setDeliveryFrequency(request.getDeliveryFrequency());
+        if (request.getAccessMethod() != null) existing.setAccessMethod(request.getAccessMethod());
+        if (request.getRetentionPolicy() != null) existing.setRetentionPolicy(request.getRetentionPolicy());
+        if (request.getFileNamingConvention() != null) existing.setFileNamingConvention(request.getFileNamingConvention());
+        if (request.getCompressionFormat() != null) existing.setCompressionFormat(request.getCompressionFormat());
 
-    return productFlatFileRepository.save(existing);
-}
-
+        return mapper.toDTO(repository.save(existing));
+    }
 
     @Override
-    public void delete(Long id) {
-        if (!productFlatFileRepository.existsById(id)) {
-            throw new RuntimeException("Flat File Product not found with ID: " + id);
-        }
-        productFlatFileRepository.deleteById(id);
+    public void delete(Long productId) {
+        repository.deleteById(productId);
     }
 }

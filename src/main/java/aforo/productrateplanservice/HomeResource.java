@@ -11,8 +11,7 @@ import aforo.productrateplanservice.discount.DiscountController;
 import aforo.productrateplanservice.freemium.FreemiumController;
 import aforo.productrateplanservice.minimumcommitment.MinimumCommitmentController;
 import aforo.productrateplanservice.overagecharges.OverageChargeController;
-import aforo.productrateplanservice.resetperiod.ResetPeriodController;
-import aforo.productrateplanservice.setupfee.RatePlanSetupFeeController;
+import aforo.productrateplanservice.setupfee.SetupFeeController;
 
 @RestController
 public class HomeResource {
@@ -21,12 +20,11 @@ public class HomeResource {
 public RepresentationModel<?> index() {
     return RepresentationModel.of(null)
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ProductResource.class).getAllProducts()).withRel("products"))
-        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RatePlanResource.class).getAll()).withRel("ratePlans"))
-        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RatePlanSetupFeeController.class).getAll()).withRel("setupFees"))
-        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(OverageChargeController.class).getAll()).withRel("overageCharges"))
-        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(DiscountController.class).getAll()).withRel("discounts"))
-        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(FreemiumController.class).getAll()).withRel("freemiums"))
-        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MinimumCommitmentController.class).getAll()).withRel("minimumCommitments"))
-        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ResetPeriodController.class).getAll()).withRel("resetPeriods"));
+        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RatePlanResource.class).getAllRatePlans()).withRel("ratePlans"))
+        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SetupFeeController.class).getAllByRatePlan(1L)).withRel("setupFees"))
+        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(OverageChargeController.class).getAll(1L)).withRel("overageCharges"))
+        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(DiscountController.class).getAll(1L)).withRel("discounts"))
+        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(FreemiumController.class).getAll(1L)).withRel("freemiums"))
+        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MinimumCommitmentController.class).getAll(1L)).withRel("minimumCommitments"));
 }
 }

@@ -11,7 +11,6 @@ import aforo.productrateplanservice.product.enums.JoinComplexity;
 @AllArgsConstructor
 @Builder
 public class CreateProductSQLResultRequest {
-    private Long productId;
     private String queryTemplate;
     private DBType dbType;
     private String resultSize;

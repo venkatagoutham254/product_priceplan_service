@@ -1,80 +1,75 @@
 package aforo.productrateplanservice.discount;
 
-import aforo.productrateplanservice.exception.ResourceNotFoundException;
+import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class DiscountServiceImpl implements DiscountService {
 
-    private final DiscountRepository repository;
+    private final DiscountRepository discountRepository;
+    private final DiscountMapper discountMapper;
     private final RatePlanRepository ratePlanRepository;
-    private final DiscountMapper mapper;
 
     @Override
-    public void create(DiscountDTO dto) {
-        RatePlan ratePlan = ratePlanRepository.findById(dto.getRatePlanId())
-                .orElseThrow(() -> new ResourceNotFoundException("RatePlan not found"));
-        Discount entity = mapper.toEntity(dto, ratePlan);
-        repository.save(entity);
+public DiscountDTO create(Long ratePlanId, DiscountCreateUpdateDTO dto) {
+    RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+            .orElseThrow(() -> new NotFoundException("RatePlan not found"));
+
+    // ❗ Validation: Only one Discount per RatePlan
+    List<Discount> existing = discountRepository.findByRatePlan_RatePlanId(ratePlanId);
+    if (!existing.isEmpty()) {
+        throw new IllegalStateException("Discount already exists for this RatePlan. Please update the existing one.");
+    }
+
+    Discount discount = discountMapper.toEntity(dto, ratePlan);
+    return discountMapper.toDTO(discountRepository.save(discount));
+}
+
+
+    @Override
+    public List<DiscountDTO> getAllByRatePlanId(Long ratePlanId) {
+        return discountRepository.findByRatePlan_RatePlanId(ratePlanId).stream()
+                .map(discountMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<DiscountDTO> getAll() {
-        return repository.findByIsDeletedFalse()
-                .stream()
-                .map(this::toDTO)
-                .toList();
+    public DiscountDTO getById(Long ratePlanId, Long id) {
+        Discount discount = discountRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Discount not found"));
+        if (!discount.getRatePlan().getRatePlanId().equals(ratePlanId)) {
+            throw new IllegalArgumentException("RatePlan ID mismatch");
+        }
+        return discountMapper.toDTO(discount);
     }
 
     @Override
-    public DiscountDTO getById(Long id) {
-        Discount entity = repository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Discount not found"));
-        return toDTO(entity);
+    public DiscountDTO update(Long ratePlanId, Long id, DiscountCreateUpdateDTO dto) {
+        Discount existing = discountRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Discount not found"));
+        discountMapper.updateEntity(existing, dto);
+        return discountMapper.toDTO(discountRepository.save(existing));
     }
 
     @Override
-    public void update(Long id, DiscountDTO dto) {
-        Discount entity = repository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Discount not found"));
-
-        entity.setDiscountType(dto.getDiscountType());
-        entity.setEligibility(dto.getEligibility());
-        entity.setStartDate(dto.getStartDate());
-        entity.setEndDate(dto.getEndDate());
-        entity.setUpdatedBy("system");
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setVersion(entity.getVersion() + 1);
-        repository.save(entity);
+    public DiscountDTO partialUpdate(Long ratePlanId, Long id, DiscountCreateUpdateDTO dto) {
+        Discount existing = discountRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Discount not found"));
+        discountMapper.partialUpdate(existing, dto);
+        return discountMapper.toDTO(discountRepository.save(existing));
     }
 
     @Override
-    public void delete(Long id) {
-        Discount entity = repository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Discount not found"));
-
-        entity.setIsDeleted(true);
-        entity.setIsActive(false);
-        entity.setUpdatedBy("system");
-        entity.setUpdatedAt(LocalDateTime.now());
-        entity.setVersion(entity.getVersion() + 1);
-        repository.save(entity);
-    }
-
-    private DiscountDTO toDTO(Discount entity) {
-        return DiscountDTO.builder()
-                .ratePlanId(entity.getRatePlan().getRatePlanId())
-                .discountType(entity.getDiscountType())
-                .eligibility(entity.getEligibility())
-                .startDate(entity.getStartDate())
-                .endDate(entity.getEndDate())
-                .build();
+    public void delete(Long ratePlanId, Long id) {
+        Discount discount = discountRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Discount not found"));
+        discountRepository.delete(discount);
     }
 }

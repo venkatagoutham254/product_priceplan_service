@@ -1,8 +1,10 @@
 package aforo.productrateplanservice.product.service;
 
+import aforo.productrateplanservice.product.dto.ProductLLMTokenDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.entity.ProductLLMToken;
 import aforo.productrateplanservice.product.enums.ProductType;
+import aforo.productrateplanservice.product.mapper.ProductLLMTokenMapper;
 import aforo.productrateplanservice.product.repository.ProductLLMTokenRepository;
 import aforo.productrateplanservice.product.repository.ProductRepository;
 import aforo.productrateplanservice.product.request.CreateProductLLMTokenRequest;
@@ -16,18 +18,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
 
-    private final ProductLLMTokenRepository productLLMTokenRepository;
+    private final ProductLLMTokenRepository repository;
     private final ProductRepository productRepository;
+    private final ProductLLMTokenMapper mapper;
 
     private void validateProductType(Product product, ProductType expected) {
         if (product.getProductType() != expected) {
-            throw new RuntimeException("Invalid product type. Expected: " + expected + ", but got: " + product.getProductType());
+            throw new RuntimeException("Invalid product type. Expected: " + expected);
         }
     }
 
     @Override
-    public ProductLLMToken create(CreateProductLLMTokenRequest request) {
-        Product product = productRepository.findById(request.getProductId())
+    public ProductLLMTokenDTO create(Long productId, CreateProductLLMTokenRequest request) {
+        Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         validateProductType(product, ProductType.LLMToken);
 
@@ -43,43 +46,43 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
                 .computeTier(request.getComputeTier())
                 .build();
 
-        return productLLMTokenRepository.save(entity);
+        return mapper.toDTO(repository.save(entity));
     }
 
     @Override
-    public ProductLLMToken getById(Long id) {
-        return productLLMTokenRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("LLM Token Product not found with ID: " + id));
+    public ProductLLMTokenDTO getByProductId(Long productId) {
+        ProductLLMToken entity = repository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("LLM Token product not found"));
+        return mapper.toDTO(entity);
     }
 
     @Override
-    public List<ProductLLMToken> getAll() {
-        return productLLMTokenRepository.findAll();
+    public List<ProductLLMTokenDTO> getAll() {
+        return repository.findAll()
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
     }
 
-   @Override
-public ProductLLMToken update(Long id, UpdateProductLLMTokenRequest request) {
-    ProductLLMToken existing = productLLMTokenRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("LLM Token not found"));
+    @Override
+    public ProductLLMTokenDTO update(Long productId, UpdateProductLLMTokenRequest request) {
+        ProductLLMToken existing = repository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("LLM Token not found"));
 
-    if (request.getTokenProvider() != null) existing.setTokenProvider(request.getTokenProvider());
-    if (request.getModelName() != null) existing.setModelName(request.getModelName());
-    if (request.getTokenUnitCost() != null) existing.setTokenUnitCost(request.getTokenUnitCost());
-    if (request.getCalculationMethod() != null) existing.setCalculationMethod(request.getCalculationMethod());
-    if (request.getQuota() != null) existing.setQuota(request.getQuota());
-    if (request.getPromptTemplate() != null) existing.setPromptTemplate(request.getPromptTemplate());
-    if (request.getInferencePriority() != null) existing.setInferencePriority(request.getInferencePriority());
-    if (request.getComputeTier() != null) existing.setComputeTier(request.getComputeTier());
+        if (request.getTokenProvider() != null) existing.setTokenProvider(request.getTokenProvider());
+        if (request.getModelName() != null) existing.setModelName(request.getModelName());
+        if (request.getTokenUnitCost() != null) existing.setTokenUnitCost(request.getTokenUnitCost());
+        if (request.getCalculationMethod() != null) existing.setCalculationMethod(request.getCalculationMethod());
+        if (request.getQuota() != null) existing.setQuota(request.getQuota());
+        if (request.getPromptTemplate() != null) existing.setPromptTemplate(request.getPromptTemplate());
+        if (request.getInferencePriority() != null) existing.setInferencePriority(request.getInferencePriority());
+        if (request.getComputeTier() != null) existing.setComputeTier(request.getComputeTier());
 
-    return productLLMTokenRepository.save(existing);
-}
-
+        return mapper.toDTO(repository.save(existing));
+    }
 
     @Override
-    public void delete(Long id) {
-        if (!productLLMTokenRepository.existsById(id)) {
-            throw new RuntimeException("LLM Token Product not found with ID: " + id);
-        }
-        productLLMTokenRepository.deleteById(id);
+    public void delete(Long productId) {
+        repository.deleteById(productId);
     }
 }

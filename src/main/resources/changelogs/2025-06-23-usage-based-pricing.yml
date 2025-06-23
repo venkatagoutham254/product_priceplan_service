@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-usage-based-pricing
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: rate_plan_usage_based_pricing
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: per_unit_amount
+                  type: DECIMAL(12,4)
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: fk-usage-based-pricing
+      author: gowtham
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_usage_based_pricing
+            baseColumnNames: rate_plan_id
+            constraintName: fk_usage_based_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE

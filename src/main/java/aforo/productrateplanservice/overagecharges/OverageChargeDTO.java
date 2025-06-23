@@ -1,15 +1,13 @@
 package aforo.productrateplanservice.overagecharges;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 @Builder
 public class OverageChargeDTO {
+    private Long id;
     private Long ratePlanId;
-    private String usageAccount;
-    private Double overageUnitRate;
+    private Integer overageUnitRate;
     private Integer graceBuffer;
 }

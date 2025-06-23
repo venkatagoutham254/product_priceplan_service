@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-old-flatfee-table
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_flat_fee
+      changes:
+        - dropTable:
+            tableName: rate_plan_flat_fee
+            cascadeConstraints: true
+
+  - changeSet:
+      id: create-flatfee-clean
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: rate_plan_flat_fee
+            columns:
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    unique: true
+
+              - column:
+                  name: flat_fee_amount
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: usage_limit
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_flat_fee
+            baseColumnNames: rate_plan_id
+            constraintName: fk_flat_fee_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE

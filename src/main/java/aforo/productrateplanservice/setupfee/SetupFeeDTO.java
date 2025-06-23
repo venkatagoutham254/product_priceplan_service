@@ -2,14 +2,16 @@ package aforo.productrateplanservice.setupfee;
 
 import lombok.*;
 
-@Getter
-@Setter
+import java.math.BigDecimal;
+
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class RatePlanSetupFeeDTO {
+public class SetupFeeDTO {
+    private Long id;
     private Long ratePlanId;
-    private Double oneTimeFee;
+    private BigDecimal setupFee;
     private String applicationTiming;
     private String invoiceDescription;
 }

@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-and-recreate-aforo-rate-plan
+      author: aforoai
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: aforo_rate_plan
+      changes:
+        - dropTable:
+            tableName: aforo_rate_plan
+            cascadeConstraints: true
+
+  - changeSet:
+      id: create-aforo-rate-plan-correct
+      author: aforoai
+      changes:
+        - createTable:
+            tableName: aforo_rate_plan
+            columns:
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: rate_plan_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: rate_plan_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: billing_frequency
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_rate_plan_product
+                    references: aforo_product(product_id)
+
+        - addUniqueConstraint:
+            tableName: aforo_rate_plan
+            columnNames: rate_plan_name, product_id
+            constraintName: uk_rate_plan_name_per_product
+
+        - addForeignKeyConstraint:
+            constraintName: fk_rate_plan_product_id
+            baseTableName: aforo_rate_plan
+            baseColumnNames: product_id
+            referencedTableName: aforo_product
+            referencedColumnNames: product_id
+            onDelete: CASCADE
+            onUpdate: NO ACTION

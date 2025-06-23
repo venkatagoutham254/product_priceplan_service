@@ -1,9 +1,8 @@
 package aforo.productrateplanservice.flatfee;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
-import java.math.BigDecimal;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -11,10 +10,12 @@ import java.util.Date;
 @AllArgsConstructor
 @Builder
 public class FlatFeeCreateUpdateDTO {
-    private Long ratePlanId;
-    private BigDecimal recurringFee;
-    private String billingFrequency;
-    private String currency;
-    private Date startDate;
-    private Date endDate;
+
+    @NotNull(message = "flatFeeAmount is required")
+    @Min(value = 0, message = "flatFeeAmount must be non-negative")
+    private Integer flatFeeAmount;
+
+    @NotNull(message = "usageLimit is required")
+    @Min(value = 0, message = "usageLimit must be non-negative")
+    private Integer usageLimit;
 }

@@ -1,42 +1,24 @@
 package aforo.productrateplanservice.volumepricing;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 @Component
 public class VolumePricingMapper {
 
-    public VolumePricing toEntity(VolumePricingDTO dto) {
-        return VolumePricing.builder()
-                .ratePlanId(dto.getRatePlanId())
-                .volumeBracket(dto.getVolumeBracket())
-                .unitPrice(dto.getUnitPrice())
-                .currency(dto.getCurrency())
-                .startDate(dto.getStartDate())
-                .endDate(dto.getEndDate())
-                .isActive(true)
-                .isDeleted(false)
-                .version(1)
-                .build();
-    }
-
-    public void updateEntity(VolumePricing entity, VolumePricingDTO dto) {
-        entity.setRatePlanId(dto.getRatePlanId());
-        entity.setVolumeBracket(dto.getVolumeBracket());
-        entity.setUnitPrice(dto.getUnitPrice());
-        entity.setCurrency(dto.getCurrency());
-        entity.setStartDate(dto.getStartDate());
-        entity.setEndDate(dto.getEndDate());
-    }
-
     public VolumePricingDTO toDTO(VolumePricing entity) {
-        return VolumePricingDTO.builder()
-                .id(entity.getId())
-                .ratePlanId(entity.getRatePlanId())
-                .volumeBracket(entity.getVolumeBracket())
-                .unitPrice(entity.getUnitPrice())
-                .currency(entity.getCurrency())
-                .startDate(entity.getStartDate())
-                .endDate(entity.getEndDate())
-                .build();
+        VolumePricingDTO dto = new VolumePricingDTO();
+        dto.setId(entity.getId());
+        dto.setStartRange(entity.getStartRange());
+        dto.setEndRange(entity.getEndRange());
+        dto.setUnitPrice(entity.getUnitPrice());
+        return dto;
+    }
+
+    public void updateEntity(VolumePricing entity, VolumePricingCreateUpdateDTO dto) {
+        entity.setStartRange(dto.getStartRange());
+        entity.setEndRange(dto.getEndRange());
+        entity.setUnitPrice(dto.getUnitPrice());
     }
 }

@@ -1,42 +1,31 @@
 package aforo.productrateplanservice.flatfee;
 
 import org.springframework.stereotype.Component;
+import aforo.productrateplanservice.rate_plan.RatePlan;
+import aforo.productrateplanservice.flatfee.FlatFeeCreateUpdateDTO;
+import aforo.productrateplanservice.flatfee.FlatFeeDTO;
+
 
 @Component
 public class FlatFeeMapper {
 
-    public FlatFee toEntity(FlatFeeCreateUpdateDTO dto) {
-        return FlatFee.builder()
-                .ratePlanId(dto.getRatePlanId())
-                .recurringFee(dto.getRecurringFee())
-                .billingFrequency(dto.getBillingFrequency())
-                .currency(dto.getCurrency())
-                .startDate(dto.getStartDate())
-                .endDate(dto.getEndDate())
-                .isActive(true)
-                .isDeleted(false)
-                .version(1)
+    public FlatFeeDTO toDTO(FlatFee entity) {
+        return FlatFeeDTO.builder()
+                .flatFeeAmount(entity.getFlatFeeAmount())
+                .usageLimit(entity.getUsageLimit())
+                .ratePlanId(entity.getRatePlan().getRatePlanId())
                 .build();
     }
 
     public void updateEntity(FlatFee entity, FlatFeeCreateUpdateDTO dto) {
-        entity.setRatePlanId(dto.getRatePlanId());
-        entity.setRecurringFee(dto.getRecurringFee());
-        entity.setBillingFrequency(dto.getBillingFrequency());
-        entity.setCurrency(dto.getCurrency());
-        entity.setStartDate(dto.getStartDate());
-        entity.setEndDate(dto.getEndDate());
+        entity.setFlatFeeAmount(dto.getFlatFeeAmount());
+        entity.setUsageLimit(dto.getUsageLimit());
     }
 
-    public FlatFeeDTO toDTO(FlatFee entity) {
-        return FlatFeeDTO.builder()
-                .id(entity.getId())
-                .ratePlanId(entity.getRatePlanId())
-                .recurringFee(entity.getRecurringFee())
-                .billingFrequency(entity.getBillingFrequency())
-                .currency(entity.getCurrency())
-                .startDate(entity.getStartDate())
-                .endDate(entity.getEndDate())
+    public FlatFee toEntity(FlatFeeCreateUpdateDTO dto) {
+        return FlatFee.builder()
+                .flatFeeAmount(dto.getFlatFeeAmount())
+                .usageLimit(dto.getUsageLimit())
                 .build();
     }
 }
