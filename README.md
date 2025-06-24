@@ -47,3 +47,43 @@ mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=aforo/productra
 * [Maven docs](https://maven.apache.org/guides/index.html)  
 * [Spring Boot reference](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)  
 * [Spring Data JPA reference](https://docs.spring.io/spring-data/jpa/reference/jpa.html)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Follow this commands to run:-
+
+
+
+docker compose down -v          docker compose up --build -d
+
+
+
+
+
+
+
+
+./mvnw liquibase:clearCheckSums \  -Dliquibase.url=jdbc:postgresql://localhost:5433/productrateplanservice \
+  -Dliquibase.username=root \
+  -Dliquibase.password=P4ssword! \
+  -Dliquibase.changeLogFile=src/main/resources/domain/changelog-master.yml
+
+
+
+
+
+./mvnw liquibase:update \          -Dliquibase.url=jdbc:postgresql://localhost:5433/productrateplanservice \
+  -Dliquibase.username=root \
+  -Dliquibase.password=P4ssword! \
+  -Dliquibase.changeLogFile=src/main/resources/domain/changelog-master.yml 
