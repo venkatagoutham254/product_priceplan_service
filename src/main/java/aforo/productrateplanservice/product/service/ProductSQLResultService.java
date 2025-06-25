@@ -11,5 +11,6 @@ public interface ProductSQLResultService {
     ProductSQLResultDTO getByProductId(Long productId);
     List<ProductSQLResultDTO> getAll();
     ProductSQLResultDTO update(Long productId, UpdateProductSQLResultRequest request);
-    void delete(Long productId);
+    ProductSQLResultDTO partialUpdate(Long productId, UpdateProductSQLResultRequest request);
+        void delete(Long productId);
 }

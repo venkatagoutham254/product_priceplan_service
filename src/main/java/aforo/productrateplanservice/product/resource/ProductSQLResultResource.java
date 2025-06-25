@@ -5,6 +5,7 @@ import aforo.productrateplanservice.product.request.CreateProductSQLResultReques
 import aforo.productrateplanservice.product.request.UpdateProductSQLResultRequest;
 import aforo.productrateplanservice.product.service.ProductSQLResultService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,12 +35,16 @@ public class ProductSQLResultResource {
     public ResponseEntity<List<ProductSQLResultDTO>> getAll() {
         return ResponseEntity.ok(productSQLResultService.getAll());
     }
+@PutMapping("/{productId}/sql-result")
+public ProductSQLResultDTO fullUpdate(@PathVariable Long productId, @RequestBody @Valid UpdateProductSQLResultRequest request) {
+    return productSQLResultService.update(productId, request);
+}
 
-    @PutMapping("/{productId}/sql-result")
-    public ResponseEntity<ProductSQLResultDTO> update(@PathVariable Long productId,
-                                                      @RequestBody UpdateProductSQLResultRequest request) {
-        return ResponseEntity.ok(productSQLResultService.update(productId, request));
-    }
+@PatchMapping("/{productId}/sql-result")
+public ProductSQLResultDTO partialUpdate(@PathVariable Long productId, @RequestBody UpdateProductSQLResultRequest request) {
+    return productSQLResultService.partialUpdate(productId, request);
+}
+
 
     @DeleteMapping("/{productId}/sql-result")
     public ResponseEntity<Void> delete(@PathVariable Long productId) {

@@ -12,6 +12,7 @@ import aforo.productrateplanservice.product.request.UpdateProductSQLResultReques
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+
 import java.util.List;
 
 @Service
@@ -68,21 +69,21 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
     @Override
     public ProductSQLResultDTO update(Long productId, UpdateProductSQLResultRequest request) {
         ProductSQLResult existing = repository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("SQL Result not found"));
-
-        if (request.getQueryTemplate() != null) existing.setQueryTemplate(request.getQueryTemplate());
-        if (request.getDbType() != null) existing.setDbType(request.getDbType());
-        if (request.getResultSize() != null) existing.setResultSize(request.getResultSize());
-        if (request.getFreshness() != null) existing.setFreshness(request.getFreshness());
-        if (request.getExecutionFrequency() != null) existing.setExecutionFrequency(request.getExecutionFrequency());
-        if (request.getExpectedRowRange() != null) existing.setExpectedRowRange(request.getExpectedRowRange());
-        if (request.getJoinComplexity() != null) existing.setJoinComplexity(request.getJoinComplexity());
-        if (request.getIsCached() != null) {
-            existing.setCached(request.getIsCached());
-        }
-        
+            .orElseThrow(() -> new RuntimeException("SQL Result not found"));
+    
+        mapper.updateEntity(existing, request);
         return mapper.toDTO(repository.save(existing));
     }
+    
+    @Override
+    public ProductSQLResultDTO partialUpdate(Long productId, UpdateProductSQLResultRequest request) {
+        ProductSQLResult existing = repository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("SQL Result not found"));
+    
+        mapper.partialUpdate(existing, request);
+        return mapper.toDTO(repository.save(existing));
+    }
+    
 
     @Override
     public void delete(Long productId) {

@@ -1,7 +1,11 @@
 package aforo.productrateplanservice.stairsteppricing;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,12 +22,23 @@ public class StairStepPricingController {
         return service.create(ratePlanId, dto);
     }
 
-    @PutMapping("/{id}")
-    public StairStepPricingDTO update(@PathVariable Long ratePlanId,
-                                      @PathVariable Long id,
-                                      @RequestBody StairStepPricingCreateUpdateDTO dto) {
-        return service.update(ratePlanId, id, dto);
-    }
+@PutMapping("/{id}")
+public ResponseEntity<StairStepPricingDTO> updateFully(
+        @PathVariable Long ratePlanId,
+        @PathVariable Long id,
+        @RequestBody @Valid StairStepPricingCreateUpdateDTO dto
+) {
+    return ResponseEntity.ok(service.updateFully(ratePlanId, id, dto));
+}
+
+@PatchMapping("/{id}")
+public ResponseEntity<StairStepPricingDTO> updatePartially(
+        @PathVariable Long ratePlanId,
+        @PathVariable Long id,
+        @RequestBody StairStepPricingCreateUpdateDTO dto
+) {
+    return ResponseEntity.ok(service.updatePartially(ratePlanId, id, dto));
+}
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long ratePlanId,

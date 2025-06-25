@@ -65,21 +65,43 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
     }
 
     @Override
-    public ProductLLMTokenDTO update(Long productId, UpdateProductLLMTokenRequest request) {
-        ProductLLMToken existing = repository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("LLM Token not found"));
+public ProductLLMTokenDTO updateFully(Long productId, UpdateProductLLMTokenRequest request) {
+    ProductLLMToken existing = repository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("LLM Token not found"));
 
-        if (request.getTokenProvider() != null) existing.setTokenProvider(request.getTokenProvider());
-        if (request.getModelName() != null) existing.setModelName(request.getModelName());
-        if (request.getTokenUnitCost() != null) existing.setTokenUnitCost(request.getTokenUnitCost());
-        if (request.getCalculationMethod() != null) existing.setCalculationMethod(request.getCalculationMethod());
-        if (request.getQuota() != null) existing.setQuota(request.getQuota());
-        if (request.getPromptTemplate() != null) existing.setPromptTemplate(request.getPromptTemplate());
-        if (request.getInferencePriority() != null) existing.setInferencePriority(request.getInferencePriority());
-        if (request.getComputeTier() != null) existing.setComputeTier(request.getComputeTier());
-
-        return mapper.toDTO(repository.save(existing));
+    // You can decide which fields are mandatory in full update
+    if (request.getTokenProvider() == null || request.getModelName() == null) {
+        throw new IllegalArgumentException("TokenProvider and ModelName are required for full update.");
     }
+
+    existing.setTokenProvider(request.getTokenProvider());
+    existing.setModelName(request.getModelName());
+    existing.setTokenUnitCost(request.getTokenUnitCost());
+    existing.setCalculationMethod(request.getCalculationMethod());
+    existing.setQuota(request.getQuota());
+    existing.setPromptTemplate(request.getPromptTemplate());
+    existing.setInferencePriority(request.getInferencePriority());
+    existing.setComputeTier(request.getComputeTier());
+
+    return mapper.toDTO(repository.save(existing));
+}
+
+@Override
+public ProductLLMTokenDTO updatePartially(Long productId, UpdateProductLLMTokenRequest request) {
+    ProductLLMToken existing = repository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("LLM Token not found"));
+
+    if (request.getTokenProvider() != null) existing.setTokenProvider(request.getTokenProvider());
+    if (request.getModelName() != null) existing.setModelName(request.getModelName());
+    if (request.getTokenUnitCost() != null) existing.setTokenUnitCost(request.getTokenUnitCost());
+    if (request.getCalculationMethod() != null) existing.setCalculationMethod(request.getCalculationMethod());
+    if (request.getQuota() != null) existing.setQuota(request.getQuota());
+    if (request.getPromptTemplate() != null) existing.setPromptTemplate(request.getPromptTemplate());
+    if (request.getInferencePriority() != null) existing.setInferencePriority(request.getInferencePriority());
+    if (request.getComputeTier() != null) existing.setComputeTier(request.getComputeTier());
+
+    return mapper.toDTO(repository.save(existing));
+}
 
     @Override
     public void delete(Long productId) {

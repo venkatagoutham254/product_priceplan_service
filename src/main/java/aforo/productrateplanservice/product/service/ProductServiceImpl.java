@@ -5,6 +5,7 @@ import aforo.productrateplanservice.product.entity.*;
 import aforo.productrateplanservice.product.mapper.ProductMapper;
 import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.*;
+import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductLLMTokenRepository productLLMTokenRepository;
     private final ProductSQLResultRepository productSQLResultRepository;
     private final ProductAssembler productAssembler;
+    private final RatePlanRepository ratePlanRepository;
 
     @Override
     public ProductDTO createProduct(CreateProductRequest request) {
@@ -49,14 +51,49 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductDTO updateProduct(Long id, UpdateProductRequest request) {
+    public ProductDTO updateProductFully(Long id, UpdateProductRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
     
-        // Check and update each field if not null
+        // Required fields check
+        if (request.getProductName() == null || request.getProductType() == null) {
+            throw new RuntimeException("productName and productType are required for full update");
+        }
+    
+        // Update all fields (required)
+        product.setProductName(request.getProductName());
+        if (request.getProductType() != product.getProductType()) {
+            handleProductTypeChange(product, request.getProductType());
+        }
+        product.setProductType(request.getProductType());
+        product.setVersion(request.getVersion());
+        product.setProductDescription(request.getProductDescription());
+        product.setTags(request.getTags());
+        product.setCategory(request.getCategory());
+        product.setVisibility(request.getVisibility());
+        product.setStatus(request.getStatus());
+        product.setInternalSkuCode(request.getInternalSkuCode());
+        product.setUom(request.getUom());
+        product.setEffectiveStartDate(request.getEffectiveStartDate());
+        product.setEffectiveEndDate(request.getEffectiveEndDate());
+        product.setBillable(request.getBillable());
+        product.setLinkedRatePlans(request.getLinkedRatePlans());
+        product.setLabels(request.getLabels());
+        product.setAuditLogId(request.getAuditLogId());
+    
+        return productAssembler.toDTO(productRepository.save(product));
+    }
+    
+    @Override
+    @Transactional
+    public ProductDTO updateProductPartially(Long id, UpdateProductRequest request) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+    
         if (request.getProductName() != null) product.setProductName(request.getProductName());
         if (request.getProductType() != null && request.getProductType() != product.getProductType()) {
             handleProductTypeChange(product, request.getProductType());
+            product.setProductType(request.getProductType());
         }
         if (request.getVersion() != null) product.setVersion(request.getVersion());
         if (request.getProductDescription() != null) product.setProductDescription(request.getProductDescription());
@@ -68,22 +105,27 @@ public class ProductServiceImpl implements ProductService {
         if (request.getUom() != null) product.setUom(request.getUom());
         if (request.getEffectiveStartDate() != null) product.setEffectiveStartDate(request.getEffectiveStartDate());
         if (request.getEffectiveEndDate() != null) product.setEffectiveEndDate(request.getEffectiveEndDate());
-if (request.getBillable() != null) product.setBillable(request.getBillable());
+        if (request.getBillable() != null) product.setBillable(request.getBillable());
         if (request.getLinkedRatePlans() != null) product.setLinkedRatePlans(request.getLinkedRatePlans());
         if (request.getLabels() != null) product.setLabels(request.getLabels());
         if (request.getAuditLogId() != null) product.setAuditLogId(request.getAuditLogId());
     
-        Product updated = productRepository.save(product);
-        return productAssembler.toDTO(updated);
+        return productAssembler.toDTO(productRepository.save(product));
     }
     
     @Override
     public void deleteProduct(Long productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new RuntimeException("Product not found with id: " + productId);
-        }
+        // Check if product exists
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("Product not found with ID: " + productId));
+    
+        // ✅ First delete all associated rate plans
+        ratePlanRepository.deleteByProduct_ProductId(productId);
+    
+        // ✅ Then delete the product
         productRepository.deleteById(productId);
     }
+    
     private void handleProductTypeChange(Product product, ProductType newType) {
         Long productId = product.getProductId();
         // Delete old type if exists

@@ -5,6 +5,7 @@ import aforo.productrateplanservice.product.request.CreateProductLLMTokenRequest
 import aforo.productrateplanservice.product.request.UpdateProductLLMTokenRequest;
 import aforo.productrateplanservice.product.service.ProductLLMTokenService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,15 +31,25 @@ public class ProductLLMTokenResource {
         return ResponseEntity.ok(productLLMTokenService.getByProductId(productId));
     }
 
+
     @GetMapping("/llm-token")
     public ResponseEntity<List<ProductLLMTokenDTO>> getAll() {
         return ResponseEntity.ok(productLLMTokenService.getAll());
     }
-
-    @PutMapping("/{productId}/llm-token")
-    public ResponseEntity<ProductLLMTokenDTO> update(@PathVariable Long productId,
-                                                     @RequestBody UpdateProductLLMTokenRequest request) {
-        return ResponseEntity.ok(productLLMTokenService.update(productId, request));
+   @PutMapping("/{productId}/llm-token")
+    public ResponseEntity<ProductLLMTokenDTO> updateFully(
+        @PathVariable Long productId,
+        @RequestBody @Valid UpdateProductLLMTokenRequest request
+    ) {
+        return ResponseEntity.ok(productLLMTokenService.updateFully(productId, request));
+    }
+    
+    @PatchMapping("/{productId}/llm-token")
+    public ResponseEntity<ProductLLMTokenDTO> updatePartially(
+        @PathVariable Long productId,
+        @RequestBody UpdateProductLLMTokenRequest request
+    ) {
+        return ResponseEntity.ok(productLLMTokenService.updatePartially(productId, request));
     }
 
     @DeleteMapping("/{productId}/llm-token")

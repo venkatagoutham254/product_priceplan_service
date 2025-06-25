@@ -20,21 +20,15 @@ public class RatePlanServiceImpl implements RatePlanService {
 
     @Override
 public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
-    String productName = request.getProductName().trim(); // ✅ Trim spaces
+    String productName = request.getProductName().trim();
 
     Product product = productRepository.findByProductNameIgnoreCase(productName)
             .orElseThrow(() -> new NotFoundException("Product not found: " + productName));
 
-    ratePlanRepository.findByRatePlanNameAndProduct_ProductId(
-            request.getRatePlanName(), product.getProductId()
-    ).ifPresent(r -> {
-        throw new ValidationException("Rate plan with this name already exists for this product.");
-    });
-
     RatePlan ratePlan = RatePlan.builder()
             .ratePlanName(request.getRatePlanName())
             .description(request.getDescription())
-            .ratePlanType(request.getRatePlanType()) // already enum
+            .ratePlanType(request.getRatePlanType())
             .billingFrequency(request.getBillingFrequency())
             .product(product)
             .build();
@@ -42,7 +36,6 @@ public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
     ratePlanRepository.save(ratePlan);
     return ratePlanMapper.toDTO(ratePlan);
 }
-
 
     @Override
     public List<RatePlanDTO> getAllRatePlans() {
