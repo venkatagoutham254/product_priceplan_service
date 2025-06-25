@@ -27,7 +27,7 @@ public class SetupFee {
     private BigDecimal setupFee;
 
     @Column(name = "application_timing")
-    private String applicationTiming;
+    private Integer applicationTiming;
 
     @Column(name = "invoice_description")
     private String invoiceDescription;

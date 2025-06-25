@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 import java.util.List;
 @RestController
 @RequestMapping("/api/rateplans/{ratePlanId}/volume-pricing")
@@ -24,13 +26,24 @@ public class VolumePricingController {
         return service.getByRatePlanId(ratePlanId);
     }
 
-   @PutMapping("/{id}")
-public ResponseEntity<VolumePricingDTO> update(
-    @PathVariable Long ratePlanId,
-    @PathVariable Long id,
-    @RequestBody VolumePricingCreateUpdateDTO dto) {
-    return ResponseEntity.ok(service.update(ratePlanId, id, dto));
+@PutMapping("/{id}")
+public ResponseEntity<VolumePricingDTO> updateFully(
+        @PathVariable Long ratePlanId,
+        @PathVariable Long id,
+        @RequestBody @Valid VolumePricingCreateUpdateDTO dto
+) {
+    return ResponseEntity.ok(service.updateFully(ratePlanId, id, dto));
 }
+
+@PatchMapping("/{id}")
+public ResponseEntity<VolumePricingDTO> updatePartially(
+        @PathVariable Long ratePlanId,
+        @PathVariable Long id,
+        @RequestBody VolumePricingCreateUpdateDTO dto
+) {
+    return ResponseEntity.ok(service.updatePartially(ratePlanId, id, dto));
+}
+
 
 @DeleteMapping("/{id}")
 public ResponseEntity<Void> delete(

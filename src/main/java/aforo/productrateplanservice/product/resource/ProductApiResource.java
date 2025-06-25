@@ -36,10 +36,20 @@ public class ProductApiResource {
     }
 
     @PutMapping("/{productId}/api")
-    public ResponseEntity<ProductAPIDTO> update(@PathVariable Long productId,
-                                                @RequestBody UpdateProductAPIRequest request) {
-        return ResponseEntity.ok(productAPIService.update(productId, request));
-    }
+public ResponseEntity<ProductAPIDTO> updateFully(
+        @PathVariable Long productId,
+        @RequestBody UpdateProductAPIRequest request) {
+    ProductAPIDTO updated = productAPIService.updateFully(productId, request);
+    return ResponseEntity.ok(updated);
+}
+
+@PatchMapping("/{productId}/api")
+public ResponseEntity<ProductAPIDTO> updatePartially(
+        @PathVariable Long productId,
+        @RequestBody UpdateProductAPIRequest request) {
+    ProductAPIDTO updated = productAPIService.updatePartially(productId, request);
+    return ResponseEntity.ok(updated);
+}
 
     @DeleteMapping("/{productId}/api")
     public ResponseEntity<Void> delete(@PathVariable Long productId) {

@@ -10,4 +10,7 @@ public interface RatePlanRepository extends JpaRepository<RatePlan, Long> {
     Optional<RatePlan> findByRatePlanNameAndProduct_ProductId(String ratePlanName, Long productId);
 
     List<RatePlan> findByProduct_ProductId(Long productId);
+
+    void deleteByProduct_ProductId(Long productId);
+
 }

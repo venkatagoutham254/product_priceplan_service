@@ -11,5 +11,6 @@ public interface ProductFlatFileService {
     ProductFlatFileDTO getByProductId(Long productId);
     List<ProductFlatFileDTO> getAll();
     ProductFlatFileDTO update(Long productId, UpdateProductFlatFileRequest request);
-    void delete(Long productId);
+    ProductFlatFileDTO partialUpdate(Long productId, UpdateProductFlatFileRequest request);
+        void delete(Long productId);
 }

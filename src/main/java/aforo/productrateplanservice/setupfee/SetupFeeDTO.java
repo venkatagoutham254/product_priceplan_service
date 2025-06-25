@@ -12,6 +12,6 @@ public class SetupFeeDTO {
     private Long id;
     private Long ratePlanId;
     private BigDecimal setupFee;
-    private String applicationTiming;
+    private Integer applicationTiming;
     private String invoiceDescription;
 }

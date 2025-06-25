@@ -4,6 +4,7 @@ import aforo.productrateplanservice.product.dto.ProductDTO;
 import aforo.productrateplanservice.product.request.CreateProductRequest;
 import aforo.productrateplanservice.product.request.UpdateProductRequest;
 import aforo.productrateplanservice.product.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +34,19 @@ public class ProductResource {
     }
 
    @PutMapping("/{id}")
-public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody UpdateProductRequest request) {
-    return ResponseEntity.ok(productService.updateProduct(id, request));
+public ResponseEntity<ProductDTO> updateProductFully(
+        @PathVariable Long id,
+        @RequestBody @Valid UpdateProductRequest request) {
+    ProductDTO updated = productService.updateProductFully(id, request);
+    return ResponseEntity.ok(updated);
+}
+
+@PatchMapping("/{id}")
+public ResponseEntity<ProductDTO> updateProductPartially(
+        @PathVariable Long id,
+        @RequestBody UpdateProductRequest request) {
+    ProductDTO updated = productService.updateProductPartially(id, request);
+    return ResponseEntity.ok(updated);
 }
 
 

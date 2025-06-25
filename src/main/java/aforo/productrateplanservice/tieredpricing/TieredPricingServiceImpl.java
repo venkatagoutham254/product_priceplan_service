@@ -49,28 +49,37 @@ public class TieredPricingServiceImpl implements TieredPricingService {
     }
 
     @Override
-public TieredPricingDTO update(Long ratePlanId, Long id, TieredPricingCreateUpdateDTO dto) {
-    TieredPricing entity = repository.findById(id)
-            .orElseThrow(() -> new NotFoundException("TieredPricing not found"));
-
-    if (!entity.getRatePlan().getRatePlanId().equals(ratePlanId)) {
-        throw new IllegalArgumentException("RatePlan ID mismatch");
+    public TieredPricingDTO updateFully(Long ratePlanId, Long id, TieredPricingCreateUpdateDTO dto) {
+        TieredPricing pricing = repository.findByIdAndRatePlan_RatePlanId(id, ratePlanId)
+            .orElseThrow(() -> new NotFoundException("Tiered pricing not found for this rate plan"));
+    
+        if (pricing.getRatePlan().getRatePlanType() != RatePlanType.TIERED) {
+            throw new IllegalArgumentException("Invalid RatePlanType. Expected TIERED but found " + pricing.getRatePlan().getRatePlanType());
+        }
+    
+        pricing.setStartRange(dto.getStartRange());
+        pricing.setEndRange(dto.getEndRange());
+        pricing.setUnitPrice(dto.getUnitPrice());
+    
+        return mapper.toDTO(repository.save(pricing));
     }
-
-    if (entity.getRatePlan().getRatePlanType() != RatePlanType.TIERED) {
-        throw new IllegalArgumentException("Invalid RatePlanType. Expected TIERED but found " + entity.getRatePlan().getRatePlanType());
+    
+    @Override
+    public TieredPricingDTO updatePartially(Long ratePlanId, Long id, TieredPricingCreateUpdateDTO dto) {
+        TieredPricing pricing = repository.findByIdAndRatePlan_RatePlanId(id, ratePlanId)
+            .orElseThrow(() -> new NotFoundException("Tiered pricing not found for this rate plan"));
+    
+        if (pricing.getRatePlan().getRatePlanType() != RatePlanType.TIERED) {
+            throw new IllegalArgumentException("Invalid RatePlanType. Expected TIERED but found " + pricing.getRatePlan().getRatePlanType());
+        }
+    
+        if (dto.getStartRange() != null) pricing.setStartRange(dto.getStartRange());
+        if (dto.getEndRange() != null) pricing.setEndRange(dto.getEndRange());
+        if (dto.getUnitPrice() != null) pricing.setUnitPrice(dto.getUnitPrice());
+    
+        return mapper.toDTO(repository.save(pricing));
     }
-
-    String tierBracket = dto.getStartRange() + "-" + dto.getEndRange();
-
-    entity.setStartRange(dto.getStartRange());
-    entity.setEndRange(dto.getEndRange());
-    entity.setUnitPrice(dto.getUnitPrice());
-    entity.setTierBracket(tierBracket);
-
-    return mapper.toDTO(repository.save(entity));
-}
-
+    
 
     @Override
     public void delete(Long id) {

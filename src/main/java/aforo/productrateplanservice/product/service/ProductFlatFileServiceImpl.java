@@ -66,18 +66,21 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     @Override
     public ProductFlatFileDTO update(Long productId, UpdateProductFlatFileRequest request) {
         ProductFlatFile existing = repository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("FlatFile not found"));
-
-        if (request.getFormat() != null) existing.setFormat(request.getFormat());
-        if (request.getSize() != null) existing.setSize(request.getSize());
-        if (request.getDeliveryFrequency() != null) existing.setDeliveryFrequency(request.getDeliveryFrequency());
-        if (request.getAccessMethod() != null) existing.setAccessMethod(request.getAccessMethod());
-        if (request.getRetentionPolicy() != null) existing.setRetentionPolicy(request.getRetentionPolicy());
-        if (request.getFileNamingConvention() != null) existing.setFileNamingConvention(request.getFileNamingConvention());
-        if (request.getCompressionFormat() != null) existing.setCompressionFormat(request.getCompressionFormat());
-
+            .orElseThrow(() -> new RuntimeException("FlatFile not found"));
+    
+        mapper.updateEntity(existing, request);
         return mapper.toDTO(repository.save(existing));
     }
+    
+    @Override
+    public ProductFlatFileDTO partialUpdate(Long productId, UpdateProductFlatFileRequest request) {
+        ProductFlatFile existing = repository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("FlatFile not found"));
+    
+        mapper.partialUpdate(existing, request);
+        return mapper.toDTO(repository.save(existing));
+    }
+    
 
     @Override
     public void delete(Long productId) {

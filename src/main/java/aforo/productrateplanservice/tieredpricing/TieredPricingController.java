@@ -2,7 +2,10 @@ package aforo.productrateplanservice.tieredpricing;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -24,14 +27,24 @@ public class TieredPricingController {
         return service.getByRatePlanId(ratePlanId);
     }
 
-    @PutMapping("/{id}")
-    public TieredPricingDTO update(
-            @PathVariable Long ratePlanId,
-            @PathVariable Long id,
-            @RequestBody TieredPricingCreateUpdateDTO dto
-    ) {
-        return service.update(ratePlanId, id, dto);
-    }
+@PutMapping("/{id}")
+public ResponseEntity<TieredPricingDTO> updateFully(
+        @PathVariable Long ratePlanId,
+        @PathVariable Long id,
+        @RequestBody @Valid TieredPricingCreateUpdateDTO dto
+) {
+    return ResponseEntity.ok(service.updateFully(ratePlanId, id, dto));
+}
+
+@PatchMapping("/{id}")
+public ResponseEntity<TieredPricingDTO> updatePartially(
+        @PathVariable Long ratePlanId,
+        @PathVariable Long id,
+        @RequestBody TieredPricingCreateUpdateDTO dto
+) {
+    return ResponseEntity.ok(service.updatePartially(ratePlanId, id, dto));
+}
+
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

@@ -10,6 +10,7 @@ public interface ProductLLMTokenService {
     ProductLLMTokenDTO create(Long productId, CreateProductLLMTokenRequest request);
     ProductLLMTokenDTO getByProductId(Long productId);
     List<ProductLLMTokenDTO> getAll();
-    ProductLLMTokenDTO update(Long productId, UpdateProductLLMTokenRequest request);
+    ProductLLMTokenDTO updateFully(Long productId, UpdateProductLLMTokenRequest request);
+    ProductLLMTokenDTO updatePartially(Long productId, UpdateProductLLMTokenRequest request);
     void delete(Long productId);
 }

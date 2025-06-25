@@ -20,11 +20,21 @@ public class FlatFeeController {
     }
 
     @PutMapping
-    public ResponseEntity<FlatFeeDTO> update(
+    public ResponseEntity<FlatFeeDTO> updateFully(
             @PathVariable Long ratePlanId,
-            @RequestBody @Valid FlatFeeCreateUpdateDTO dto) {
-        return ResponseEntity.ok(flatFeeService.update(ratePlanId, dto));
+            @RequestBody @Valid FlatFeeCreateUpdateDTO dto
+    ) {
+        return ResponseEntity.ok(flatFeeService.updateFully(ratePlanId, dto));
     }
+    
+    @PatchMapping
+    public ResponseEntity<FlatFeeDTO> updatePartially(
+            @PathVariable Long ratePlanId,
+            @RequestBody FlatFeeCreateUpdateDTO dto
+    ) {
+        return ResponseEntity.ok(flatFeeService.updatePartially(ratePlanId, dto));
+    }
+    
 
     @GetMapping
     public ResponseEntity<FlatFeeDTO> get(@PathVariable Long ratePlanId) {

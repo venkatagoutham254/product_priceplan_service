@@ -67,30 +67,44 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     }
 
     @Override
-    public ProductAPIDTO update(Long productId, UpdateProductAPIRequest request) {
+    public ProductAPIDTO updateFully(Long productId, UpdateProductAPIRequest request) {
         ProductAPI existing = productAPIRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product API not found"));
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        validateProductType(product, ProductType.API);
-
+                .orElseThrow(() -> new RuntimeException("API product not found"));
+    
+        // Required fields check for full update
+        if (request.getEndpointUrl() == null || request.getAuthType() == null) {
+            throw new RuntimeException("Endpoint and Method are required for full update");
+        }
+    
+        existing.setEndpointUrl(request.getEndpointUrl());
+        existing.setAuthType(request.getAuthType());
+        existing.setPayloadSizeMetric(request.getPayloadSizeMetric());
+        existing.setRateLimitPolicy(request.getRateLimitPolicy());
+        existing.setMeteringGranularity(request.getMeteringGranularity());
+        existing.setGrouping(request.getGrouping());
+        existing.setCachingFlag(request.getCachingFlag());
+        existing.setLatencyClass(request.getLatencyClass());
+    
+        return productAPIMapper.toDTO(productAPIRepository.save(existing));
+    }
+    
+    @Override
+    public ProductAPIDTO updatePartially(Long productId, UpdateProductAPIRequest request) {
+        ProductAPI existing = productAPIRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("API product not found"));
+    
         if (request.getEndpointUrl() != null) existing.setEndpointUrl(request.getEndpointUrl());
         if (request.getAuthType() != null) existing.setAuthType(request.getAuthType());
         if (request.getPayloadSizeMetric() != null) existing.setPayloadSizeMetric(request.getPayloadSizeMetric());
         if (request.getRateLimitPolicy() != null) existing.setRateLimitPolicy(request.getRateLimitPolicy());
         if (request.getMeteringGranularity() != null) existing.setMeteringGranularity(request.getMeteringGranularity());
         if (request.getGrouping() != null) existing.setGrouping(request.getGrouping());
+        if (request.getCachingFlag() != null) existing.setCachingFlag(request.getCachingFlag());
         if (request.getLatencyClass() != null) existing.setLatencyClass(request.getLatencyClass());
-
-        if (request.getCachingFlag() != null) {
-            existing.setCachingFlag(request.getCachingFlag());
-        }
-        
+    
         return productAPIMapper.toDTO(productAPIRepository.save(existing));
     }
-
+    
     @Override
     public void delete(Long productId) {
         productAPIRepository.deleteById(productId);

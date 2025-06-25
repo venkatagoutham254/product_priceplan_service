@@ -5,6 +5,7 @@ import aforo.productrateplanservice.product.request.CreateProductFlatFileRequest
 import aforo.productrateplanservice.product.request.UpdateProductFlatFileRequest;
 import aforo.productrateplanservice.product.service.ProductFlatFileService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,12 +39,16 @@ public class ProductFlatFileResource {
         return ResponseEntity.ok(productFlatFileService.getAll());
     }
 
-    // ✅ Update
     @PutMapping("/{productId}/flatfile")
-    public ResponseEntity<ProductFlatFileDTO> update(@PathVariable Long productId,
-                                                     @RequestBody UpdateProductFlatFileRequest request) {
-        return ResponseEntity.ok(productFlatFileService.update(productId, request));
-    }
+public ProductFlatFileDTO fullUpdate(@PathVariable Long productId, @RequestBody @Valid UpdateProductFlatFileRequest request) {
+    return productFlatFileService.update(productId, request);
+}
+
+@PatchMapping("/{productId}/flatfile")
+public ProductFlatFileDTO partialUpdate(@PathVariable Long productId, @RequestBody UpdateProductFlatFileRequest request) {
+    return productFlatFileService.partialUpdate(productId, request);
+}
+
 
     // ✅ Delete
     @DeleteMapping("/{productId}/flatfile")

@@ -5,7 +5,7 @@ import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import aforo.productrateplanservice.rate_plan.RatePlanType;
-
+import aforo.productrateplanservice.exception.NotFoundException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,27 +42,35 @@ public StairStepPricingDTO create(Long ratePlanId, StairStepPricingCreateUpdateD
 
 
 @Override
-public StairStepPricingDTO update(Long ratePlanId, Long id, StairStepPricingCreateUpdateDTO dto) {
-    StairStepPricing entity = repository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Stair Step not found"));
+public StairStepPricingDTO updateFully(Long ratePlanId, Long id, StairStepPricingCreateUpdateDTO dto) {
+    StairStepPricing pricing = repository.findByIdAndRatePlan_RatePlanId(id, ratePlanId)
+        .orElseThrow(() -> new NotFoundException("Stair-step pricing not found for this rate plan"));
 
-    if (!entity.getRatePlan().getRatePlanId().equals(ratePlanId)) {
-        throw new IllegalArgumentException("RatePlan ID mismatch");
+    if (pricing.getRatePlan().getRatePlanType() != RatePlanType.STAIRSTEP) {
+        throw new IllegalArgumentException("Invalid RatePlanType. Expected STAIR_STEP but found " + pricing.getRatePlan().getRatePlanType());
     }
 
-    if (entity.getRatePlan().getRatePlanType() != RatePlanType.STAIRSTEP) {
-        throw new IllegalArgumentException("Invalid RatePlanType. Expected STAIR_STEP but found " + entity.getRatePlan().getRatePlanType());
+    pricing.setUsageThresholdStart(dto.getUsageThresholdStart());
+    pricing.setUsageThresholdEnd(dto.getUsageThresholdEnd());
+    pricing.setMonthlyCharge(dto.getMonthlyCharge());
+
+    return mapper.toDTO(repository.save(pricing));
+}
+
+@Override
+public StairStepPricingDTO updatePartially(Long ratePlanId, Long id, StairStepPricingCreateUpdateDTO dto) {
+    StairStepPricing pricing = repository.findByIdAndRatePlan_RatePlanId(id, ratePlanId)
+        .orElseThrow(() -> new NotFoundException("Stair-step pricing not found for this rate plan"));
+
+    if (pricing.getRatePlan().getRatePlanType() != RatePlanType.STAIRSTEP) {
+        throw new IllegalArgumentException("Invalid RatePlanType. Expected STAIR_STEP but found " + pricing.getRatePlan().getRatePlanType());
     }
 
-    String bracket = dto.getUsageThresholdStart() + "-" +
-            (dto.getUsageThresholdEnd() == null ? "Unlimited" : dto.getUsageThresholdEnd());
+    if (dto.getUsageThresholdStart() != null) pricing.setUsageThresholdStart(dto.getUsageThresholdStart());
+    if (dto.getUsageThresholdEnd() != null) pricing.setUsageThresholdEnd(dto.getUsageThresholdEnd());
+    if (dto.getMonthlyCharge() != null) pricing.setMonthlyCharge(dto.getMonthlyCharge());
 
-    entity.setUsageThresholdStart(dto.getUsageThresholdStart());
-    entity.setUsageThresholdEnd(dto.getUsageThresholdEnd());
-    entity.setMonthlyCharge(dto.getMonthlyCharge());
-    entity.setStairBracket(bracket);
-
-    return mapper.toDTO(repository.save(entity));
+    return mapper.toDTO(repository.save(pricing));
 }
 
 

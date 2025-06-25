@@ -9,6 +9,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class SetupFeeCreateUpdateDTO {
     private BigDecimal setupFee;
-    private String applicationTiming;
+    private Integer applicationTiming;
     private String invoiceDescription;
 }

@@ -10,6 +10,7 @@ public interface ProductAPIService {
     ProductAPIDTO create(Long productId, CreateProductAPIRequest request);
     ProductAPIDTO getByProductId(Long productId);
     List<ProductAPIDTO> getAll();
-    ProductAPIDTO update(Long productId, UpdateProductAPIRequest request);
+    ProductAPIDTO updateFully(Long productId, UpdateProductAPIRequest request);
+    ProductAPIDTO updatePartially(Long productId, UpdateProductAPIRequest request);
     void delete(Long productId);
 }

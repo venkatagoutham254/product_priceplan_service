@@ -31,28 +31,36 @@ public FlatFeeDTO create(Long ratePlanId, FlatFeeCreateUpdateDTO request) {
     FlatFee saved = flatFeeRepository.save(flatFee);
     return flatFeeMapper.toDTO(saved);
 }
-
-    
-
 @Override
-public FlatFeeDTO update(Long ratePlanId, FlatFeeCreateUpdateDTO request) {
-    RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
-        .orElseThrow(() -> new RuntimeException("RatePlan with ID " + ratePlanId + " not found"));
+public FlatFeeDTO updateFully(Long ratePlanId, FlatFeeCreateUpdateDTO dto) {
+    FlatFee flatFee = flatFeeRepository.findByRatePlan_RatePlanId(ratePlanId)
+        .orElseThrow(() -> new NotFoundException("FlatFee not found for this rate plan"));
 
-    if (ratePlan.getRatePlanType() != RatePlanType.FLATFEE) {
-        throw new RuntimeException("Invalid RatePlanType. Expected FLAT_FEE but found " + ratePlan.getRatePlanType());
+    if (flatFee.getRatePlan().getRatePlanType() != RatePlanType.FLATFEE) {
+        throw new IllegalArgumentException("Expected RatePlanType.FLATFEE but found " + flatFee.getRatePlan().getRatePlanType());
     }
 
-    FlatFee flatFee = flatFeeRepository.findByRatePlan_RatePlanId(ratePlanId)
-        .orElseThrow(() -> new RuntimeException("FlatFee not found for ratePlanId: " + ratePlanId));
+    flatFee.setFlatFeeAmount(dto.getFlatFeeAmount());
+    flatFee.setUsageLimit(dto.getUsageLimit());
 
-    // Apply new values from the request
-    flatFee.setFlatFeeAmount(request.getFlatFeeAmount());
-    flatFee.setUsageLimit(request.getUsageLimit());
-
-    FlatFee saved = flatFeeRepository.save(flatFee);
-    return flatFeeMapper.toDTO(saved);
+    return flatFeeMapper.toDTO(flatFeeRepository.save(flatFee));
 }
+
+@Override
+public FlatFeeDTO updatePartially(Long ratePlanId, FlatFeeCreateUpdateDTO dto) {
+    FlatFee flatFee = flatFeeRepository.findByRatePlan_RatePlanId(ratePlanId)
+        .orElseThrow(() -> new NotFoundException("FlatFee not found for this rate plan"));
+
+    if (flatFee.getRatePlan().getRatePlanType() != RatePlanType.FLATFEE) {
+        throw new IllegalArgumentException("Expected RatePlanType.FLATFEE but found " + flatFee.getRatePlan().getRatePlanType());
+    }
+
+    if (dto.getFlatFeeAmount() != null) flatFee.setFlatFeeAmount(dto.getFlatFeeAmount());
+    if (dto.getUsageLimit() != null) flatFee.setUsageLimit(dto.getUsageLimit());
+
+    return flatFeeMapper.toDTO(flatFeeRepository.save(flatFee));
+}
+
 
 
     @Override
