@@ -35,9 +35,9 @@ jobs:
       # 5. Wait until EC2 API is reachable
       - name: Wait until EC2 API is reachable
         run: |
-          echo "Waiting for service to respond on http://${{ secrets.EC2_HOST }}:8080/actuator/health …"
+          echo "Waiting for service to respond on http://${{ secrets.EC2_HOST }}:8080/api/products …"
           for i in {1..30}; do
-            if curl -fs http://${{ secrets.EC2_HOST }}:8080/actuator/health > /dev/null 2>&1; then
+            if curl -fs http://${{ secrets.EC2_HOST }}:8080/api/products > /dev/null 2>&1; then
               echo "Service is up!" && exit 0
             fi
             sleep 5
