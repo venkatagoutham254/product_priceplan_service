@@ -5,7 +5,7 @@ FROM openjdk:21-jdk-slim
 WORKDIR /app
 
 # Copy the application JAR into the container
-COPY target/productrateplanservie-0.0.1-SNAPSHOT.jar app.jar
+COPY app.jar app.jar
 
 # Expose the port your application runs on
 EXPOSE 8080
