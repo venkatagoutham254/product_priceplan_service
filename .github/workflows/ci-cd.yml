@@ -34,18 +34,17 @@ jobs:
         working-directory: ./
         run: docker compose -f docker-compose.yml up --build -d
 
-      # 5. (Optional) Wait for the application to become healthy / reachable
-      - name: Wait until API is reachable
-        working-directory: ./
+      # 5. Wait until EC2 API is reachable
+      - name: Wait until EC2 API is reachable
         run: |
-          echo "Waiting for service to respond on http://localhost:8080/actuator/health …"
+          echo "Waiting for service to respond on http://${{ secrets.EC2_HOST }}:8080/actuator/health …"
           for i in {1..30}; do
-            if curl -fs http://localhost:8080/actuator/health > /dev/null 2>&1; then
+            if curl -fs http://${{ secrets.EC2_HOST }}:8080/actuator/health > /dev/null 2>&1; then
               echo "Service is up!" && exit 0
             fi
             sleep 5
           done
-          echo "Service did not become healthy in time." && docker compose logs && exit 1
+          echo "Service did not become healthy in time." && exit 1
 
       # 6. (Optional) Run integration tests here if you have any
       # - name: Integration tests
