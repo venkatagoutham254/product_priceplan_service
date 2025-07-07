@@ -5,8 +5,7 @@ FROM openjdk:21-jdk-slim
 WORKDIR /app
 
 # Copy the application JAR built by Maven (located under target/)
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} app.jar
+COPY app.jar app.jar
 
 # Expose port
 EXPOSE 8080
