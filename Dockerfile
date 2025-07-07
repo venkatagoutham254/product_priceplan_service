@@ -4,8 +4,9 @@ FROM openjdk:21-jdk-slim
 # Set working directory
 WORKDIR /app
 
-# Copy the application JAR (uploaded by CI as app.jar)
-COPY app.jar app.jar
+# Copy the application JAR built by Maven (located under target/)
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
 
 # Expose port
 EXPOSE 8080
