@@ -1,5 +1,5 @@
+# .github/workflows/ci-cd.yml
 # GitHub Actions workflow for building and smoke-deploying the Spring-Boot service with Maven & Docker Compose
-# Triggers only after a successful merge / push to the `main` branch.
 
 name: CI / CD
 
@@ -17,21 +17,19 @@ jobs:
         uses: actions/checkout@v4
 
       # 2. Set up JDK for Maven build
-      - name: Set up Temurin JDK 17
+      - name: Set up Temurin JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "21"
-          cache: "maven"
+          cache: maven
 
       # 3. Build project & run unit-tests
       - name: Build with Maven
-        working-directory: ./
         run: mvn -B clean install
 
       # 4. Build Docker images & start full stack (app + database)
       - name: Build & start stack with Docker Compose
-        working-directory: ./
         run: docker compose -f docker-compose.yml up --build -d
 
       # 5. Wait until EC2 API is reachable
@@ -46,14 +44,13 @@ jobs:
           done
           echo "Service did not become healthy in time." && exit 1
 
-      # 6. (Optional) Run integration tests here if you have any
+      # 6. (Optional) Run integration tests
       # - name: Integration tests
       #   run: mvn verify -Pintegration-tests
 
-      # 7. Tear down stack no matter what (collecting logs keeps workflow output tidy)
+      # 7. Tear down stack no matter what
       - name: Shutdown stack & collect logs on failure
         if: always()
-        working-directory: ./
         run: |
           docker compose logs || true
           docker compose down --remove-orphans
