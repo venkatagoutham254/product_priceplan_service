@@ -31,7 +31,7 @@ jobs:
       - name: Build & start stack with Docker Compose
         run: docker compose -f docker-compose.yml up --build -d
 
-      # 5. Wait until EC2 API is reachable (bunny version)
+      # 5. Wait until EC2 API is reachable (/api/products endpoint)
       - name: Wait until EC2 API is reachable
         run: |
           echo "Waiting for service to respond on http://${{ secrets.EC2_HOST }}:8080/api/products …"
