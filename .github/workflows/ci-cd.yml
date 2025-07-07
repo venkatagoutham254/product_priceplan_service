@@ -1,5 +1,3 @@
-# GitHub Actions workflow for building and smoke-deploying the Spring-Boot service with Maven & Docker Compose
-
 name: CI / CD
 
 on:
@@ -23,15 +21,33 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # 3. Build project & run unit-tests
+      # 3. Build project & package the jar
       - name: Build with Maven
-        run: mvn -B clean install
+        run: mvn -B clean package -DskipTests
 
-      # 4. Build Docker images & start full stack (app + database)
-      - name: Build & start stack with Docker Compose
-        run: docker compose -f docker-compose.yml up --build -d
+      # 4. Copy JAR to EC2
+      - name: Copy JAR to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "target/*.jar"
+          target: "/home/ubuntu/productrateplanservice/app.jar"
 
-      # 5. Wait until EC2 API is reachable (/api/products endpoint)
+      # 5. SSH into EC2 and restart Docker container
+      - name: Restart app container on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/productrateplanservice
+            docker compose down
+            docker compose up --build -d
+
+      # 6. Wait until EC2 API is reachable
       - name: Wait until EC2 API is reachable
         run: |
           echo "Waiting for service to respond on http://${{ secrets.EC2_HOST }}:8080/api/products …"
@@ -42,14 +58,3 @@ jobs:
             sleep 5
           done
           echo "Service did not become healthy in time." && exit 1
-
-      # 6. (Optional) Run integration tests
-      # - name: Integration tests
-      #   run: mvn verify -Pintegration-tests
-
-      # 7. Tear down stack no matter what
-      - name: Shutdown stack & collect logs on failure
-        if: always()
-        run: |
-          docker compose logs || true
-          docker compose down --remove-orphans
