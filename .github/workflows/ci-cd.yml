@@ -25,29 +25,35 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package -DskipTests
 
-      # 4. Copy JAR to EC2
+      # 4. Decode EC2 PEM key from base64
+      - name: Decode EC2 SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ec2-key.pem
+          chmod 600 ec2-key.pem
+
+      # 5. Copy JAR to EC2
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          username: ec2-user
+          key_path: ./ec2-key.pem
           source: "target/*.jar"
-          target: "/home/ubuntu/productrateplanservice/app.jar"
+          target: "/home/ec2-user/productrateplanservice/app.jar"
 
-      # 5. SSH into EC2 and restart Docker container
+      # 6. SSH into EC2 and restart Docker container
       - name: Restart app container on EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          username: ec2-user
+          key_path: ./ec2-key.pem
           script: |
-            cd /home/ubuntu/productrateplanservice
+            cd /home/ec2-user/productrateplanservice
             docker compose down
             docker compose up --build -d
 
-      # 6. Wait until EC2 API is reachable
+      # 7. Wait until EC2 API is reachable
       - name: Wait until EC2 API is reachable
         run: |
           echo "Waiting for service to respond on http://${{ secrets.EC2_HOST }}:8080/api/products …"
