@@ -41,7 +41,7 @@ jobs:
           source: "target/*.jar"
           target: "/home/ec2-user/productrateplanservice/app.jar"
 
-      # 6. SSH into EC2 and restart Docker container
+      # 6. SSH into EC2 and restart Docker container using docker-compose
       - name: Restart app container on EC2
         uses: appleboy/ssh-action@master
         with:
@@ -50,8 +50,8 @@ jobs:
           key_path: ./ec2-key.pem
           script: |
             cd /home/ec2-user/productrateplanservice
-            docker compose down
-            docker compose up --build -d
+            docker-compose down
+            docker-compose up --build -d
 
       # 7. Wait until EC2 API is reachable
       - name: Wait until EC2 API is reachable
