@@ -35,7 +35,7 @@ jobs:
           key_path: ./ec2-key.pem
           source: |
             target/*.jar
-                        Dockerfile
+            Dockerfile
             docker-compose.yml
           target: "/home/ec2-user/productrateplanservice"
 
@@ -47,8 +47,7 @@ jobs:
           key_path: ./ec2-key.pem
           script: |
             cd /home/ec2-user/productrateplanservice
-            JAR_FILE=$(ls *.jar | head -n 1)
-             mv -f "$JAR_FILE" app.jar
+            
             docker-compose down
             docker-compose up --build -d
 
