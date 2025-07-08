@@ -21,10 +21,6 @@ jobs:
       - name: Build JAR with Maven
         run: mvn -B clean package -DskipTests
 
-      - name: Rename JAR to app.jar inside target/
-        run: |
-          mv target/*.jar target/app.jar
-
       - name: Decode EC2 SSH key
         run: |
           echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ec2-key.pem
