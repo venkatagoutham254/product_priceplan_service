@@ -21,12 +21,16 @@ jobs:
       - name: Build JAR with Maven
         run: mvn -B clean package -DskipTests
 
+      - name: Rename JAR to app.jar inside target/
+        run: |
+          mv target/*.jar target/app.jar
+
       - name: Decode EC2 SSH key
         run: |
           echo "${{ secrets.EC2_SSH_KEY_B64 }}" | base64 -d > ec2-key.pem
           chmod 600 ec2-key.pem
 
-      - name: Copy files using SCP
+      - name: Copy files to EC2 via SCP
         run: |
           scp -i ec2-key.pem -o StrictHostKeyChecking=no target/app.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
           scp -i ec2-key.pem -o StrictHostKeyChecking=no Dockerfile ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
