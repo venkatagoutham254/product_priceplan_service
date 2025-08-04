@@ -1,59 +1,48 @@
 package aforo.productrateplanservice.stairsteppricing;
 
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/rateplans/{ratePlanId}/stair-step-pricing")
+@RequestMapping("/api/rateplans/{ratePlanId}/stairstep")
 @RequiredArgsConstructor
 public class StairStepPricingController {
 
-    private final StairStepPricingService service;
+    private final StairStepPricingService stairStepPricingService;
 
     @PostMapping
-    public StairStepPricingDTO create(@PathVariable Long ratePlanId,
-                                      @RequestBody StairStepPricingCreateUpdateDTO dto) {
-        return service.create(ratePlanId, dto);
+    public ResponseEntity<StairStepPricingDTO> create(
+            @PathVariable Long ratePlanId,
+            @Valid @RequestBody StairStepPricingCreateUpdateDTO dto) {
+        return ResponseEntity.ok(stairStepPricingService.create(ratePlanId, dto));
     }
 
-@PutMapping("/{id}")
-public ResponseEntity<StairStepPricingDTO> updateFully(
+    @PutMapping("/{stairStepPricingId}")
+    public ResponseEntity<StairStepPricingDTO> update(
         @PathVariable Long ratePlanId,
-        @PathVariable Long id,
-        @RequestBody @Valid StairStepPricingCreateUpdateDTO dto
-) {
-    return ResponseEntity.ok(service.updateFully(ratePlanId, id, dto));
-}
-
-@PatchMapping("/{id}")
-public ResponseEntity<StairStepPricingDTO> updatePartially(
-        @PathVariable Long ratePlanId,
-        @PathVariable Long id,
-        @RequestBody StairStepPricingCreateUpdateDTO dto
-) {
-    return ResponseEntity.ok(service.updatePartially(ratePlanId, id, dto));
-}
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long ratePlanId,
-                       @PathVariable Long id) {
-        service.delete(ratePlanId, id);
+        @PathVariable Long stairStepPricingId,
+        @Valid @RequestBody StairStepPricingCreateUpdateDTO dto) {
+        return ResponseEntity.ok(stairStepPricingService.update(ratePlanId, stairStepPricingId, dto));
     }
+    
 
     @GetMapping
-    public List<StairStepPricingDTO> getByRatePlan(@PathVariable Long ratePlanId) {
-        return service.getByRatePlanId(ratePlanId);
+    public ResponseEntity<List<StairStepPricingDTO>> getAll(@PathVariable Long ratePlanId) {
+        return ResponseEntity.ok(stairStepPricingService.getAllByRatePlanId(ratePlanId));
     }
 
-    @GetMapping("/{id}")
-    public StairStepPricingDTO getById(@PathVariable Long ratePlanId,
-                                       @PathVariable Long id) {
-        return service.getById(ratePlanId, id);
+    @GetMapping("/{stairStepPricingId}")
+    public ResponseEntity<StairStepPricingDTO> getById(@PathVariable Long stairStepPricingId) {
+        return ResponseEntity.ok(stairStepPricingService.getById(stairStepPricingId));
+    }
+
+    @DeleteMapping("/{stairStepPricingId}")
+    public ResponseEntity<Void> delete(@PathVariable Long stairStepPricingId) {
+        stairStepPricingService.deleteById(stairStepPricingId);
+        return ResponseEntity.noContent().build();
     }
 }

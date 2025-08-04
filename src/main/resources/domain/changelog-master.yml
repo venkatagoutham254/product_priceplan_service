@@ -19,3 +19,11 @@ databaseChangeLog:
       file: changelogs/clean_rateplan_extras.yaml
   - include:
       file: changelogs/2025-06-23-clean-tiered-pricing.yml
+  - include:
+      file: changelogs/2025-07-14-clean-flatfee1.yml
+  - include:
+      file: changelogs/2025-07-14-clean-rate-plan1.yml
+  - include:
+      file: changelogs/2025-07-14-volume-pricing-clean1.yml
+  - include:
+      file: changelogs/2025-08-01-drop-overage-charges.yml

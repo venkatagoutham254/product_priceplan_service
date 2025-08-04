@@ -1,4 +1,4 @@
-package aforo.productrateplanservice.rate_plan;
+package aforo.productrateplanservice.enums;
 
 public enum RatePlanType {
     STAIRSTEP,

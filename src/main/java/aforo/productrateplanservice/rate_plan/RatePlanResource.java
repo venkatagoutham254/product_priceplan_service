@@ -52,4 +52,11 @@ public class RatePlanResource {
         return ResponseEntity.ok(ratePlanService.updateRatePlanPartially(ratePlanId, request));
     }
     
+    @PostMapping("/api/rateplans/{ratePlanId}/confirm")
+    public ResponseEntity<Void> confirmRatePlan(@PathVariable Long ratePlanId) {
+        ratePlanService.confirmRatePlan(ratePlanId);
+        return ResponseEntity.ok().build();
+    }
+    
+
     }

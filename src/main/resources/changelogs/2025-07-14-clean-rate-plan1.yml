@@ -1,0 +1,65 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-old-rateplan-table
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: aforo_rate_plan
+      changes:
+        - dropTable:
+            tableName: aforo_rate_plan
+            cascadeConstraints: true
+
+  - changeSet:
+      id: create-new-rateplan-table
+      author: gowtham
+      changes:
+        - createTable:
+            tableName: aforo_rate_plan
+            columns:
+              - column:
+                  name: rate_plan_id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: rate_plan_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+              - column:
+                  name: billing_frequency
+                  type: VARCHAR(50)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payment_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false 
+              - column:
+                  name: billable_metric_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false

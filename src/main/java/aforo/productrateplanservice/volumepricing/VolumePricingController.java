@@ -1,61 +1,51 @@
 package aforo.productrateplanservice.volumepricing;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/rateplans/{ratePlanId}/volume-pricing")
 @RequiredArgsConstructor
 public class VolumePricingController {
 
-    private final VolumePricingService service;
+    private final VolumePricingService volumePricingService;
 
     @PostMapping
-    public VolumePricingDTO create(@PathVariable Long ratePlanId,
-                                   @RequestBody VolumePricingCreateUpdateDTO dto) {
-        return service.create(ratePlanId, dto);
+    public ResponseEntity<VolumePricingDTO> createVolumePricing(
+        @PathVariable Long ratePlanId,
+        @RequestBody @Valid VolumePricingCreateUpdateDTO dto) {
+        return ResponseEntity.ok(volumePricingService.create(ratePlanId, dto));
+    }
+    
+    @PutMapping("/{volumePricingId}")
+    public ResponseEntity<VolumePricingDTO> updateVolumePricing(
+        @PathVariable Long ratePlanId,
+        @PathVariable Long volumePricingId,
+        @RequestBody @Valid VolumePricingCreateUpdateDTO dto) {
+        return ResponseEntity.ok(volumePricingService.update(ratePlanId, volumePricingId, dto));
+    }
+    
+
+    @GetMapping("/{volumePricingId}")
+    public ResponseEntity<VolumePricingDTO> getById(
+            @PathVariable Long volumePricingId
+    ) {
+        VolumePricingDTO dto = volumePricingService.getById(volumePricingId);
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping
-    public List<VolumePricingDTO> getByRatePlanId(@PathVariable Long ratePlanId) {
-        return service.getByRatePlanId(ratePlanId);
+    public ResponseEntity<List<VolumePricingDTO>> getAll() {
+        return ResponseEntity.ok(volumePricingService.getAll());
     }
 
-@PutMapping("/{id}")
-public ResponseEntity<VolumePricingDTO> updateFully(
-        @PathVariable Long ratePlanId,
-        @PathVariable Long id,
-        @RequestBody @Valid VolumePricingCreateUpdateDTO dto
-) {
-    return ResponseEntity.ok(service.updateFully(ratePlanId, id, dto));
-}
-
-@PatchMapping("/{id}")
-public ResponseEntity<VolumePricingDTO> updatePartially(
-        @PathVariable Long ratePlanId,
-        @PathVariable Long id,
-        @RequestBody VolumePricingCreateUpdateDTO dto
-) {
-    return ResponseEntity.ok(service.updatePartially(ratePlanId, id, dto));
-}
-
-
-@DeleteMapping("/{id}")
-public ResponseEntity<Void> delete(
-    @PathVariable Long ratePlanId,
-    @PathVariable Long id) {
-    service.delete(ratePlanId, id);
-    return ResponseEntity.noContent().build();
-}
-
-
-    @DeleteMapping
-    public void deleteAllByRatePlan(@PathVariable Long ratePlanId) {
-        service.deleteByRatePlanId(ratePlanId);
+    @DeleteMapping("/{volumePricingId}")
+    public ResponseEntity<Void> delete(@PathVariable Long volumePricingId) {
+        volumePricingService.delete(volumePricingId);
+        return ResponseEntity.noContent().build();
     }
 }

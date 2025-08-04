@@ -1,54 +1,46 @@
 package aforo.productrateplanservice.tieredpricing;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/rateplans/{ratePlanId}/tiered-pricing")
+@RequestMapping("/api/rateplans/{ratePlanId}/tiered")
 @RequiredArgsConstructor
 public class TieredPricingController {
 
-    private final TieredPricingService service;
+    private final TieredPricingService tieredPricingService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public TieredPricingDTO create(@PathVariable Long ratePlanId, @RequestBody TieredPricingCreateUpdateDTO dto) {
-        return service.create(ratePlanId, dto);
+    public ResponseEntity<TieredPricingDTO> create(
+            @PathVariable Long ratePlanId,
+            @Valid @RequestBody TieredPricingCreateUpdateDTO dto) {
+        return ResponseEntity.ok(tieredPricingService.create(ratePlanId, dto));
+    }
+
+    @PutMapping("/{tieredPricingId}")
+    public ResponseEntity<TieredPricingDTO> update(
+            @PathVariable Long tieredPricingId,
+            @Valid @RequestBody TieredPricingCreateUpdateDTO dto) {
+        return ResponseEntity.ok(tieredPricingService.update(tieredPricingId, dto));
     }
 
     @GetMapping
-    public List<TieredPricingDTO> getAll(@PathVariable Long ratePlanId) {
-        return service.getByRatePlanId(ratePlanId);
+    public ResponseEntity<List<TieredPricingDTO>> getAll(@PathVariable Long ratePlanId) {
+        return ResponseEntity.ok(tieredPricingService.getAllByRatePlanId(ratePlanId));
     }
 
-@PutMapping("/{id}")
-public ResponseEntity<TieredPricingDTO> updateFully(
-        @PathVariable Long ratePlanId,
-        @PathVariable Long id,
-        @RequestBody @Valid TieredPricingCreateUpdateDTO dto
-) {
-    return ResponseEntity.ok(service.updateFully(ratePlanId, id, dto));
-}
+    @GetMapping("/{tieredPricingId}")
+    public ResponseEntity<TieredPricingDTO> getById(@PathVariable Long tieredPricingId) {
+        return ResponseEntity.ok(tieredPricingService.getById(tieredPricingId));
+    }
 
-@PatchMapping("/{id}")
-public ResponseEntity<TieredPricingDTO> updatePartially(
-        @PathVariable Long ratePlanId,
-        @PathVariable Long id,
-        @RequestBody TieredPricingCreateUpdateDTO dto
-) {
-    return ResponseEntity.ok(service.updatePartially(ratePlanId, id, dto));
-}
-
-
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        service.delete(id);
+    @DeleteMapping("/{tieredPricingId}")
+    public ResponseEntity<Void> delete(@PathVariable Long tieredPricingId) {
+        tieredPricingService.deleteById(tieredPricingId);
+        return ResponseEntity.noContent().build();
     }
 }

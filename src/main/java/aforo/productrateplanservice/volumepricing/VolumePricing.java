@@ -1,11 +1,11 @@
 package aforo.productrateplanservice.volumepricing;
 
+import aforo.productrateplanservice.enums.RatePlanType;
+import aforo.productrateplanservice.rate_plan.RatePlan;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-
-import aforo.productrateplanservice.rate_plan.RatePlan;
 
 @Entity
 @Table(name = "rate_plan_volume_pricing")
@@ -18,7 +18,7 @@ public class VolumePricing {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long volumePricingId;
 
     @Column(name = "start_range", nullable = false)
     private Integer startRange;
@@ -34,6 +34,16 @@ public class VolumePricing {
     private RatePlan ratePlan;
 
     @Column(name = "volume_bracket", nullable = false)
-private String volumeBracket;
+    private String volumeBracket;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rate_plan_type", nullable = false, updatable = false)
+    private final RatePlanType ratePlanType = RatePlanType.VOLUME_BASED;
+
+    @Column(name = "overage_unit_rate")
+    private BigDecimal overageUnitRate;
+    
+    @Column(name = "grace_buffer")
+    private Integer graceBuffer;
+    
 }

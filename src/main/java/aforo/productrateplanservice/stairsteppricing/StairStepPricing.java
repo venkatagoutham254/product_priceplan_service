@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.stairsteppricing;
 
+import aforo.productrateplanservice.enums.RatePlanType;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,7 +18,8 @@ public class StairStepPricing {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "stair_step_pricing_id")
+    private Long stairStepPricingId;
 
     @Column(name = "usage_threshold_start", nullable = false)
     private Integer usageThresholdStart;
@@ -34,4 +36,11 @@ public class StairStepPricing {
 
     @Column(name = "stair_bracket", nullable = false)
     private String stairBracket;
+    @Column(name = "overage_unit_rate")
+    private BigDecimal overageUnitRate;
+    
+    @Column(name = "grace_buffer")
+    private Integer graceBuffer;
+    
+    
 }

@@ -10,10 +10,13 @@ public class RatePlanMapper {
                 .ratePlanId(ratePlan.getRatePlanId())
                 .ratePlanName(ratePlan.getRatePlanName())
                 .description(ratePlan.getDescription())
-                .ratePlanType(ratePlan.getRatePlanType())
+
                 .billingFrequency(ratePlan.getBillingFrequency())
                 .productId(ratePlan.getProduct().getProductId())
                 .productName(ratePlan.getProduct().getProductName())
+                .status(ratePlan.getStatus())
+                .paymentType(ratePlan.getPaymentType())
+                .billableMetricId(ratePlan.getBillableMetricId())
                 .build();
     }
 }

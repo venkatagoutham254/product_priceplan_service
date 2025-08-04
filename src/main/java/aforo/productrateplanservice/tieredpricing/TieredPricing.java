@@ -1,6 +1,7 @@
 package aforo.productrateplanservice.tieredpricing;
 
 import aforo.productrateplanservice.rate_plan.RatePlan;
+import aforo.productrateplanservice.enums.RatePlanType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,8 +18,8 @@ public class TieredPricing {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id") // could also be rate_plan_id; confirm this!
-    private Long id;
+    @Column(name = "tiered_pricing_id")
+    private Long tieredPricingId;
 
     @Column(name = "start_range", nullable = false)
     private Integer startRange;
@@ -35,4 +36,14 @@ public class TieredPricing {
 
     @Column(name = "tier_bracket", nullable = false)
     private String tierBracket;
+
+    @Column(name = "rate_plan_type", nullable = false, updatable = false)
+    private final RatePlanType ratePlanType = RatePlanType.TIERED;
+
+
+    @Column(name = "overage_unit_rate")
+    private BigDecimal overageUnitRate;
+    
+    @Column(name = "grace_buffer")
+    private Integer graceBuffer;
 }
