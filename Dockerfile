@@ -2,8 +2,8 @@ FROM openjdk:21-jdk-slim
 
 WORKDIR /app
 
-# Copy app.jar (already renamed by GitHub Actions)
-COPY app.jar app.jar
+# Copy the JAR file
+COPY target/app.jar .
 
 EXPOSE 8080
 
