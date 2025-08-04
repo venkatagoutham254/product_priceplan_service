@@ -1,9 +1,8 @@
 package aforo.productrateplanservice.usagebasedpricing;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.Optional;
+import java.util.List;
 
 public interface UsageBasedPricingRepository extends JpaRepository<UsageBasedPricing, Long> {
-    Optional<UsageBasedPricing> findByRatePlanRatePlanId(Long ratePlanId);
+    List<UsageBasedPricing> findByRatePlanRatePlanId(Long ratePlanId);
 }

@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-overage-charges-table
+      author: gowtham
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: overage_charge
+      changes:
+        - dropTable:
+            tableName: overage_charge
+            cascadeConstraints: true

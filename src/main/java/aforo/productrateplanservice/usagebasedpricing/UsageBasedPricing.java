@@ -1,6 +1,7 @@
 package aforo.productrateplanservice.usagebasedpricing;
 
 import aforo.productrateplanservice.rate_plan.RatePlan;
+import aforo.productrateplanservice.enums.RatePlanType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,7 +18,8 @@ public class UsageBasedPricing {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "usage_based_pricing_id")
+    private Long usageBasedPricingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rate_plan_id", nullable = false)
@@ -25,4 +27,7 @@ public class UsageBasedPricing {
 
     @Column(name = "per_unit_amount", nullable = false)
     private BigDecimal perUnitAmount;
+
+    @Column(name = "rate_plan_type", nullable = false, updatable = false)
+    private final RatePlanType ratePlanType = RatePlanType.USAGE_BASED;
 }

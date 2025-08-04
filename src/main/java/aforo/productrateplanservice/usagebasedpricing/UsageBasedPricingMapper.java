@@ -6,18 +6,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class UsageBasedPricingMapper {
 
-    public UsageBasedPricingDTO toDTO(UsageBasedPricing entity) {
-        return UsageBasedPricingDTO.builder()
-                .id(entity.getId())
-                .ratePlanId(entity.getRatePlan().getRatePlanId())
-                .perUnitAmount(entity.getPerUnitAmount())
-                .build();
-    }
-
-    public UsageBasedPricing toEntity(RatePlan ratePlan, UsageBasedPricingCreateUpdateDTO dto) {
+    public UsageBasedPricing toEntity(UsageBasedPricingCreateUpdateDTO dto, RatePlan ratePlan) {
         return UsageBasedPricing.builder()
                 .ratePlan(ratePlan)
                 .perUnitAmount(dto.getPerUnitAmount())
+                .build();
+    }
+
+    public UsageBasedPricingDTO toDTO(UsageBasedPricing entity) {
+        return UsageBasedPricingDTO.builder()
+                .usageBasedPricingId(entity.getUsageBasedPricingId())
+                .ratePlanId(entity.getRatePlan().getRatePlanId())
+                .perUnitAmount(entity.getPerUnitAmount())
                 .build();
     }
 

@@ -4,9 +4,8 @@ import java.util.List;
 
 public interface StairStepPricingService {
     StairStepPricingDTO create(Long ratePlanId, StairStepPricingCreateUpdateDTO dto);
-    StairStepPricingDTO updateFully(Long ratePlanId, Long id, StairStepPricingCreateUpdateDTO dto); // PUT
-    StairStepPricingDTO updatePartially(Long ratePlanId, Long id, StairStepPricingCreateUpdateDTO dto); // PATCH
-    void delete(Long ratePlanId, Long id);
-    List<StairStepPricingDTO> getByRatePlanId(Long ratePlanId);
-    StairStepPricingDTO getById(Long ratePlanId, Long id);
+    StairStepPricingDTO update(Long ratePlanId, Long stairStepPricingId, StairStepPricingCreateUpdateDTO dto);
+    List<StairStepPricingDTO> getAllByRatePlanId(Long ratePlanId);
+    StairStepPricingDTO getById(Long id);
+    void deleteById(Long id);
 }

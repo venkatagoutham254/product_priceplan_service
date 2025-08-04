@@ -10,7 +10,6 @@ import aforo.productrateplanservice.rate_plan.RatePlanResource;
 import aforo.productrateplanservice.discount.DiscountController;
 import aforo.productrateplanservice.freemium.FreemiumController;
 import aforo.productrateplanservice.minimumcommitment.MinimumCommitmentController;
-import aforo.productrateplanservice.overagecharges.OverageChargeController;
 import aforo.productrateplanservice.setupfee.SetupFeeController;
 
 @RestController
@@ -22,7 +21,6 @@ public RepresentationModel<?> index() {
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ProductResource.class).getAllProducts()).withRel("products"))
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RatePlanResource.class).getAllRatePlans()).withRel("ratePlans"))
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SetupFeeController.class).getAllByRatePlan(1L)).withRel("setupFees"))
-        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(OverageChargeController.class).getAll(1L)).withRel("overageCharges"))
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(DiscountController.class).getAll(1L)).withRel("discounts"))
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(FreemiumController.class).getAll(1L)).withRel("freemiums"))
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MinimumCommitmentController.class).getAll(1L)).withRel("minimumCommitments"));

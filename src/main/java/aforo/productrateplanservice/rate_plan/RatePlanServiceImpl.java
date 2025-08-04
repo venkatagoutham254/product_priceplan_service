@@ -1,8 +1,10 @@
 package aforo.productrateplanservice.rate_plan;
 
+import aforo.productrateplanservice.client.BillableMetricClient;
 import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.exception.ValidationException;
 import aforo.productrateplanservice.product.entity.Product;
+import aforo.productrateplanservice.product.enums.RatePlanStatus;
 import aforo.productrateplanservice.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,25 +19,32 @@ public class RatePlanServiceImpl implements RatePlanService {
     private final RatePlanRepository ratePlanRepository;
     private final ProductRepository productRepository;
     private final RatePlanMapper ratePlanMapper;
+    private final RatePlanAssembler ratePlanAssembler;
+    private final BillableMetricClient billableMetricClient;
 
     @Override
-public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
-    String productName = request.getProductName().trim();
+    public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
+        String productName = request.getProductName().trim();
 
-    Product product = productRepository.findByProductNameIgnoreCase(productName)
-            .orElseThrow(() -> new NotFoundException("Product not found: " + productName));
+        Product product = productRepository.findByProductNameIgnoreCase(productName)
+                .orElseThrow(() -> new NotFoundException("Product not found: " + productName));
 
-    RatePlan ratePlan = RatePlan.builder()
-            .ratePlanName(request.getRatePlanName())
-            .description(request.getDescription())
-            .ratePlanType(request.getRatePlanType())
-            .billingFrequency(request.getBillingFrequency())
-            .product(product)
-            .build();
+                if (!billableMetricClient.metricExists(request.getBillableMetricId())) {
+                    throw new ValidationException("Invalid billableMetricId: " + request.getBillableMetricId());
+                }
+                
+        RatePlanDTO dto = RatePlanDTO.builder()
+                .ratePlanName(request.getRatePlanName())
+                .description(request.getDescription())
+                .billingFrequency(request.getBillingFrequency())
+                .paymentType(request.getPaymentType())
+                .billableMetricId(request.getBillableMetricId())
+                .build();
 
-    ratePlanRepository.save(ratePlan);
-    return ratePlanMapper.toDTO(ratePlan);
-}
+        RatePlan ratePlan = ratePlanAssembler.toEntity(dto, product);
+        ratePlan = ratePlanRepository.save(ratePlan);
+        return ratePlanMapper.toDTO(ratePlan);
+    }
 
     @Override
     public List<RatePlanDTO> getAllRatePlans() {
@@ -72,42 +81,65 @@ public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
     public RatePlanDTO updateRatePlanFully(Long ratePlanId, UpdateRatePlanRequest request) {
         RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
-    
+
         if (request.getRatePlanName() == null || request.getBillingFrequency() == null) {
             throw new ValidationException("All fields must be provided for full update.");
         }
-    
+
+        if (request.getBillableMetricId() != null) {
+            billableMetricClient.metricExists(request.getBillableMetricId());
+            ratePlan.setBillableMetricId(request.getBillableMetricId());
+        }
+
         ratePlan.setRatePlanName(request.getRatePlanName());
         ratePlan.setDescription(request.getDescription());
-        ratePlan.setRatePlanType(request.getRatePlanType());
         ratePlan.setBillingFrequency(request.getBillingFrequency());
-    
+        ratePlan.setPaymentType(request.getPaymentType());
+
         ratePlanRepository.save(ratePlan);
         return ratePlanMapper.toDTO(ratePlan);
     }
-    
+
     @Override
     public RatePlanDTO updateRatePlanPartially(Long ratePlanId, UpdateRatePlanRequest request) {
         RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
-    
+
         if (request.getRatePlanName() != null) {
             ratePlan.setRatePlanName(request.getRatePlanName());
         }
-    
+
         if (request.getDescription() != null) {
             ratePlan.setDescription(request.getDescription());
         }
-    
-        if (request.getRatePlanType() != null) {
-            ratePlan.setRatePlanType(request.getRatePlanType());
-        }
-    
+
         if (request.getBillingFrequency() != null) {
             ratePlan.setBillingFrequency(request.getBillingFrequency());
         }
-    
+
+        if (request.getPaymentType() != null) {
+            ratePlan.setPaymentType(request.getPaymentType());
+        }
+
+        if (request.getBillableMetricId() != null) {
+            billableMetricClient.metricExists(request.getBillableMetricId());
+            ratePlan.setBillableMetricId(request.getBillableMetricId());
+        }
+
         ratePlanRepository.save(ratePlan);
         return ratePlanMapper.toDTO(ratePlan);
     }
-}    
+
+    @Override
+    public void confirmRatePlan(Long ratePlanId) {
+        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new NotFoundException("RatePlan not found"));
+
+        if (ratePlan.getStatus() == RatePlanStatus.ACTIVE) {
+            throw new IllegalStateException("RatePlan is already ACTIVE");
+        }
+
+        ratePlan.setStatus(RatePlanStatus.ACTIVE);
+        ratePlanRepository.save(ratePlan);
+    }
+}

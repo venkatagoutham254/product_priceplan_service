@@ -4,8 +4,8 @@ import java.util.List;
 
 public interface TieredPricingService {
     TieredPricingDTO create(Long ratePlanId, TieredPricingCreateUpdateDTO dto);
-    List<TieredPricingDTO> getByRatePlanId(Long ratePlanId);
-    TieredPricingDTO updateFully(Long ratePlanId, Long id, TieredPricingCreateUpdateDTO dto); // PUT
-    TieredPricingDTO updatePartially(Long ratePlanId, Long id, TieredPricingCreateUpdateDTO dto); // PATCH
-    void delete(Long id);
+    TieredPricingDTO update(Long tieredPricingId, TieredPricingCreateUpdateDTO dto);
+    List<TieredPricingDTO> getAllByRatePlanId(Long ratePlanId);
+    TieredPricingDTO getById(Long tieredPricingId);
+    void deleteById(Long tieredPricingId);
 }
