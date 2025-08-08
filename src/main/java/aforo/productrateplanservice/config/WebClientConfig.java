@@ -17,7 +17,8 @@ public class WebClientConfig {
     @Bean(name = "billableMetricWebClient")
     public WebClient billableMetricWebClient(WebClient.Builder builder) {
         return builder
-                .baseUrl("http://localhost:8085") // Billable Metrics service
+                .baseUrl("http://35.77.48.47:8081/swagger-ui/index.html#/") // Billable Metrics service
                 .build();
     }
 }
+abstract
