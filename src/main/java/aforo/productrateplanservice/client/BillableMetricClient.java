@@ -1,43 +1,38 @@
 package aforo.productrateplanservice.client;
 
 import aforo.productrateplanservice.exception.ValidationException;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Component
-@RequiredArgsConstructor
 public class BillableMetricClient {
 
-    private final WebClient billableMetricWebClient;
+    @Autowired
+    @Qualifier("billableMetricWebClient")
+    private WebClient webClient;
 
-    public boolean metricExists(Long id) {
-        try {
-            BillableMetricResponse[] response = billableMetricWebClient
-                    .get()
-                    .uri("/api/billable-metrics")
-                    .retrieve()
-                    .bodyToMono(BillableMetricResponse[].class)
-                    .block();
-
-            if (response == null) return false;
-
-            for (BillableMetricResponse metric : response) {
-                if (metric.getMetricId().equals(id)) {
-                    return true;
-                }
-            }
-            return false;
-
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    // 🔴 Add this method — it is missing!
     public void validateMetricId(Long id) {
         if (!metricExists(id)) {
             throw new ValidationException("Invalid billableMetricId: " + id);
+        }
+    }
+
+    public boolean metricExists(Long id) {
+        try {
+            webClient.get()
+                     .uri("/api/billable-metrics/{id}", id)
+                     .retrieve()
+                     .toBodilessEntity()
+                     .block();
+            return true;
+        } catch (WebClientResponseException.NotFound e) {
+            return false;
+        } catch (Exception e) {
+            throw new ValidationException("Billable Metrics validation failed for id "
+                    + id + ": " + e.getMessage());
         }
     }
 }

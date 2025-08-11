@@ -23,11 +23,15 @@ spring:
 
 
 server:
-  port: 8080
+  port: 8089
 
 customer:
   service:
     url: http://44.203.171.98:8082
+
+billableMetrics:
+  service:
+    url: http://18.182.19.181:8081  
 
 ---
 # PostgreSQL-specific configurations
