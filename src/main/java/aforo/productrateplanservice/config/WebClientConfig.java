@@ -3,6 +3,7 @@ package aforo.productrateplanservice.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 public class WebClientConfig {
@@ -15,9 +16,9 @@ public class WebClientConfig {
     }
 
     @Bean(name = "billableMetricWebClient")
-    public WebClient billableMetricWebClient(WebClient.Builder builder) {
-        return builder
-                .baseUrl("http://18.182.19.181:8081") // Billable Metrics service
-                .build();
+    public WebClient billableMetricWebClient(
+            WebClient.Builder builder,
+            @Value("${billableMetrics.service.url}") String url) {
+        return builder.baseUrl(url).build();
     }
 }

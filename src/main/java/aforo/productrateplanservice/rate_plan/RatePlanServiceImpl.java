@@ -29,10 +29,8 @@ public class RatePlanServiceImpl implements RatePlanService {
         Product product = productRepository.findByProductNameIgnoreCase(productName)
                 .orElseThrow(() -> new NotFoundException("Product not found: " + productName));
 
-                if (!billableMetricClient.metricExists(request.getBillableMetricId())) {
-                    throw new ValidationException("Invalid billableMetricId: " + request.getBillableMetricId());
-                }
-                
+        billableMetricClient.validateMetricId(request.getBillableMetricId());
+
         RatePlanDTO dto = RatePlanDTO.builder()
                 .ratePlanName(request.getRatePlanName())
                 .description(request.getDescription())
@@ -87,7 +85,7 @@ public class RatePlanServiceImpl implements RatePlanService {
         }
 
         if (request.getBillableMetricId() != null) {
-            billableMetricClient.metricExists(request.getBillableMetricId());
+            billableMetricClient.validateMetricId(request.getBillableMetricId());
             ratePlan.setBillableMetricId(request.getBillableMetricId());
         }
 
@@ -122,7 +120,7 @@ public class RatePlanServiceImpl implements RatePlanService {
         }
 
         if (request.getBillableMetricId() != null) {
-            billableMetricClient.metricExists(request.getBillableMetricId());
+            billableMetricClient.validateMetricId(request.getBillableMetricId());
             ratePlan.setBillableMetricId(request.getBillableMetricId());
         }
 
