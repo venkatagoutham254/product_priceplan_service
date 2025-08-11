@@ -17,7 +17,7 @@ public class WebClientConfig {
     @Bean(name = "billableMetricWebClient")
     public WebClient billableMetricWebClient(WebClient.Builder builder) {
         return builder
-                .baseUrl("http://35.77.48.47:8081") // Billable Metrics service
+                .baseUrl("http://18.182.19.181:8081") // Billable Metrics service
                 .build();
     }
 }
