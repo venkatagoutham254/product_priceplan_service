@@ -21,29 +21,19 @@ public class TieredPricing {
     @Column(name = "tiered_pricing_id")
     private Long tieredPricingId;
 
-    @Column(name = "start_range", nullable = false)
-    private Integer startRange;
-
-    @Column(name = "end_range")
-    private Integer endRange;
-
-    @Column(name = "unit_price", nullable = false)
-    private BigDecimal unitPrice;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rate_plan_id", nullable = false)
     private RatePlan ratePlan;
 
-    @Column(name = "tier_bracket", nullable = false)
-    private String tierBracket;
+    @Column(name = "overage_unit_rate")
+    private java.math.BigDecimal overageUnitRate;
+
+    @Column(name = "grace_buffer")
+    private Integer graceBuffer;
 
     @Column(name = "rate_plan_type", nullable = false, updatable = false)
     private final RatePlanType ratePlanType = RatePlanType.TIERED;
 
-
-    @Column(name = "overage_unit_rate")
-    private BigDecimal overageUnitRate;
-    
-    @Column(name = "grace_buffer")
-    private Integer graceBuffer;
+    @OneToMany(mappedBy = "tieredPricing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<TieredTier> tiers = new java.util.ArrayList<>();
 }

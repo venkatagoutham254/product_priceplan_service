@@ -2,7 +2,7 @@ package aforo.productrateplanservice.stairsteppricing;
 
 import aforo.productrateplanservice.enums.RatePlanType;
 import lombok.*;
-
+import java.util.List;
 import java.math.BigDecimal;
 
 @Getter
@@ -15,13 +15,7 @@ public class StairStepPricingDTO {
     private Long stairStepPricingId;
 
 
-    private Integer usageThresholdStart;
-
-    private Integer usageThresholdEnd;
-
-    private BigDecimal monthlyCharge;
-
-    private String stairBracket;
+    private List<StairStepTierDTO> tiers;
 
     private final RatePlanType ratePlanType = RatePlanType.STAIRSTEP;
 

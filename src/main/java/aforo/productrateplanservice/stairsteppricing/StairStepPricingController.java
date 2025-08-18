@@ -28,7 +28,6 @@ public class StairStepPricingController {
         @Valid @RequestBody StairStepPricingCreateUpdateDTO dto) {
         return ResponseEntity.ok(stairStepPricingService.update(ratePlanId, stairStepPricingId, dto));
     }
-    
 
     @GetMapping
     public ResponseEntity<List<StairStepPricingDTO>> getAll(@PathVariable Long ratePlanId) {

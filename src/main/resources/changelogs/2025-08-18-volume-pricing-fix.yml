@@ -1,0 +1,57 @@
+databaseChangeLog:
+  - changeSet:
+      id: volume-pricing-table-fix
+      author: gowtham
+      changes:
+        # Drop tier-specific columns from parent if they exist
+        - dropColumn:
+            columnName: start_range
+            tableName: rate_plan_volume_pricing
+        - dropColumn:
+            columnName: end_range
+            tableName: rate_plan_volume_pricing
+        - dropColumn:
+            columnName: unit_price
+            tableName: rate_plan_volume_pricing
+        - dropColumn:
+            columnName: volume_bracket
+            tableName: rate_plan_volume_pricing
+
+        # Create child table for tiers
+        - createTable:
+            tableName: rate_plan_volume_tier
+            columns:
+              - column:
+                  name: volume_tier_id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: volume_pricing_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: usage_start
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: usage_end
+                  type: INTEGER
+              - column:
+                  name: unit_price
+                  type: DECIMAL(12,4)
+                  constraints:
+                    nullable: false
+
+        # Add foreign key from tier to parent
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_volume_tier
+            baseColumnNames: volume_pricing_id
+            constraintName: fk_volume_tier_pricing
+            referencedTableName: rate_plan_volume_pricing
+            referencedColumnNames: volume_pricing_id
+            onDelete: CASCADE

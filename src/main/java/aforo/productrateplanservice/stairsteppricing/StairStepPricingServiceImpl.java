@@ -18,33 +18,40 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
 
     @Override
     public StairStepPricingDTO create(Long ratePlanId, StairStepPricingCreateUpdateDTO dto) {
+        // ✅ Validate RatePlan
         RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
                 .orElseThrow(() -> new ResourceNotFoundException("RatePlan not found with ID: " + ratePlanId));
 
+        // ✅ Map DTO → Entity (parent + tiers)
         StairStepPricing entity = mapper.toEntity(dto, ratePlan);
-        return mapper.toDTO(repository.save(entity));
+
+        // ✅ Save parent with cascade (tiers saved automatically)
+        StairStepPricing saved = repository.save(entity);
+
+        return mapper.toDTO(saved);
     }
 
     @Override
     public StairStepPricingDTO update(Long ratePlanId, Long stairStepPricingId, StairStepPricingCreateUpdateDTO dto) {
-        // Validate existing StairStepPricing
+        // ✅ Validate existing StairStepPricing
         StairStepPricing existing = repository.findById(stairStepPricingId)
                 .orElseThrow(() -> new ResourceNotFoundException("StairStepPricing not found with ID: " + stairStepPricingId));
-    
-        // Validate rate plan
+
+        // ✅ Validate RatePlan
         RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
                 .orElseThrow(() -> new ResourceNotFoundException("RatePlan not found with ID: " + ratePlanId));
-    
-        // Set the new rate plan reference
+
+        // ✅ Reassign RatePlan
         existing.setRatePlan(ratePlan);
-    
-        // Apply the updates from DTO
+
+        // ✅ Update tiers + optional fields
         mapper.updateEntity(existing, dto);
-    
-        // Save and return updated DTO
-        return mapper.toDTO(repository.save(existing));
+
+        // ✅ Save updated entity
+        StairStepPricing updated = repository.save(existing);
+
+        return mapper.toDTO(updated);
     }
-    
 
     @Override
     public List<StairStepPricingDTO> getAllByRatePlanId(Long ratePlanId) {

@@ -7,42 +7,65 @@ import org.springframework.stereotype.Component;
 public class TieredPricingMapper {
 
     public TieredPricing toEntity(TieredPricingCreateUpdateDTO dto, RatePlan ratePlan) {
-        return TieredPricing.builder()
-                .ratePlan(ratePlan)
+        TieredPricing tieredPricing = new TieredPricing();
+        tieredPricing.setRatePlan(ratePlan);
+        tieredPricing.setOverageUnitRate(dto.getOverageUnitRate());
+        tieredPricing.setGraceBuffer(dto.getGraceBuffer());
+        if (dto.getTiers() != null) {
+            java.util.List<TieredTier> tiers = new java.util.ArrayList<>();
+            for (TieredTierCreateUpdateDTO tierDTO : dto.getTiers()) {
+                TieredTier tier = toTierEntity(tierDTO, tieredPricing);
+                tiers.add(tier);
+            }
+            tieredPricing.setTiers(tiers);
+        }
+        return tieredPricing;
+    }
+
+    private TieredTier toTierEntity(TieredTierCreateUpdateDTO dto, TieredPricing parent) {
+        return TieredTier.builder()
                 .startRange(dto.getStartRange())
                 .endRange(dto.getEndRange())
                 .unitPrice(dto.getUnitPrice())
-                .tierBracket(dto.getTierBracket())
-                .overageUnitRate(dto.getOverageUnitRate())   // ✅ new
-                .graceBuffer(dto.getGraceBuffer())           // ✅ new
+                .tieredPricing(parent)
                 .build();
     }
 
     public TieredPricingDTO toDTO(TieredPricing entity) {
+        java.util.List<TieredTierDTO> tierDTOs = new java.util.ArrayList<>();
+        if (entity.getTiers() != null) {
+            for (TieredTier tier : entity.getTiers()) {
+                tierDTOs.add(toTierDTO(tier));
+            }
+        }
         return TieredPricingDTO.builder()
                 .tieredPricingId(entity.getTieredPricingId())
                 .ratePlanId(entity.getRatePlan().getRatePlanId())
-                .startRange(entity.getStartRange())
-                .endRange(entity.getEndRange())
-                .unitPrice(entity.getUnitPrice())
-                .tierBracket(entity.getTierBracket())
-                .overageUnitRate(entity.getOverageUnitRate())   // ✅ new
-                .graceBuffer(entity.getGraceBuffer())           // ✅ new
+                .overageUnitRate(entity.getOverageUnitRate())
+                .graceBuffer(entity.getGraceBuffer())
+                .tiers(tierDTOs)
+                .build();
+    }
+
+    private TieredTierDTO toTierDTO(TieredTier tier) {
+        return TieredTierDTO.builder()
+                .tieredTierId(tier.getTieredTierId())
+                .startRange(tier.getStartRange())
+                .endRange(tier.getEndRange())
+                .unitPrice(tier.getUnitPrice())
                 .build();
     }
 
     public void updateEntity(TieredPricing entity, TieredPricingCreateUpdateDTO dto) {
-        entity.setStartRange(dto.getStartRange());
-        entity.setEndRange(dto.getEndRange());
-        entity.setUnitPrice(dto.getUnitPrice());
-        entity.setTierBracket(dto.getTierBracket());
-
-        if (dto.getOverageUnitRate() != null) {
-            entity.setOverageUnitRate(dto.getOverageUnitRate());  // ✅ new
-        }
-
-        if (dto.getGraceBuffer() != null) {
-            entity.setGraceBuffer(dto.getGraceBuffer());          // ✅ new
+        entity.setOverageUnitRate(dto.getOverageUnitRate());
+        entity.setGraceBuffer(dto.getGraceBuffer());
+        // Clear and update tiers
+        entity.getTiers().clear();
+        if (dto.getTiers() != null) {
+            for (TieredTierCreateUpdateDTO tierDTO : dto.getTiers()) {
+                TieredTier tier = toTierEntity(tierDTO, entity);
+                entity.getTiers().add(tier);
+            }
         }
     }
 }
