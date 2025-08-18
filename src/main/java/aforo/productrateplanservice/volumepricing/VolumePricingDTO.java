@@ -4,6 +4,7 @@ import aforo.productrateplanservice.enums.RatePlanType;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Setter
@@ -16,15 +17,8 @@ public class VolumePricingDTO {
 
     private Long ratePlanId;
 
-    private Integer startRange;
+    private List<VolumeTierDTO> tiers;
 
-    private Integer endRange;
-
-    private BigDecimal unitPrice;
-
-    private String volumeBracket;
-
-    private final RatePlanType ratePlanType = RatePlanType.VOLUME_BASED;
 
     private BigDecimal overageUnitRate;
     private Integer graceBuffer;

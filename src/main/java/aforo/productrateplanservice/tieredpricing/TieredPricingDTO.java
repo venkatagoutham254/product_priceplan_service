@@ -16,16 +16,10 @@ public class TieredPricingDTO {
 
     private Long ratePlanId;
 
-    private Integer startRange;
-
-    private Integer endRange;
-
-    private BigDecimal unitPrice;
-
-    private String tierBracket;
+    private java.math.BigDecimal overageUnitRate;
+    private Integer graceBuffer;
 
     private final RatePlanType ratePlanType = RatePlanType.TIERED;
 
-    private BigDecimal overageUnitRate;
-    private Integer graceBuffer;
+    private java.util.List<TieredTierDTO> tiers;
 }

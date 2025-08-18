@@ -24,6 +24,18 @@ databaseChangeLog:
   - include:
       file: changelogs/2025-07-14-clean-rate-plan1.yml
   - include:
-      file: changelogs/2025-07-14-volume-pricing-clean1.yml
+      file: changelogs/2025-07-14-tiered-pricing-clean1.yml
+  - include:
+      file: changelogs/2025-08-18-tiered-pricing-fix.yml
   - include:
       file: changelogs/2025-08-01-drop-overage-charges.yml
+  - include:
+      file: changelogs/2025-07-14-stairstep-pricing-clean1.yml
+  - include:
+      file: changelogs/2025-07-14-stairstep-pricing-clean2.yml
+  - include:
+      file: changelogs/2025-08-18-volume-pricing2.yml
+  - include:
+      file: changelogs/2025-08-18-volume-pricing-fix.yml
+      
+      

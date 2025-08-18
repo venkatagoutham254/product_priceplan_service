@@ -3,45 +3,73 @@ package aforo.productrateplanservice.stairsteppricing;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import org.springframework.stereotype.Component;
 
+import java.util.stream.Collectors;
+
 @Component
 public class StairStepPricingMapper {
 
     public StairStepPricing toEntity(StairStepPricingCreateUpdateDTO dto, RatePlan ratePlan) {
-        return StairStepPricing.builder()
+        StairStepPricing pricing = StairStepPricing.builder()
                 .ratePlan(ratePlan)
-                .usageThresholdStart(dto.getUsageThresholdStart())
-                .usageThresholdEnd(dto.getUsageThresholdEnd())
-                .monthlyCharge(dto.getMonthlyCharge())
-                .stairBracket(dto.getStairBracket())
-                .overageUnitRate(dto.getOverageUnitRate())   // ✅ new
-                .graceBuffer(dto.getGraceBuffer())           // ✅ new
+                .overageUnitRate(dto.getOverageUnitRate())
+                .graceBuffer(dto.getGraceBuffer())
                 .build();
+
+        if (dto.getTiers() != null) {
+            pricing.setTiers(
+                dto.getTiers().stream()
+                        .map(t -> StairStepTier.builder()
+                                .usageStart(t.getUsageStart())
+                                .usageEnd(t.getUsageEnd())
+                                .flatCost(t.getFlatCost())
+                                .stairStepPricing(pricing)
+                                .build()
+                        ).collect(Collectors.toList())
+            );
+        }
+        return pricing;
     }
 
     public StairStepPricingDTO toDTO(StairStepPricing entity) {
         return StairStepPricingDTO.builder()
                 .stairStepPricingId(entity.getStairStepPricingId())
-                .usageThresholdStart(entity.getUsageThresholdStart())
-                .usageThresholdEnd(entity.getUsageThresholdEnd())
-                .monthlyCharge(entity.getMonthlyCharge())
-                .stairBracket(entity.getStairBracket())
-                .overageUnitRate(entity.getOverageUnitRate())   // ✅ new
-                .graceBuffer(entity.getGraceBuffer())           // ✅ new
+                .overageUnitRate(entity.getOverageUnitRate())
+                .graceBuffer(entity.getGraceBuffer())
+                .tiers(
+                        entity.getTiers() != null
+                                ? entity.getTiers().stream()
+                                    .map(t -> StairStepTierDTO.builder()
+                                            .stairStepTierId(t.getStairStepTierId())
+                                            .usageStart(t.getUsageStart())
+                                            .usageEnd(t.getUsageEnd())
+                                            .flatCost(t.getFlatCost())
+                                            .build()
+                                    ).collect(Collectors.toList())
+                                : null
+                )
                 .build();
     }
 
     public void updateEntity(StairStepPricing entity, StairStepPricingCreateUpdateDTO dto) {
-        entity.setUsageThresholdStart(dto.getUsageThresholdStart());
-        entity.setUsageThresholdEnd(dto.getUsageThresholdEnd());
-        entity.setMonthlyCharge(dto.getMonthlyCharge());
-        entity.setStairBracket(dto.getStairBracket());
-
-        if (dto.getOverageUnitRate() != null) {
-            entity.setOverageUnitRate(dto.getOverageUnitRate());  // ✅ new
+        // Replace all tiers with new ones
+        entity.getTiers().clear();
+        if (dto.getTiers() != null) {
+            dto.getTiers().forEach(t -> {
+                StairStepTier tier = StairStepTier.builder()
+                        .usageStart(t.getUsageStart())
+                        .usageEnd(t.getUsageEnd())
+                        .flatCost(t.getFlatCost())
+                        .stairStepPricing(entity)
+                        .build();
+                entity.getTiers().add(tier);
+            });
         }
 
+        if (dto.getOverageUnitRate() != null) {
+            entity.setOverageUnitRate(dto.getOverageUnitRate());
+        }
         if (dto.getGraceBuffer() != null) {
-            entity.setGraceBuffer(dto.getGraceBuffer());          // ✅ new
+            entity.setGraceBuffer(dto.getGraceBuffer());
         }
     }
 }

@@ -5,17 +5,16 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-@ValidTieredTiers
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TieredPricingCreateUpdateDTO {
-
-    private java.math.BigDecimal overageUnitRate;
-    private Integer graceBuffer;
-
+public class TieredTierCreateUpdateDTO {
     @NotNull
-    private java.util.List<TieredTierCreateUpdateDTO> tiers;
+    private Integer startRange;
+    private Integer endRange;
+    @NotNull
+    private BigDecimal unitPrice;
+
 }

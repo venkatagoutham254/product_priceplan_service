@@ -4,7 +4,7 @@ import aforo.productrateplanservice.enums.RatePlanType;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import jakarta.persistence.*;
 import lombok.*;
-
+import java.util.List;
 import java.math.BigDecimal;
 
 @Entity
@@ -21,21 +21,15 @@ public class StairStepPricing {
     @Column(name = "stair_step_pricing_id")
     private Long stairStepPricingId;
 
-    @Column(name = "usage_threshold_start", nullable = false)
-    private Integer usageThresholdStart;
-
-    @Column(name = "usage_threshold_end")
-    private Integer usageThresholdEnd;
-
-    @Column(name = "monthly_charge", nullable = false)
-    private BigDecimal monthlyCharge;
+    @OneToMany(mappedBy = "stairStepPricing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<StairStepTier> tiers;
+    
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rate_plan_id", nullable = false)
     private RatePlan ratePlan;
 
-    @Column(name = "stair_bracket", nullable = false)
-    private String stairBracket;
+
     @Column(name = "overage_unit_rate")
     private BigDecimal overageUnitRate;
     

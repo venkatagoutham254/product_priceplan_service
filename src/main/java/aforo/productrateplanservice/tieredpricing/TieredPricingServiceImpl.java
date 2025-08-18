@@ -24,6 +24,12 @@ public class TieredPricingServiceImpl implements TieredPricingService {
                 .orElseThrow(() -> new ResourceNotFoundException("RatePlan not found with ID: " + ratePlanId));
 
         TieredPricing entity = tieredPricingMapper.toEntity(dto, ratePlan);
+        // Set parent reference for all tiers
+        if (entity.getTiers() != null) {
+            for (TieredTier tier : entity.getTiers()) {
+                tier.setTieredPricing(entity);
+            }
+        }
         return tieredPricingMapper.toDTO(tieredPricingRepository.save(entity));
     }
 
@@ -34,6 +40,12 @@ public class TieredPricingServiceImpl implements TieredPricingService {
                 .orElseThrow(() -> new ResourceNotFoundException("TieredPricing not found with ID: " + tieredPricingId));
 
         tieredPricingMapper.updateEntity(existing, dto);
+        // Set parent reference for all tiers
+        if (existing.getTiers() != null) {
+            for (TieredTier tier : existing.getTiers()) {
+                tier.setTieredPricing(existing);
+            }
+        }
         return tieredPricingMapper.toDTO(tieredPricingRepository.save(existing));
     }
 

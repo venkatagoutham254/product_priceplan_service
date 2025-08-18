@@ -4,20 +4,19 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StairStepPricingCreateUpdateDTO {
-
-
+public class StairStepTierCreateUpdateDTO {
 
     @NotNull
-    private List<StairStepTierCreateUpdateDTO> tiers;
-    private BigDecimal overageUnitRate;
-    private Integer graceBuffer;
-    
+    private Integer usageStart;
+
+    private Integer usageEnd; // optional
+
+    @NotNull
+    private BigDecimal flatCost;
 }
