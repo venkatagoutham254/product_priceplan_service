@@ -2,15 +2,15 @@ package aforo.productrateplanservice.product.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import aforo.productrateplanservice.product.enums.FileFormat;
+import aforo.productrateplanservice.product.enums.AuthType;
 
 @Entity
-@Table(name = "aforo_product_flatfile")
+@Table(name = "aforo_product_storage")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductFlatFile {
+public class ProductStorage{
 
     @Id
     private Long productId;
@@ -18,13 +18,12 @@ public class ProductFlatFile {
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
     @JoinColumn(name = "product_id", nullable = false,
-        foreignKey = @ForeignKey(name = "fk_product_api_product_id"))
+        foreignKey = @ForeignKey(name = "fk_product_storage_product_id"))
     private Product product;
-
-private String fileLocation;
+    
+    private String storageLocation;
 
     @Enumerated(EnumType.STRING)
-    private FileFormat format;
-
+    private AuthType authType;
 
 }

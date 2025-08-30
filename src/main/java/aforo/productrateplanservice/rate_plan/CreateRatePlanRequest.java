@@ -18,7 +18,6 @@ public class CreateRatePlanRequest {
     private BillingFrequency billingFrequency;
     private PaymentType paymentType;
     
-    @NotNull(message = "billableMetricId must not be null")
     private Long billableMetricId;
 }
 

@@ -37,5 +37,9 @@ databaseChangeLog:
       file: changelogs/2025-08-18-volume-pricing2.yml
   - include:
       file: changelogs/2025-08-18-volume-pricing-fix.yml
+  - include:
+      file: changelogs/2025-08-29-alter-rateplan-nullable.yml
+  - include:
+      file: changelogs/2025-08-30-reset-products.yaml
       
       

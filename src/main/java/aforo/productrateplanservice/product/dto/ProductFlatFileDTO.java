@@ -10,10 +10,6 @@ import lombok.*;
 public class ProductFlatFileDTO {
     private Long productId;
     private FileFormat format;
-    private String size;
-    private DeliveryFrequency deliveryFrequency;
-    private AccessMethod accessMethod;
-    private String retentionPolicy;
-    private String fileNamingConvention;
-    private CompressionFormat compressionFormat;
+
+    private String fileLocation;
 }

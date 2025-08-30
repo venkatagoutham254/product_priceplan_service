@@ -4,5 +4,6 @@ public enum ProductType {
     API,
     FlatFile,
     SQLResult,
-    LLMToken
+    LLMToken,
+    Storage
 }

@@ -8,14 +8,18 @@ import aforo.productrateplanservice.product.entity.Product;
 @Component
 public class RatePlanAssembler {
     public RatePlan toEntity(RatePlanDTO dto, Product product) {
-        return RatePlan.builder()
+        RatePlan.RatePlanBuilder builder = RatePlan.builder()
             .ratePlanName(dto.getRatePlanName())
             .description(dto.getDescription())
             .billingFrequency(dto.getBillingFrequency())
-            .product(product)  // ✅ Now this is the JPA entity
-            .status(RatePlanStatus.DRAFT)
+            .status(RatePlanStatus.DRAFT)   // always default
             .paymentType(dto.getPaymentType())
-            .billableMetricId(dto.getBillableMetricId())
-            .build();
+            .billableMetricId(dto.getBillableMetricId());
+        
+        if (product != null) {
+            builder.product(product);
+        }
+
+        return builder.build();  // DB handles createdOn & lastUpdated
     }
 }

@@ -7,8 +7,9 @@ import aforo.productrateplanservice.product.enums.AuthType;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateProductAPIRequest {
-    
-    private String endpointUrl;
+public class UpdateProductStorageRequest {
+
+    private String storageLocation;
     private AuthType authType;
+
 }

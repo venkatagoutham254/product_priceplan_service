@@ -3,6 +3,7 @@ package aforo.productrateplanservice.product.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import aforo.productrateplanservice.product.enums.TokenProvider;
+import aforo.productrateplanservice.product.enums.AuthType;
 import aforo.productrateplanservice.product.enums.CalculationMethod;
 import aforo.productrateplanservice.product.enums.InferencePriority;
 import aforo.productrateplanservice.product.enums.ComputeTier;
@@ -18,34 +19,19 @@ public class ProductLLMToken {
 
     @Id
     private Long productId;
-
-    @OneToOne
+    
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
-    @JoinColumn(name = "productId")
+    @JoinColumn(name = "product_id", nullable = false,
+        foreignKey = @ForeignKey(name = "fk_product_llm_product_id"))
     private Product product;
+    
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TokenProvider tokenProvider;
-
-    @Column(nullable = false)
     private String modelName;
 
-    private BigDecimal tokenUnitCost;
+    private String endpointUrl;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private CalculationMethod calculationMethod;
-
-    private Integer quota;
-
-    @Column(columnDefinition = "TEXT")
-    private String promptTemplate;
-
-    @Enumerated(EnumType.STRING)
-    private InferencePriority inferencePriority;
-
-    @Enumerated(EnumType.STRING)
-    private ComputeTier computeTier;
+    private AuthType authType;
 }
 

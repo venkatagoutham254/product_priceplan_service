@@ -1,15 +1,11 @@
 package aforo.productrateplanservice.product.dto;
 
 import lombok.*;
-
+import aforo.productrateplanservice.client.BillableMetricResponse;
+import aforo.productrateplanservice.product.enums.ProductStatus;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
-import aforo.productrateplanservice.product.enums.ProductCategory;
-import aforo.productrateplanservice.product.enums.ProductStatus;
-import aforo.productrateplanservice.product.enums.ProductType;
-// ProductDTO.java
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,21 +13,13 @@ import aforo.productrateplanservice.product.enums.ProductType;
 public class ProductDTO {
     private Long productId;
     private String productName;
-    private ProductType productType;
     private String version;
-    private String productDescription; // Changed field name
-    private Map<String, Object> tags;
-    private ProductCategory category;
-    private boolean visibility;
+    private String productDescription;
     private ProductStatus status;
     private String internalSkuCode;
-    private String uom;
-    private LocalDateTime effectiveStartDate;
-    private LocalDateTime effectiveEndDate;
-    private Boolean billable;
-    private List<String> linkedRatePlans;
-    private Map<String, Object> labels;
-    private Long auditLogId;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime createdOn;
+    private LocalDateTime lastUpdated;
+
+    private List<BillableMetricResponse> billableMetrics;
+
 }

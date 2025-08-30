@@ -9,12 +9,7 @@ import lombok.*;
 @Builder
 public class ProductSQLResultDTO {
     private Long productId;
-    private String queryTemplate;
+    private String connectionString;
     private DBType dbType;
-    private String resultSize;
-    private Freshness freshness;
-    private ExecutionFrequency executionFrequency;
-    private String expectedRowRange;
-    private boolean isCached;
-    private JoinComplexity joinComplexity;
+    private AuthType authType;
 }
