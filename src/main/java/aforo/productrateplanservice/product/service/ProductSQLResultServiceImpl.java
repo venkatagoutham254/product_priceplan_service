@@ -1,17 +1,16 @@
 package aforo.productrateplanservice.product.service;
 
+import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.product.dto.ProductSQLResultDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.entity.ProductSQLResult;
-import aforo.productrateplanservice.product.enums.ProductType;
 import aforo.productrateplanservice.product.mapper.ProductSQLResultMapper;
-import aforo.productrateplanservice.product.repository.ProductRepository;
-import aforo.productrateplanservice.product.repository.ProductSQLResultRepository;
+import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductSQLResultRequest;
 import aforo.productrateplanservice.product.request.UpdateProductSQLResultRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,74 +18,98 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductSQLResultServiceImpl implements ProductSQLResultService {
 
-    private final ProductSQLResultRepository repository;
+    private final ProductSQLResultRepository sqlResultRepository;
     private final ProductRepository productRepository;
+    private final ProductAPIRepository productAPIRepository;
+    private final ProductFlatFileRepository productFlatFileRepository;
+    private final ProductLLMTokenRepository productLLMTokenRepository;
+    private final ProductStorageRepository productStorageRepository;
     private final ProductSQLResultMapper mapper;
 
-    private void validateProductType(Product product, ProductType expected) {
-        if (product.getProductType() != expected) {
-            throw new RuntimeException("Invalid product type. Expected: " + expected);
-        }
-    }
-
     @Override
+    @Transactional
     public ProductSQLResultDTO create(Long productId, CreateProductSQLResultRequest request) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
-        validateProductType(product, ProductType.SQLResult);
+        // Ensure only one config type per product
+        if (sqlResultRepository.existsById(productId)) {
+            throw new IllegalStateException("Product " + productId + " already has SQL Result configuration.");
+        }
+        if (productAPIRepository.existsById(productId)
+         || productFlatFileRepository.existsById(productId)
+         || productLLMTokenRepository.existsById(productId)
+         || productStorageRepository.existsById(productId)) {
+            throw new IllegalStateException(
+                    "Product " + productId + " already has a different configuration type. " +
+                    "A product can only have one configuration type."
+            );
+        }
 
         ProductSQLResult entity = ProductSQLResult.builder()
                 .product(product)
-                .queryTemplate(request.getQueryTemplate())
                 .dbType(request.getDbType())
-                .resultSize(request.getResultSize())
-                .freshness(request.getFreshness())
-                .executionFrequency(request.getExecutionFrequency())
-                .expectedRowRange(request.getExpectedRowRange())
-                .isCached(request.isCached())
-                .joinComplexity(request.getJoinComplexity())
+                .connectionString(request.getConnectionString())
+                .authType(request.getAuthType())
                 .build();
 
-        return mapper.toDTO(repository.save(entity));
+        return mapper.toDTO(sqlResultRepository.save(entity));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductSQLResultDTO getByProductId(Long productId) {
-        ProductSQLResult entity = repository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("SQL Result not found"));
+        ProductSQLResult entity = sqlResultRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
         return mapper.toDTO(entity);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductSQLResultDTO> getAll() {
-        return repository.findAll()
+        return sqlResultRepository.findAll()
                 .stream()
                 .map(mapper::toDTO)
                 .toList();
     }
 
     @Override
+    @Transactional
     public ProductSQLResultDTO update(Long productId, UpdateProductSQLResultRequest request) {
-        ProductSQLResult existing = repository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("SQL Result not found"));
-    
-        mapper.updateEntity(existing, request);
-        return mapper.toDTO(repository.save(existing));
+        ProductSQLResult existing = sqlResultRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
+
+        // Require all fields for full update
+        if (request.getDbType() == null || request.getConnectionString() == null || request.getAuthType() == null) {
+            throw new IllegalArgumentException("dbType, connectionString, and authType are required for full update.");
+        }
+
+        existing.setDbType(request.getDbType());
+        existing.setConnectionString(request.getConnectionString());
+        existing.setAuthType(request.getAuthType());
+
+        return mapper.toDTO(sqlResultRepository.save(existing));
     }
-    
-    @Override
-    public ProductSQLResultDTO partialUpdate(Long productId, UpdateProductSQLResultRequest request) {
-        ProductSQLResult existing = repository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("SQL Result not found"));
-    
-        mapper.partialUpdate(existing, request);
-        return mapper.toDTO(repository.save(existing));
-    }
-    
 
     @Override
+    @Transactional
+    public ProductSQLResultDTO partialUpdate(Long productId, UpdateProductSQLResultRequest request) {
+        ProductSQLResult existing = sqlResultRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
+
+        if (request.getDbType() != null) existing.setDbType(request.getDbType());
+        if (request.getConnectionString() != null) existing.setConnectionString(request.getConnectionString());
+        if (request.getAuthType() != null) existing.setAuthType(request.getAuthType());
+
+        return mapper.toDTO(sqlResultRepository.save(existing));
+    }
+
+    @Override
+    @Transactional
     public void delete(Long productId) {
-        repository.deleteById(productId);
+        if (!sqlResultRepository.existsById(productId)) {
+            throw new NotFoundException("SQL Result configuration not found for product " + productId);
+        }
+        sqlResultRepository.deleteById(productId);
     }
 }

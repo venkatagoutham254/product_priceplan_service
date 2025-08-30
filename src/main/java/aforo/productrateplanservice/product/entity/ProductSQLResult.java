@@ -2,10 +2,8 @@ package aforo.productrateplanservice.product.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import aforo.productrateplanservice.product.enums.AuthType;
 import aforo.productrateplanservice.product.enums.DBType;
-import aforo.productrateplanservice.product.enums.Freshness;
-import aforo.productrateplanservice.product.enums.ExecutionFrequency;
-import aforo.productrateplanservice.product.enums.JoinComplexity;
 
 @Entity
 @Table(name = "aforo_product_sqlresult")
@@ -15,35 +13,22 @@ import aforo.productrateplanservice.product.enums.JoinComplexity;
 @Builder
 public class ProductSQLResult {
 
+    
     @Id
     private Long productId;
-
-    @OneToOne
+    
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
-    @JoinColumn(name = "productId")
+    @JoinColumn(name = "product_id", nullable = false,
+        foreignKey = @ForeignKey(name = "fk_product_sqlresult_product_id"))
     private Product product;
-
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String queryTemplate;
+    
+    private String connectionString;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private DBType dbType;
 
-    private String resultSize;
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Freshness freshness;
+    private AuthType authType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ExecutionFrequency executionFrequency;
-
-    private String expectedRowRange;
-
-    private boolean isCached;
-
-    @Enumerated(EnumType.STRING)
-    private JoinComplexity joinComplexity;
 }

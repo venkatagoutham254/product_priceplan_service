@@ -15,26 +15,16 @@ public class ProductAPI {
 
     @Id
     private Long productId;
-
-    @OneToOne
+    
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
-    @JoinColumn(name = "productId")
+    @JoinColumn(name = "product_id", nullable = false,
+        foreignKey = @ForeignKey(name = "fk_product_api_product_id"))
     private Product product;
-
-    @Column(nullable = false)
+    
     private String endpointUrl;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private AuthType authType;
 
-    private String payloadSizeMetric;
-    private String rateLimitPolicy;
-    private String meteringGranularity;
-    private String grouping;
-
-    private boolean cachingFlag;
-
-    @Enumerated(EnumType.STRING)
-    private LatencyClass latencyClass;
 }

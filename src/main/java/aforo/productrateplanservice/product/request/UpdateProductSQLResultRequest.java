@@ -8,12 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class UpdateProductSQLResultRequest {
-    private String queryTemplate;
+    private String connectionString;
     private DBType dbType;
-    private String resultSize;
-    private Freshness freshness;
-    private ExecutionFrequency executionFrequency;
-    private String expectedRowRange;
-    private Boolean isCached;
-    private JoinComplexity joinComplexity;
+    private AuthType authType;
 }

@@ -8,7 +8,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 
@@ -55,5 +54,11 @@ public ResponseEntity<ProductDTO> updateProductPartially(
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @PostMapping("/{id}/finalize")
+    public ResponseEntity<ProductDTO> finalizeProduct(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.finalizeProduct(id));
     }
 }

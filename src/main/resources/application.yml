@@ -52,6 +52,10 @@ spring:
   liquibase:
     enabled: true
     change-log: classpath:/domain/changelog-master.yml
+  jackson:
+    date-format: dd MMM, yyyy HH:mm z
+    time-zone: Asia/Kolkata
+
 
 ---
 # MySQL-specific configurations

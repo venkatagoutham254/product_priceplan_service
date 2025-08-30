@@ -9,10 +9,5 @@ import lombok.*;
 @Builder
 public class UpdateProductFlatFileRequest {
     private FileFormat format;
-    private String size;
-    private DeliveryFrequency deliveryFrequency;
-    private AccessMethod accessMethod;
-    private String retentionPolicy;
-    private String fileNamingConvention;
-    private CompressionFormat compressionFormat;
+    private String fileLocation;
 }

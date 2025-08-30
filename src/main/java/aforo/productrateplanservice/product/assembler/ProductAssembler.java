@@ -13,23 +13,13 @@ public class ProductAssembler {
         return ProductDTO.builder()
                 .productId(product.getProductId())
                 .productName(product.getProductName())
-                .productType(product.getProductType())
                 .version(product.getVersion())
                 .productDescription(product.getProductDescription()) // updated field
-                .tags(product.getTags())
-                .category(product.getCategory())
-                .visibility(product.isVisibility())
                 .status(product.getStatus())
                 .internalSkuCode(product.getInternalSkuCode())
-                .uom(product.getUom())
-                .effectiveStartDate(product.getEffectiveStartDate())
-                .effectiveEndDate(product.getEffectiveEndDate())
-                .billable(product.getBillable())
-                .linkedRatePlans(product.getLinkedRatePlans())
-                .labels(product.getLabels())
-                .auditLogId(product.getAuditLogId())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
+                .createdOn(product.getCreatedOn())
+                .lastUpdated(product.getLastUpdated())
+                .billableMetrics(null) // Set to null to avoid null pointer exception
                 .build();
     }
 }

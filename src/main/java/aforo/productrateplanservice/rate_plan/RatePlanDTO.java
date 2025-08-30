@@ -1,6 +1,10 @@
 package aforo.productrateplanservice.rate_plan;
 
 import lombok.*;
+import aforo.productrateplanservice.enums.*;
+
+import java.time.LocalDateTime;
+
 import aforo.productrateplanservice.product.enums.RatePlanStatus;
 import aforo.productrateplanservice.rate_plan.RatePlan.PaymentType;
 
@@ -17,7 +21,11 @@ public class RatePlanDTO {
     private BillingFrequency billingFrequency;
     private Long productId;
     private String productName;
-    private RatePlanStatus status;
     private PaymentType paymentType;
     private Long billableMetricId;
+
+    private RatePlanStatus status;
+    private LocalDateTime createdOn;
+    private LocalDateTime lastUpdated;
+
 }

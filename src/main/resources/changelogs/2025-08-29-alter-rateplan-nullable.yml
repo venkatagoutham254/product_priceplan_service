@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: alter-rateplan-make-fields-nullable
+      author: gowtham
+      changes:
+        # rate_plan_name
+        - dropNotNullConstraint:
+            tableName: aforo_rate_plan
+            columnName: rate_plan_name
+            columnDataType: VARCHAR(255)
+
+        # product_id
+        - dropNotNullConstraint:
+            tableName: aforo_rate_plan
+            columnName: product_id
+            columnDataType: INTEGER
+
+        # description
+        - dropNotNullConstraint:
+            tableName: aforo_rate_plan
+            columnName: description
+            columnDataType: VARCHAR(500)
+
+        # billing_frequency
+        - dropNotNullConstraint:
+            tableName: aforo_rate_plan
+            columnName: billing_frequency
+            columnDataType: VARCHAR(50)
+
+        # payment_type
+        - dropNotNullConstraint:
+            tableName: aforo_rate_plan
+            columnName: payment_type
+            columnDataType: VARCHAR(50)
+
+        # billable_metric_id
+        - dropNotNullConstraint:
+            tableName: aforo_rate_plan
+            columnName: billable_metric_id
+            columnDataType: BIGINT

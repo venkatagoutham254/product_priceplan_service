@@ -1,0 +1,281 @@
+databaseChangeLog:
+
+  # =========================
+  # DROP OLD TABLES (SAFE)
+  # =========================
+  - changeSet:
+      id: 2025-08-30-drop-aforo-product-api
+      author: aforo
+      changes:
+        - dropTable:
+            tableName: aforo_product_api
+            cascadeConstraints: true
+            ifExists: true
+
+  - changeSet:
+      id: 2025-08-30-drop-aforo-product-flatfile
+      author: aforo
+      changes:
+        - dropTable:
+            tableName: aforo_product_flatfile
+            cascadeConstraints: true
+            ifExists: true
+
+  - changeSet:
+      id: 2025-08-30-drop-aforo-product-sqlresult
+      author: aforo
+      changes:
+        - dropTable:
+            tableName: aforo_product_sqlresult
+            cascadeConstraints: true
+            ifExists: true
+
+  - changeSet:
+      id: 2025-08-30-drop-aforo-product-llmtoken
+      author: aforo
+      changes:
+        - dropTable:
+            tableName: aforo_product_llmtoken
+            cascadeConstraints: true
+            ifExists: true
+
+  - changeSet:
+      id: 2025-08-30-drop-aforo-product
+      author: aforo
+      changes:
+        - dropTable:
+            tableName: aforo_product
+            cascadeConstraints: true
+            ifExists: true
+
+  # =========================
+  # RE-CREATE TABLES (NEW)
+  # =========================
+
+  # Parent: aforo_product
+  - changeSet:
+      id: 2025-08-30-create-aforo-product
+      author: aforo
+      changes:
+        - createTable:
+            tableName: aforo_product
+            columns:
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: product_name
+                  type: VARCHAR(255)
+                  # nullable by design (drafts allowed)
+
+              - column:
+                  name: version
+                  type: VARCHAR(50)
+
+              - column:
+                  name: product_description
+                  type: TEXT
+
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  defaultValue: DRAFT
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: internal_sku_code
+                  type: VARCHAR(100)
+                  # nullable by design (drafts allowed)
+
+              - column:
+                  name: created_on
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: last_updated
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        # Unique constraints (Postgres allows multiple NULLs)
+        - addUniqueConstraint:
+            tableName: aforo_product
+            columnNames: product_name
+            constraintName: uq_aforo_product__product_name
+        - addUniqueConstraint:
+            tableName: aforo_product
+            columnNames: internal_sku_code
+            constraintName: uq_aforo_product__internal_sku_code
+
+  # Child: API (ProductAPI)
+  - changeSet:
+      id: 2025-08-30-create-aforo-product-api
+      author: aforo
+      changes:
+        - createTable:
+            tableName: aforo_product_api
+            columns:
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: endpoint_url
+                  type: VARCHAR(2048)
+                  # nullable for drafts
+              - column:
+                  name: auth_type
+                  type: VARCHAR(50)
+                  # nullable for drafts
+        - addForeignKeyConstraint:
+            constraintName: fk_product_api_product_id
+            baseTableName: aforo_product_api
+            baseColumnNames: product_id
+            referencedTableName: aforo_product
+            referencedColumnNames: product_id
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+
+  # Child: FlatFile (ProductFlatFile) — ALL NULLABLE
+  - changeSet:
+      id: 2025-08-30-create-aforo-product-flatfile
+      author: aforo
+      changes:
+        - createTable:
+            tableName: aforo_product_flatfile
+            columns:
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: file_location
+                  type: VARCHAR(2048)
+                  # nullable true
+              - column:
+                  name: format
+                  type: VARCHAR(50)
+                  # nullable true (per your latest change)
+        - addForeignKeyConstraint:
+            constraintName: fk_product_flatfile_product_id
+            baseTableName: aforo_product_flatfile
+            baseColumnNames: product_id
+            referencedTableName: aforo_product
+            referencedColumnNames: product_id
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+
+  # Child: SQL Result (ProductSQLResult)
+  - changeSet:
+      id: 2025-08-30-create-aforo-product-sqlresult
+      author: aforo
+      changes:
+        - createTable:
+            tableName: aforo_product_sqlresult
+            columns:
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: connection_string
+                  type: VARCHAR(2048)
+                  # nullable for drafts
+              - column:
+                  name: db_type
+                  type: VARCHAR(50)
+                  # nullable for drafts
+              - column:
+                  name: auth_type
+                  type: VARCHAR(50)
+                  # nullable for drafts
+        - addForeignKeyConstraint:
+            constraintName: fk_product_sqlresult_product_id
+            baseTableName: aforo_product_sqlresult
+            baseColumnNames: product_id
+            referencedTableName: aforo_product
+            referencedColumnNames: product_id
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+
+  # Child: LLM Token (ProductLLMToken)
+  - changeSet:
+      id: 2025-08-30-create-aforo-product-llmtoken
+      author: aforo
+      changes:
+        - createTable:
+            tableName: aforo_product_llmtoken
+            columns:
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: model_name
+                  type: VARCHAR(100)
+                  # nullable for drafts
+              - column:
+                  name: endpoint_url
+                  type: VARCHAR(2048)
+                  # nullable for drafts
+              - column:
+                  name: auth_type
+                  type: VARCHAR(50)
+                  # nullable for drafts
+        - addForeignKeyConstraint:
+            constraintName: fk_product_llmtoken_product_id
+            baseTableName: aforo_product_llmtoken
+            baseColumnNames: product_id
+            referencedTableName: aforo_product
+            referencedColumnNames: product_id
+            onDelete: CASCADE
+            onUpdate: NO ACTION
+
+  # Child: Storage (ProductStorage)
+  - changeSet:
+      id: 2025-08-30-create-aforo-product-storage
+      author: aforo
+      changes:
+        - createTable:
+            tableName: aforo_product_storage
+            columns:
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: storage_location
+                  type: VARCHAR(2048)
+                  # nullable for drafts
+              - column:
+                  name: auth_type
+                  type: VARCHAR(50)
+                  # nullable for drafts
+        - addForeignKeyConstraint:
+            constraintName: fk_product_storage_product_id
+            baseTableName: aforo_product_storage
+            baseColumnNames: product_id
+            referencedTableName: aforo_product
+            referencedColumnNames: product_id
+            onDelete: CASCADE
+            onUpdate: NO ACTION

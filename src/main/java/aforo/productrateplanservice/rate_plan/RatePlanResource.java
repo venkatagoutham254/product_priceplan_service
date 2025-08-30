@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import aforo.productrateplanservice.product.dto.ProductDTO;
+
 import java.util.List;
 
 @RestController
@@ -52,11 +54,11 @@ public class RatePlanResource {
         return ResponseEntity.ok(ratePlanService.updateRatePlanPartially(ratePlanId, request));
     }
     
-    @PostMapping("/api/rateplans/{ratePlanId}/confirm")
-    public ResponseEntity<Void> confirmRatePlan(@PathVariable Long ratePlanId) {
-        ratePlanService.confirmRatePlan(ratePlanId);
-        return ResponseEntity.ok().build();
+    @PostMapping("/{ratePlanId}/confirm")
+    public ResponseEntity<RatePlanDTO> confirmRatePlan(@PathVariable Long ratePlanId) {
+        return ResponseEntity.ok(ratePlanService.confirmRatePlan(ratePlanId));
     }
     
+
 
     }
