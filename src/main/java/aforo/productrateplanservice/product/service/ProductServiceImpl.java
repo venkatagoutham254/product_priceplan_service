@@ -21,9 +21,11 @@ import aforo.productrateplanservice.product.request.CreateProductRequest;
 import aforo.productrateplanservice.product.request.UpdateProductRequest;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import aforo.productrateplanservice.client.BillableMetricClient;
+import aforo.productrateplanservice.storage.IconStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductSQLResultRepository productSQLResultRepository;
     private final ProductLLMTokenRepository productLLMTokenRepository;
     private final ProductStorageRepository productStorageRepository;
+    private final IconStorageService iconStorageService;
 
     @Override
     @Transactional
@@ -71,6 +74,16 @@ public class ProductServiceImpl implements ProductService {
 
         Product saved = productRepository.save(product);
         return productAssembler.toDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    public ProductDTO createProduct(CreateProductRequest request, MultipartFile icon) {
+        ProductDTO dto = createProduct(request);
+        if (icon != null && !icon.isEmpty()) {
+            dto = updateIcon(dto.getProductId(), icon);
+        }
+        return dto;
     }
 
     @Override
@@ -274,6 +287,38 @@ public class ProductServiceImpl implements ProductService {
 
     private static boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
+    }
+
+    @Override
+    @Transactional
+    public ProductDTO updateIcon(Long id, MultipartFile icon) {
+        if (icon == null || icon.isEmpty()) {
+            throw new IllegalArgumentException("Icon file is required");
+        }
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        // delete previous file if any
+        if (product.getIcon() != null) {
+            iconStorageService.deleteByUrl(product.getIcon());
+        }
+
+        String url = iconStorageService.saveIcon(icon, id);
+        product.setIcon(url);
+        Product saved = productRepository.save(product);
+        return productAssembler.toDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    public void deleteIcon(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+        if (product.getIcon() != null) {
+            iconStorageService.deleteByUrl(product.getIcon());
+            product.setIcon(null);
+            productRepository.save(product);
+        }
     }
 
 }
