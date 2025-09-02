@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-09-02-add-product-type-column
+      author: aforo
+      changes:
+        - addColumn:
+            tableName: aforo_product
+            columns:
+              - column:
+                  name: product_type
+                  type: VARCHAR(50)
+                  # nullable by design - can be determined dynamically or set explicitly

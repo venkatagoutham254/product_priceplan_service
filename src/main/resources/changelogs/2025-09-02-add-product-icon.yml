@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-09-02-add-product-icon-column
+      author: aforo
+      changes:
+        - addColumn:
+            tableName: aforo_product
+            columns:
+              - column:
+                  name: icon
+                  type: VARCHAR(1024)
+                  constraints:
+                    nullable: true

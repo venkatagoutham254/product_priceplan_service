@@ -1,6 +1,8 @@
 spring:
   profiles:
     active: postgres # Set the active profile here: 'mysql' or 'postgres'
+  main:
+    web-application-type: servlet
 
   # Common configurations
   datasource:
@@ -18,8 +20,12 @@ spring:
     change-log: classpath:/domain/changelog-master.yml
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+uploads:
+  dir: uploads
+  public-base-url: /uploads
 
 
 server:

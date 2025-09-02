@@ -42,18 +42,21 @@ public class Product {
     @Column(name = "product_description", columnDefinition = "TEXT")
     private String productDescription;
 
-
-
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private ProductStatus status = ProductStatus.DRAFT;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "product_type", nullable = true)
+    private ProductType productType;
 
     @Column(unique = true)
     private String internalSkuCode;
 
+    @Column(name = "icon", nullable = true, length = 1024)
+    private String icon;
 
- 
     @CreationTimestamp
     @Column(updatable = false, nullable = false)
     private LocalDateTime createdOn;

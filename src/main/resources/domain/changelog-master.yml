@@ -41,5 +41,7 @@ databaseChangeLog:
       file: changelogs/2025-08-29-alter-rateplan-nullable.yml
   - include:
       file: changelogs/2025-08-30-reset-products.yaml
-      
-      
+  - include:
+      file: changelogs/2025-09-02-add-product-type.yml
+  - include:
+      file: changelogs/2025-09-02-add-product-icon.yml

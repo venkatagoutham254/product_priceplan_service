@@ -23,6 +23,7 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
     private final ProductAPIRepository productAPIRepository;
     private final ProductFlatFileRepository productFlatFileRepository;
     private final ProductSQLResultRepository productSQLResultRepository;
+    private final ProductStorageRepository productStorageRepository;
     private final ProductLLMTokenMapper mapper;
 
     @Override
@@ -37,7 +38,8 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
         }
         if (productAPIRepository.existsById(productId) ||
             productFlatFileRepository.existsById(productId) ||
-            productSQLResultRepository.existsById(productId)) {
+            productSQLResultRepository.existsById(productId) ||
+            productStorageRepository.existsById(productId)) {
             throw new IllegalStateException(
                 "Product " + productId + " already has a different configuration type. " +
                 "A product can have only one configuration type."

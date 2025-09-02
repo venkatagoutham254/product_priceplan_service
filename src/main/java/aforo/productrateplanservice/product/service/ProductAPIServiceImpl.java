@@ -7,6 +7,10 @@ import aforo.productrateplanservice.product.entity.ProductAPI;
 import aforo.productrateplanservice.product.mapper.ProductAPIMapper;
 import aforo.productrateplanservice.product.repository.ProductAPIRepository;
 import aforo.productrateplanservice.product.repository.ProductRepository;
+import aforo.productrateplanservice.product.repository.ProductFlatFileRepository;
+import aforo.productrateplanservice.product.repository.ProductSQLResultRepository;
+import aforo.productrateplanservice.product.repository.ProductLLMTokenRepository;
+import aforo.productrateplanservice.product.repository.ProductStorageRepository;
 import aforo.productrateplanservice.product.request.CreateProductAPIRequest;
 import aforo.productrateplanservice.product.request.UpdateProductAPIRequest;
 import lombok.RequiredArgsConstructor;
@@ -23,15 +27,29 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     private final ProductRepository productRepository;
     private final ProductAPIMapper productAPIMapper;
 
+    private final ProductFlatFileRepository productFlatFileRepository;
+    private final ProductSQLResultRepository productSQLResultRepository;
+    private final ProductLLMTokenRepository productLLMTokenRepository;
+    private final ProductStorageRepository productStorageRepository;
+
     @Override
     @Transactional
     public ProductAPIDTO create(Long productId, CreateProductAPIRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
-        // ensure one API config per product
+        // ensure one API config per product and no other config types exist
         if (productAPIRepository.existsById(productId)) {
             throw new IllegalStateException("Product " + productId + " already has API configuration.");
+        }
+        if (productFlatFileRepository.existsById(productId) ||
+            productSQLResultRepository.existsById(productId) ||
+            productLLMTokenRepository.existsById(productId) ||
+            productStorageRepository.existsById(productId)) {
+            throw new IllegalStateException(
+                "Product " + productId + " already has a different configuration type. " +
+                "A product can have only one configuration type."
+            );
         }
 
         ProductAPI productAPI = ProductAPI.builder()
