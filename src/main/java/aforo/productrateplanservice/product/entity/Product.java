@@ -36,6 +36,8 @@ public class Product {
     @Column(name = "product_name", unique = true)
     private String productName;
 
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
 
     private String version;
 
@@ -64,6 +66,5 @@ public class Product {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime lastUpdated;
-
 
 }

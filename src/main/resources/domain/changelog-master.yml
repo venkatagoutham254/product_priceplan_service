@@ -55,3 +55,5 @@ databaseChangeLog:
       file: changelogs/2025-09-03-extras-fk-cascade.yml
   - include:
       file: changelogs/2025-09-03-usage-based-fk-cascade.yml
+  - include:
+      file: changelogs/2025-09-02_add_tenancy.yml

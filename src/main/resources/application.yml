@@ -31,6 +31,13 @@ uploads:
 server:
   port: 8080
 
+aforo:
+  cors:
+    allowed-origins: "http://productscreens.s3-website-ap-northeast-1.amazonaws.com,http://localhost:3000,http://13.115.248.133"
+    allowed-methods: "GET,POST,PUT,DELETE,OPTIONS,HEAD,PATCH"
+    allowed-headers: "Authorization,Content-Type,X-Organization-Id"
+    allow-credentials: true
+
 customer:
   service:
     url: http://44.203.171.98:8082
@@ -61,6 +68,33 @@ spring:
   jackson:
     date-format: dd MMM, yyyy HH:mm z
     time-zone: Asia/Kolkata
+
+springdoc:
+  swagger-ui:
+    display-operation-id: false
+    display-request-duration: false
+    default-models-expand-depth: 1
+    default-model-expand-depth: 1
+    doc-expansion: none
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-operation-path: true
+    custom-css-url: /swagger-ui/swagger-custom.css
+
+
+
+aforo:
+  jwt:
+    issuer: aforo-productrateplans
+    secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}  # env var or fallback
+    expiryMinutes: 120
+  cors:
+    # Comma-separated list; used by SecurityConfig.corsConfigurationSource()
+    # Include your frontend origin(s). Add https variants if applicable.
+    allowed-origins: "http://13.115.248.133,http://localhost:3000"
+    allowed-methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    allowed-headers: "Authorization,Content-Type,X-Organization-Id"
+    allow-credentials: true
 
 
 ---
