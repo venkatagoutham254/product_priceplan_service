@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-product-type-to-product
+      author: aforo
+      changes:
+        - addColumn:
+            tableName: aforo_product
+            columns:
+              - column:
+                  name: product_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: true  # draft products don’t have to set type yet

@@ -1,0 +1,19 @@
+/* Force path to stay in a single line */
+.opblock-summary-path {
+    white-space: nowrap !important;
+    overflow-x: auto !important;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
+  
+  /* Hide the description column completely */
+  .opblock-summary-description {
+    display: none !important;
+  }
+  
+  /* Compact row height */
+  .opblock {
+    margin: 4px 0 !important;
+    padding: 2px !important;
+  }
+  

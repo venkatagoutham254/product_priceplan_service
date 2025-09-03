@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: productrateplans-add-tenancy
+      author: aforo.ai
+      changes:
+        - addColumn:
+            tableName: aforo_product
+            columns:
+              - column:
+                  name: organization_id
+                  type: bigint
+                  constraints:
+                    nullable: false        
+
+        - addColumn:
+            tableName: aforo_rate_plan
+            columns:
+              - column:
+                  name: organization_id
+                  type: bigint
+                  constraints:
+                    nullable: false

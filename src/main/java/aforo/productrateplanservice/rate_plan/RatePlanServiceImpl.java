@@ -6,6 +6,7 @@ import aforo.productrateplanservice.exception.ValidationException;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.enums.RatePlanStatus;
 import aforo.productrateplanservice.product.repository.ProductRepository;
+import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,39 +24,37 @@ public class RatePlanServiceImpl implements RatePlanService {
     private final BillableMetricClient billableMetricClient;
 
     @Override
-public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
-    String productName = request.getProductName();
-    Product product = null;
-    
-    if (productName != null) {
-        final String trimmedName = productName.trim();
-        if (!trimmedName.isEmpty()) {
-            product = productRepository.findByProductNameIgnoreCase(trimmedName)
-                    .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
+    public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
+        Long orgId = TenantContext.require();
+        String productName = request.getProductName();
+        Product product = null;
+        if (productName != null) {
+            final String trimmedName = productName.trim();
+            if (!trimmedName.isEmpty()) {
+                product = productRepository.findByProductNameIgnoreCaseAndOrganizationId(trimmedName, orgId)
+                        .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
+            }
         }
+        if (request.getBillableMetricId() != null) {
+            billableMetricClient.validateMetricId(request.getBillableMetricId());
+        }
+        RatePlanDTO dto = RatePlanDTO.builder()
+                .ratePlanName(request.getRatePlanName())
+                .description(request.getDescription())
+                .billingFrequency(request.getBillingFrequency())
+                .paymentType(request.getPaymentType())
+                .billableMetricId(request.getBillableMetricId())
+                .build();
+        RatePlan ratePlan = ratePlanAssembler.toEntity(dto, product);
+        ratePlan.setOrganizationId(orgId);
+        ratePlan = ratePlanRepository.save(ratePlan);
+        return ratePlanMapper.toDTO(ratePlan);
     }
-    
-    if (request.getBillableMetricId() != null) {
-        billableMetricClient.validateMetricId(request.getBillableMetricId());
-    }
 
-    RatePlanDTO dto = RatePlanDTO.builder()
-            .ratePlanName(request.getRatePlanName())
-            .description(request.getDescription())
-            .billingFrequency(request.getBillingFrequency())
-            .paymentType(request.getPaymentType())
-            .billableMetricId(request.getBillableMetricId())
-            .build();
-
-    RatePlan ratePlan = ratePlanAssembler.toEntity(dto, product);
-    ratePlan = ratePlanRepository.save(ratePlan);
-    return ratePlanMapper.toDTO(ratePlan);
-}
-
-    
     @Override
     public List<RatePlanDTO> getAllRatePlans() {
-        return ratePlanRepository.findAll()
+        Long orgId = TenantContext.require();
+        return ratePlanRepository.findAllByOrganizationId(orgId)
                 .stream()
                 .map(ratePlanMapper::toDTO)
                 .collect(Collectors.toList());
@@ -63,7 +62,8 @@ public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
 
     @Override
     public List<RatePlanDTO> getRatePlansByProductId(Long productId) {
-        return ratePlanRepository.findByProduct_ProductId(productId)
+        Long orgId = TenantContext.require();
+        return ratePlanRepository.findByProduct_ProductIdAndOrganizationId(productId, orgId)
                 .stream()
                 .map(ratePlanMapper::toDTO)
                 .collect(Collectors.toList());
@@ -71,32 +71,33 @@ public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
 
     @Override
     public RatePlanDTO getRatePlanById(Long ratePlanId) {
-        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+        Long orgId = TenantContext.require();
+        RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
         return ratePlanMapper.toDTO(ratePlan);
     }
 
     @Override
     public void deleteRatePlan(Long ratePlanId) {
-        if (!ratePlanRepository.existsById(ratePlanId)) {
-            throw new NotFoundException("Rate plan not found with ID: " + ratePlanId);
-        }
-        ratePlanRepository.deleteById(ratePlanId);
+        Long orgId = TenantContext.require();
+        RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
+                .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
+        ratePlanRepository.deleteById(ratePlan.getRatePlanId());
     }
 
     @Override
     public RatePlanDTO updateRatePlanFully(Long ratePlanId, UpdateRatePlanRequest request) {
-        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+        Long orgId = TenantContext.require();
+        RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
 
+        if (request.getProductName() != null && !request.getProductName().trim().isEmpty()) {
+            String trimmedName = request.getProductName().trim();
+            Product product = productRepository.findByProductNameIgnoreCaseAndOrganizationId(trimmedName, orgId)
+                    .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
+            ratePlan.setProduct(product);
+        }
 
-                if (request.getProductName() != null && !request.getProductName().trim().isEmpty()) {
-                    String trimmedName = request.getProductName().trim();
-                    Product product = productRepository.findByProductNameIgnoreCase(trimmedName)
-                            .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
-                    ratePlan.setProduct(product);
-                }
-                        
         if (request.getRatePlanName() == null || request.getBillingFrequency() == null) {
             throw new ValidationException("All fields must be provided for full update.");
         }
@@ -117,15 +118,16 @@ public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
 
     @Override
     public RatePlanDTO updateRatePlanPartially(Long ratePlanId, UpdateRatePlanRequest request) {
-        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+        Long orgId = TenantContext.require();
+        RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
-                if (request.getProductName() != null && !request.getProductName().trim().isEmpty()) {
-                    String trimmedName = request.getProductName().trim();
-                    Product product = productRepository.findByProductNameIgnoreCase(trimmedName)
-                            .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
-                    ratePlan.setProduct(product);
-                }
-                
+
+        if (request.getProductName() != null && !request.getProductName().trim().isEmpty()) {
+            String trimmedName = request.getProductName().trim();
+            Product product = productRepository.findByProductNameIgnoreCaseAndOrganizationId(trimmedName, orgId)
+                    .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
+            ratePlan.setProduct(product);
+        }
 
         if (request.getRatePlanName() != null) {
             ratePlan.setRatePlanName(request.getRatePlanName());
@@ -154,13 +156,14 @@ public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
 
     @Override
     public RatePlanDTO confirmRatePlan(Long ratePlanId) {
-        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+        Long orgId = TenantContext.require();
+        RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("RatePlan not found"));
-    
+
         if (ratePlan.getStatus() == RatePlanStatus.ACTIVE) {
             throw new IllegalStateException("RatePlan is already ACTIVE");
         }
-    
+
         // ✅ enforce billableMetricId must exist before activating
         if (ratePlan.getBillableMetricId() == null) {
             throw new ValidationException("Billable Metric ID is required before finalizing a RatePlan.");

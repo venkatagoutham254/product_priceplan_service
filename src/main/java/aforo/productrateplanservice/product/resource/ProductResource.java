@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
     // IMPORTANT: Do NOT import OpenAPI RequestBody unqualified, it clashes with Spring's @RequestBody
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
 
@@ -23,6 +25,7 @@ import java.util.List;
 @CrossOrigin(origins = {"http://13.115.248.133", "http://13.115.248.133:3001", "https://13.115.248.133", "https://13.115.248.133:3001"}, allowCredentials = "true")
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
+@Tag(name = "Products", description = "Create, read, update, finalize and manage product icons")
 public class ProductResource {
 
     private final ProductService productService;
@@ -30,6 +33,7 @@ public class ProductResource {
 
     // Multipart variant to create product with optional icon file, like CustomerService style
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Create product (multipart)", description = "Create a product with an optional icon file using multipart form-data")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Multipart payload containing JSON 'request' and optional 'icon' file",
             required = true,
@@ -50,16 +54,19 @@ public class ProductResource {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get product by ID")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @GetMapping
+    @Operation(summary = "List products")
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update product (full)")
     public ResponseEntity<ProductDTO> updateProductFully(
             @PathVariable Long id,
             @org.springframework.web.bind.annotation.RequestBody @Valid UpdateProductRequest request) {
@@ -68,6 +75,7 @@ public class ProductResource {
     }
 
     @PatchMapping("/{id}")
+    @Operation(summary = "Update product (partial)")
     public ResponseEntity<ProductDTO> updateProductPartially(
             @PathVariable Long id,
             @org.springframework.web.bind.annotation.RequestBody UpdateProductRequest request) {
@@ -77,6 +85,7 @@ public class ProductResource {
 
     // Separate PATCH endpoint for just the icon
     @PatchMapping(path = "/{id}/icon", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Update product icon")
     public ResponseEntity<ProductDTO> updateIcon(
             @PathVariable Long id,
             @RequestPart("icon") MultipartFile icon) {
@@ -85,6 +94,7 @@ public class ProductResource {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete product")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
@@ -92,12 +102,14 @@ public class ProductResource {
 
     // Delete only the icon
     @DeleteMapping("/{id}/icon")
+    @Operation(summary = "Delete product icon")
     public ResponseEntity<Void> deleteIcon(@PathVariable Long id) {
         productService.deleteIcon(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/finalize")
+    @Operation(summary = "Finalize product")
     public ResponseEntity<ProductDTO> finalizeProduct(@PathVariable Long id) {
         return ResponseEntity.ok(productService.finalizeProduct(id));
     }

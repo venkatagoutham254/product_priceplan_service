@@ -2,6 +2,7 @@ package aforo.productrateplanservice.client;
 
 import aforo.productrateplanservice.exception.ValidationException;
 import aforo.productrateplanservice.client.BillableMetricResponse;
+import aforo.productrateplanservice.tenant.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -26,8 +27,13 @@ public class BillableMetricClient {
 
     public boolean metricExists(Long id) {
         try {
+            Long orgId = TenantContext.require();
+            String token = TenantContext.getJwt();
+    
             webClient.get()
                      .uri("/api/billable-metrics/{id}", id)
+                     .header("X-Organization-Id", String.valueOf(orgId))
+                     .header("Authorization", "Bearer " + token) // 👈 forward token
                      .retrieve()
                      .toBodilessEntity()
                      .block();
@@ -39,30 +45,33 @@ public class BillableMetricClient {
                     + id + ": " + e.getMessage());
         }
     }
-
+    
     public List<BillableMetricResponse> getMetricsByProductId(Long productId) {
         try {
+            Long orgId = TenantContext.require();
+            String token = TenantContext.getJwt();
+    
             return webClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/billable-metrics/by-product")
                             .queryParam("productId", productId)
                             .build())
+                    .header("X-Organization-Id", String.valueOf(orgId))
+                    .header("Authorization", "Bearer " + token) // 👈 forward token
                     .retrieve()
                     .bodyToFlux(BillableMetricResponse.class)
                     .filter(bm -> bm != null && bm.getStatus() != null && bm.getStatus().equalsIgnoreCase("ACTIVE"))
                     .collectList()
                     .block();
         } catch (WebClientResponseException.NotFound e) {
-            // no metrics linked for this product
             return List.of();
         } catch (WebClientResponseException.BadRequest e) {
-            // invalid param → treat as no metrics
             return List.of();
         } catch (Exception e) {
-            // unexpected error → log and return empty instead of breaking product
             System.err.println("⚠️ Failed to fetch billable metrics for productId " + productId + ": " + e.getMessage());
             return List.of();
         }
     }
+    
     
 }

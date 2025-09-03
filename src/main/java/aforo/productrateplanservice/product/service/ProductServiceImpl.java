@@ -22,6 +22,7 @@ import aforo.productrateplanservice.product.request.UpdateProductRequest;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import aforo.productrateplanservice.client.BillableMetricClient;
 import aforo.productrateplanservice.storage.IconStorageService;
+import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDTO createProduct(CreateProductRequest request) {
+        Long orgId = TenantContext.require();
         // normalize inputs
         String name = trim(request.getProductName());
         String sku  = trim(request.getInternalSkuCode());
@@ -57,11 +59,11 @@ public class ProductServiceImpl implements ProductService {
         // For drafts, productName may be omitted
 
         // uniqueness
-        if (name != null && productRepository.findByProductNameIgnoreCase(name).isPresent()) {
+        if (name != null && productRepository.findByProductNameIgnoreCaseAndOrganizationId(name, orgId).isPresent()) {
             throw new IllegalArgumentException("productName already exists");
         }
         // internalSkuCode is optional for drafts; only validate when provided
-        if (sku != null && productRepository.existsByInternalSkuCode(sku)) {
+        if (sku != null && productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
             throw new IllegalArgumentException("internalSkuCode already exists");
         }
 
@@ -71,6 +73,7 @@ public class ProductServiceImpl implements ProductService {
         if (sku != null) {
             product.setInternalSkuCode(sku);
         }
+        product.setOrganizationId(orgId);
 
         Product saved = productRepository.save(product);
         return productAssembler.toDTO(saved);
@@ -89,11 +92,12 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductDTO getProductById(Long productId) {
-        Product product = productRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
     
         ProductDTO dto = productAssembler.toDTO(product);
-        // ✅ fetch only metrics for this product
+        // fetch only metrics for this product
         dto.setBillableMetrics(billableMetricClient.getMetricsByProductId(productId));
         return dto;
     }
@@ -101,10 +105,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductDTO> getAllProducts() {
-        return productRepository.findAll().stream()
+        Long orgId = TenantContext.require();
+        return productRepository.findAllByOrganizationId(orgId).stream()
                 .map(product -> {
                     ProductDTO dto = productAssembler.toDTO(product);
-                    // ✅ fetch only metrics linked to each product
+                    // fetch only metrics linked to each product
                     dto.setBillableMetrics(
                             billableMetricClient.getMetricsByProductId(product.getProductId())
                     );
@@ -116,7 +121,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDTO updateProductFully(Long id, UpdateProductRequest request) {
-        Product product = productRepository.findById(id)
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
         // PUT requires productName & internalSkuCode
@@ -126,12 +132,12 @@ public class ProductServiceImpl implements ProductService {
         if (sku  == null) throw new IllegalArgumentException("internalSkuCode is required for PUT");
 
         // name uniqueness (ignore-case, trim) excluding self
-        if (productRepository.existsByProductNameTrimmedIgnoreCase(name, id)) {
+        if (productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(name, id, orgId)) {
             throw new IllegalArgumentException("productName already exists");
         }
         // sku uniqueness excluding self
         if (!sku.equals(product.getInternalSkuCode()) &&
-            productRepository.existsByInternalSkuCode(sku)) {
+            productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
             throw new IllegalArgumentException("internalSkuCode already exists");
         }
 
@@ -146,13 +152,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDTO updateProductPartially(Long id, UpdateProductRequest request) {
-        Product product = productRepository.findById(id)
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
         if (request.getProductName() != null) {
             String name = trim(request.getProductName());
             if (name == null) throw new IllegalArgumentException("productName cannot be blank");
-            if (productRepository.existsByProductNameTrimmedIgnoreCase(name, id)) {
+            if (productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(name, id, orgId)) {
                 throw new IllegalArgumentException("productName already exists");
             }
             product.setProductName(name);
@@ -163,7 +170,7 @@ public class ProductServiceImpl implements ProductService {
             String sku = trim(request.getInternalSkuCode());
             if (sku == null) throw new IllegalArgumentException("internalSkuCode cannot be blank");
             if (!sku.equals(product.getInternalSkuCode()) &&
-                productRepository.existsByInternalSkuCode(sku)) {
+                productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
                 throw new IllegalArgumentException("internalSkuCode already exists");
             }
             product.setInternalSkuCode(sku);
@@ -175,14 +182,15 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deleteProduct(Long productId) {
+        Long orgId = TenantContext.require();
         // validate existence
-        productRepository.findById(productId)
+        productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + productId));
 
         // delete child rate plans first
-        ratePlanRepository.deleteByProduct_ProductId(productId);
+        ratePlanRepository.deleteByProduct_ProductIdAndOrganizationId(productId, orgId);
 
-        productRepository.deleteById(productId);
+        productRepository.deleteByProductIdAndOrganizationId(productId, orgId);
     }
 
     private static String trim(String s) {
@@ -190,10 +198,12 @@ public class ProductServiceImpl implements ProductService {
         String t = s.trim();
         return t.isEmpty() ? null : t;
     }
+
     @Override
     @Transactional
     public ProductDTO finalizeProduct(Long id) {
-        Product product = productRepository.findById(id)
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
 
         // Only DRAFT can be finalized
@@ -207,7 +217,7 @@ public class ProductServiceImpl implements ProductService {
 
         // Uniqueness (exclude self)
         String normalizedName = product.getProductName().trim();
-        if (productRepository.existsByProductNameTrimmedIgnoreCase(normalizedName, id)) {
+        if (productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(normalizedName, id, orgId)) {
             throw new IllegalArgumentException("productName already exists");
         }
 

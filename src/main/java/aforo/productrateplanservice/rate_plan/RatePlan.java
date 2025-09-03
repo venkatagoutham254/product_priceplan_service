@@ -8,12 +8,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
-
-
-
 @Entity
 @Table(name = "aforo_rate_plan", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"rate_plan_name", "product_id"})
+    @UniqueConstraint(columnNames = {"rate_plan_name", "product_id", "organization_id"})
 })
 @Getter
 @Setter
@@ -34,9 +31,11 @@ public class RatePlan {
     @Column(name = "rate_plan_name")
     private String ratePlanName;
 
+    @Column(name = "organization_id", nullable = false)
+    private Long organizationId;
+
     @Column(name = "description")
     private String description;
-
 
     @Enumerated(EnumType.STRING)
     @Column(name = "billing_frequency")
