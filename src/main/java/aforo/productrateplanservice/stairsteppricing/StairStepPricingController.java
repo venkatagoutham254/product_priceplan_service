@@ -34,6 +34,11 @@ public class StairStepPricingController {
         return ResponseEntity.ok(stairStepPricingService.getAllByRatePlanId(ratePlanId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<StairStepPricingDTO>> getAll() {
+        return ResponseEntity.ok(stairStepPricingService.getAll());
+    }
+
     @GetMapping("/{stairStepPricingId}")
     public ResponseEntity<StairStepPricingDTO> getById(@PathVariable Long stairStepPricingId) {
         return ResponseEntity.ok(stairStepPricingService.getById(stairStepPricingId));

@@ -58,6 +58,14 @@ public class TieredPricingServiceImpl implements TieredPricingService {
     }
 
     @Override
+    public List<TieredPricingDTO> getAll() {
+        return tieredPricingRepository.findAll()
+                .stream()
+                .map(tieredPricingMapper::toDTO)
+                .toList();
+    }
+
+    @Override
     public TieredPricingDTO getById(Long tieredPricingId) {
         return tieredPricingRepository.findById(tieredPricingId)
                 .map(tieredPricingMapper::toDTO)

@@ -1,13 +1,26 @@
 package aforo.productrateplanservice.client;
 
 import lombok.Data;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.util.List;
 
 @Data
+@JsonPropertyOrder({
+        "metricId",
+        "metricName",
+        "productId",
+        "version",
+        "unitOfMeasure",
+        "description",
+        "aggregationFunction",
+        "aggregationWindow",
+        "status",
+        "usageConditions"
+})
 public class BillableMetricResponse {
-    @JsonProperty("billableMetricId")
-    private Long metricId; // mapped from billableMetricId
+    @JsonAlias("billableMetricId")
+    private Long metricId; // accept billableMetricId on input; serialize as metricId
     private String metricName;
     private Long productId;
     private String version;

@@ -33,6 +33,11 @@ public class TieredPricingController {
         return ResponseEntity.ok(tieredPricingService.getAllByRatePlanId(ratePlanId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<TieredPricingDTO>> getAll() {
+        return ResponseEntity.ok(tieredPricingService.getAll());
+    }
+
     @GetMapping("/{tieredPricingId}")
     public ResponseEntity<TieredPricingDTO> getById(@PathVariable Long tieredPricingId) {
         return ResponseEntity.ok(tieredPricingService.getById(tieredPricingId));

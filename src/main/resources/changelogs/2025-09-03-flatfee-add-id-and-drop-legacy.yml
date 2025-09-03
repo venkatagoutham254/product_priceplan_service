@@ -1,0 +1,87 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-09-03-flatfee-add-id-column
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_flat_fee
+      changes:
+        - createSequence:
+            sequenceName: rate_plan_flat_fee_flat_fee_id_seq
+            startValue: 1
+        - addColumn:
+            tableName: rate_plan_flat_fee
+            columns:
+              - column:
+                  name: flat_fee_id
+                  type: BIGINT
+        - addDefaultValue:
+            tableName: rate_plan_flat_fee
+            columnName: flat_fee_id
+            defaultValueComputed: "nextval('rate_plan_flat_fee_flat_fee_id_seq'::regclass)"
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Backfill IDs for existing rows
+              UPDATE public.rate_plan_flat_fee
+              SET flat_fee_id = nextval('rate_plan_flat_fee_flat_fee_id_seq')
+              WHERE flat_fee_id IS NULL;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Replace existing PK (if any) with PK on flat_fee_id
+              DO $$
+              DECLARE pkname text;
+              BEGIN
+                SELECT tc.constraint_name INTO pkname
+                FROM information_schema.table_constraints tc
+                WHERE tc.table_name='rate_plan_flat_fee' AND tc.constraint_type='PRIMARY KEY'
+                LIMIT 1;
+
+                IF pkname IS NOT NULL THEN
+                  EXECUTE format('ALTER TABLE public.rate_plan_flat_fee DROP CONSTRAINT %I', pkname);
+                END IF;
+
+                -- Ensure flat_fee_id is not null before setting PK
+                PERFORM 1 FROM public.rate_plan_flat_fee WHERE flat_fee_id IS NULL;
+                IF FOUND THEN
+                  RAISE EXCEPTION 'Found NULL flat_fee_id rows; backfill failed.';
+                END IF;
+
+                ALTER TABLE public.rate_plan_flat_fee
+                ADD CONSTRAINT pk_rate_plan_flat_fee PRIMARY KEY (flat_fee_id);
+              END $$;
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Add unique constraint on rate_plan_id if missing
+              DO $$
+              DECLARE uqname text;
+              BEGIN
+                SELECT tc.constraint_name INTO uqname
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.constraint_column_usage ccu
+                  ON tc.constraint_name = ccu.constraint_name
+                WHERE tc.table_name='rate_plan_flat_fee'
+                  AND tc.constraint_type='UNIQUE'
+                  AND ccu.column_name='rate_plan_id'
+                LIMIT 1;
+
+                IF uqname IS NULL THEN
+                  ALTER TABLE public.rate_plan_flat_fee
+                  ADD CONSTRAINT uq_rate_plan_flat_fee_rate_plan_id UNIQUE (rate_plan_id);
+                END IF;
+              END $$;
+
+  - changeSet:
+      id: 2025-09-03-flatfee-drop-legacy-table
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: flat_fee
+      changes:
+        - dropTable:
+            tableName: flat_fee
+            cascadeConstraints: true

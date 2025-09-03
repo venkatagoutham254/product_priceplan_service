@@ -33,6 +33,11 @@ public class UsageBasedPricingController {
         return ResponseEntity.ok(usageBasedPricingService.getAllByRatePlanId(ratePlanId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<UsageBasedPricingDTO>> getAll() {
+        return ResponseEntity.ok(usageBasedPricingService.getAll());
+    }
+
     @GetMapping("/{usageBasedPricingId}")
     public ResponseEntity<UsageBasedPricingDTO> getById(@PathVariable Long usageBasedPricingId) {
         return ResponseEntity.ok(usageBasedPricingService.getById(usageBasedPricingId));

@@ -9,6 +9,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "rate_plan_freemium")
 @Getter
 @Setter
 public class Freemium {
@@ -18,6 +19,7 @@ public class Freemium {
     private Long id;
 
     @ManyToOne(optional = false)
+    @JoinColumn(name = "rate_plan_id", nullable = false)
     private RatePlan ratePlan;
 
     @Enumerated(EnumType.STRING)

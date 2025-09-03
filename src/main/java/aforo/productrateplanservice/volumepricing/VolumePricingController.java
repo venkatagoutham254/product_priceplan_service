@@ -41,6 +41,11 @@ public class VolumePricingController {
         return ResponseEntity.ok(volumePricingService.getAllByRatePlanId(ratePlanId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<VolumePricingDTO>> getAll() {
+        return ResponseEntity.ok(volumePricingService.getAll());
+    }
+
     @DeleteMapping("/{volumePricingId}")
     public ResponseEntity<Void> delete(@PathVariable Long volumePricingId) {
         volumePricingService.deleteById(volumePricingId);

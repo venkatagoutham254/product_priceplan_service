@@ -46,6 +46,14 @@ public class UsageBasedPricingServiceImpl implements UsageBasedPricingService {
     }
 
     @Override
+    public List<UsageBasedPricingDTO> getAll() {
+        return repository.findAll()
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
+
+    @Override
     public UsageBasedPricingDTO getById(Long id) {
         return repository.findById(id)
                 .map(mapper::toDTO)

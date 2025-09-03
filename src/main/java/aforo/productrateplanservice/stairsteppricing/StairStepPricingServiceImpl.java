@@ -62,6 +62,14 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
     }
 
     @Override
+    public List<StairStepPricingDTO> getAll() {
+        return repository.findAll()
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
+
+    @Override
     public StairStepPricingDTO getById(Long id) {
         return repository.findById(id)
                 .map(mapper::toDTO)

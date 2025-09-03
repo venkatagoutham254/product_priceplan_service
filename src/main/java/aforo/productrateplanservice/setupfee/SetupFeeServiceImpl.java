@@ -84,6 +84,14 @@ public SetupFeeDTO getById(Long ratePlanId, Long id) {
     }
 
     @Override
+    public List<SetupFeeDTO> getAll() {
+        return setupFeeRepository.findAll()
+                .stream()
+                .map(setupFeeMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public SetupFeeDTO partialUpdate(Long ratePlanId, Long id, SetupFeeCreateUpdateDTO dto) {
         SetupFee existing = setupFeeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("SetupFee not found"));

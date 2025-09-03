@@ -9,4 +9,5 @@ public interface FreemiumService {
     void delete(Long ratePlanId, Long id);
     FreemiumDTO getById(Long ratePlanId, Long id);
     List<FreemiumDTO> getAllByRatePlanId(Long ratePlanId);
+    List<FreemiumDTO> getAll();
 }

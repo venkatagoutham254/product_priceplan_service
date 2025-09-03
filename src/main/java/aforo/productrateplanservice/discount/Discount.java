@@ -7,6 +7,7 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "rate_plan_discount")
 @Getter
 @Setter
 @Builder

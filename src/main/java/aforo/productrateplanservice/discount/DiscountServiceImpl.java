@@ -41,6 +41,14 @@ public DiscountDTO create(Long ratePlanId, DiscountCreateUpdateDTO dto) {
     }
 
     @Override
+    public List<DiscountDTO> getAll() {
+        return discountRepository.findAll()
+                .stream()
+                .map(discountMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public DiscountDTO getById(Long ratePlanId, Long id) {
         Discount discount = discountRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Discount not found"));

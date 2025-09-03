@@ -25,6 +25,11 @@ public class SetupFeeController {
         return ResponseEntity.ok(setupFeeService.getAllByRatePlanId(ratePlanId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<SetupFeeDTO>> getAll() {
+        return ResponseEntity.ok(setupFeeService.getAll());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<SetupFeeDTO> getById(
             @PathVariable Long ratePlanId,

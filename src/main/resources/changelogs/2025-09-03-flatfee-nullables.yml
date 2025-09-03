@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-09-03-flatfee-make-nullable
+      author: cascade
+      changes:
+        - dropNotNullConstraint:
+            tableName: rate_plan_flat_fee
+            columnName: flat_fee_amount
+            columnDataType: INTEGER
+        - dropNotNullConstraint:
+            tableName: rate_plan_flat_fee
+            columnName: number_of_api_calls
+            columnDataType: INTEGER
+        - dropNotNullConstraint:
+            tableName: rate_plan_flat_fee
+            columnName: overage_unit_rate
+            columnDataType: DECIMAL(12,4)
