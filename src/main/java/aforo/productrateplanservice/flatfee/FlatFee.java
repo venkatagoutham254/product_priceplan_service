@@ -14,7 +14,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "flat_fee")
+@Table(name = "rate_plan_flat_fee")
 public class FlatFee {
 
     @Id
@@ -26,25 +26,23 @@ public class FlatFee {
     @Column(name = "rate_plan_id", nullable = false, unique = true)
     private Long ratePlanId;
 
-    @NotNull(message = "flatFeeAmount is required")
     @Min(value = 0, message = "flatFeeAmount must be non-negative")
-    @Column(name = "flat_fee_amount", nullable = false)
+    @Column(name = "flat_fee_amount", nullable = true)
     private Integer flatFeeAmount;
 
-    @NotNull(message = "numberOfApiCalls is required")
     @Min(value = 0, message = "numberOfApiCalls must be non-negative")
-    @Column(name = "number_of_api_calls", nullable = false)
+    @Column(name = "number_of_api_calls", nullable = true)
     private Integer numberOfApiCalls;
 
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "rate_plan_type", nullable = false, updatable = false)
+    @Transient
     private final RatePlanType ratePlanType = RatePlanType.FLATFEE;
 
-    @Column(name = "overage_unit_rate",nullable = false)
+    @Column(name = "overage_unit_rate", nullable = true)
     private BigDecimal overageUnitRate;
 
-    @Column(name = "grace_buffer")
+    @Column(name = "grace_buffer", nullable = true)
     private Integer graceBuffer;
     
 }

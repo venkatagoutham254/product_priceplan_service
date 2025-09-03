@@ -6,6 +6,7 @@ public interface StairStepPricingService {
     StairStepPricingDTO create(Long ratePlanId, StairStepPricingCreateUpdateDTO dto);
     StairStepPricingDTO update(Long ratePlanId, Long stairStepPricingId, StairStepPricingCreateUpdateDTO dto);
     List<StairStepPricingDTO> getAllByRatePlanId(Long ratePlanId);
+    List<StairStepPricingDTO> getAll();
     StairStepPricingDTO getById(Long id);
     void deleteById(Long id);
 }

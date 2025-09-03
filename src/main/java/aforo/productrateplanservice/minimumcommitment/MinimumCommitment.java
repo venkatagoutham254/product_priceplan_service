@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
+@Table(name = "rate_plan_minimum_commitment")
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor

@@ -24,6 +24,11 @@ public class MinimumCommitmentController {
         return ResponseEntity.ok(service.getAllByRatePlanId(ratePlanId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<MinimumCommitmentDTO>> getAll() {
+        return ResponseEntity.ok(service.getAll());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<MinimumCommitmentDTO> getById(@PathVariable Long ratePlanId,
                                                         @PathVariable Long id) {

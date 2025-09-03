@@ -62,6 +62,14 @@ public class VolumePricingServiceImpl implements VolumePricingService {
     }
 
     @Override
+    public List<VolumePricingDTO> getAll() {
+        return repository.findAll()
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
+
+    @Override
     public VolumePricingDTO getById(Long id) {
         return repository.findById(id)
                 .map(mapper::toDTO)

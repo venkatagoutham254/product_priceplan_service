@@ -1,0 +1,73 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-09-03-flat-fee-clean-orphans
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_flat_fee
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              -- Clean up orphans first to satisfy FK creation
+              DELETE FROM rate_plan_flat_fee ff
+              WHERE NOT EXISTS (
+                SELECT 1 FROM aforo_rate_plan rp WHERE rp.rate_plan_id = ff.rate_plan_id
+              );
+
+  - changeSet:
+      id: 2025-09-03-flat-fee-drop-existing-fk
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_flat_fee
+        - tableExists:
+            tableName: aforo_rate_plan
+      changes:
+        - sql:
+            comment: Drop any existing FK from rate_plan_flat_fee.rate_plan_id to aforo_rate_plan (unknown name)
+            splitStatements: false
+            sql: |
+              DO $$
+              DECLARE
+                cname text;
+              BEGIN
+                SELECT pc.conname
+                  INTO cname
+                FROM pg_constraint pc
+                JOIN pg_class c ON c.oid = pc.conrelid
+                JOIN pg_attribute a ON a.attrelid = pc.conrelid AND a.attnum = ANY(pc.conkey)
+                JOIN pg_class rc ON rc.oid = pc.confrelid
+                WHERE pc.contype = 'f'
+                  AND c.relname = 'rate_plan_flat_fee'
+                  AND rc.relname = 'aforo_rate_plan'
+                  AND a.attname = 'rate_plan_id'
+                LIMIT 1;
+
+                IF cname IS NOT NULL THEN
+                  EXECUTE format('ALTER TABLE public.rate_plan_flat_fee DROP CONSTRAINT %I', cname);
+                END IF;
+              END
+              $$;
+
+  - changeSet:
+      id: 2025-09-03-add-flat-fee-fk-cascade-if-missing
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_flat_fee
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_flat_fee_rate_plan_flat_fee
+                foreignKeyTableName: rate_plan_flat_fee
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_flat_fee
+            baseColumnNames: rate_plan_id
+            constraintName: fk_flat_fee_rate_plan_flat_fee
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE

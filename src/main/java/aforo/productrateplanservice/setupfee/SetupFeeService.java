@@ -11,6 +11,7 @@ public interface SetupFeeService {
     SetupFeeDTO getById(Long ratePlanId, Long id);
 
     List<SetupFeeDTO> getAllByRatePlanId(Long ratePlanId);
+    List<SetupFeeDTO> getAll();
     SetupFeeDTO partialUpdate(Long ratePlanId, Long id, SetupFeeCreateUpdateDTO dto);
     void delete(Long ratePlanId, Long id); // ✅ updated method signature
 

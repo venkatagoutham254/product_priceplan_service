@@ -25,6 +25,11 @@ public class DiscountController {
         return ResponseEntity.ok(discountService.getAllByRatePlanId(ratePlanId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<DiscountDTO>> getAll() {
+        return ResponseEntity.ok(discountService.getAll());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<DiscountDTO> getById(
             @PathVariable Long ratePlanId,

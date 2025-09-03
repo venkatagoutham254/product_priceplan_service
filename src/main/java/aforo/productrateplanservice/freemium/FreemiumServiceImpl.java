@@ -69,6 +69,14 @@ public FreemiumDTO create(Long ratePlanId, FreemiumCreateUpdateDTO dto) {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<FreemiumDTO> getAll() {
+        return freemiumRepository.findAll()
+                .stream()
+                .map(freemiumMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
     private Freemium getFreemiumById(Long id, Long ratePlanId) {
         Freemium entity = freemiumRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Freemium not found"));

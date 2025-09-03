@@ -10,20 +10,24 @@ public class FlatFeeMapper {
                 .ratePlanId(ratePlanId)
                 .flatFeeAmount(dto.getFlatFeeAmount())
                 .numberOfApiCalls(dto.getNumberOfApiCalls())
-                .overageUnitRate(dto.getOverageUnitRate())      // ✅ new
-                .graceBuffer(dto.getGraceBuffer())              // ✅ new
+                .overageUnitRate(dto.getOverageUnitRate())      // 
+                .graceBuffer(dto.getGraceBuffer())              // 
                 .build();
     }
 
     public void updateEntity(FlatFee entity, FlatFeeCreateUpdateDTO dto) {
-        entity.setFlatFeeAmount(dto.getFlatFeeAmount());
-        entity.setNumberOfApiCalls(dto.getNumberOfApiCalls());
+        if (dto.getFlatFeeAmount() != null) {
+            entity.setFlatFeeAmount(dto.getFlatFeeAmount());
+        }
+        if (dto.getNumberOfApiCalls() != null) {
+            entity.setNumberOfApiCalls(dto.getNumberOfApiCalls());
+        }
 
         if (dto.getOverageUnitRate() != null) {
-            entity.setOverageUnitRate(dto.getOverageUnitRate()); // ✅ optional
+            entity.setOverageUnitRate(dto.getOverageUnitRate()); // 
         }
         if (dto.getGraceBuffer() != null) {
-            entity.setGraceBuffer(dto.getGraceBuffer());         // ✅ optional
+            entity.setGraceBuffer(dto.getGraceBuffer());         // 
         }
     }
 

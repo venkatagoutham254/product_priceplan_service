@@ -1,0 +1,173 @@
+databaseChangeLog:
+  - changeSet:
+      id: extras-orphan-cleanup
+      author: cascade
+      changes:
+        - sql:
+            comment: Clean orphan setup fees
+            sql: |
+              DELETE FROM rate_plan_setup_fee rpsf
+              WHERE NOT EXISTS (
+                SELECT 1 FROM aforo_rate_plan arp WHERE arp.rate_plan_id = rpsf.rate_plan_id
+              );
+        - sql:
+            comment: Clean orphan discounts
+            sql: |
+              DELETE FROM rate_plan_discount rpd
+              WHERE NOT EXISTS (
+                SELECT 1 FROM aforo_rate_plan arp WHERE arp.rate_plan_id = rpd.rate_plan_id
+              );
+        - sql:
+            comment: Clean orphan freemium
+            sql: |
+              DELETE FROM rate_plan_freemium rpf
+              WHERE NOT EXISTS (
+                SELECT 1 FROM aforo_rate_plan arp WHERE arp.rate_plan_id = rpf.rate_plan_id
+              );
+        - sql:
+            comment: Clean orphan minimum commitment
+            sql: |
+              DELETE FROM rate_plan_minimum_commitment rpmc
+              WHERE NOT EXISTS (
+                SELECT 1 FROM aforo_rate_plan arp WHERE arp.rate_plan_id = rpmc.rate_plan_id
+              );
+
+  - changeSet:
+      id: extras-setup-fee-fk-drop-if-exists
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_setup_fee
+        - foreignKeyConstraintExists:
+            foreignKeyName: fk_setup_fee_rate_plan
+            foreignKeyTableName: rate_plan_setup_fee
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: rate_plan_setup_fee
+            constraintName: fk_setup_fee_rate_plan
+
+  - changeSet:
+      id: extras-setup-fee-fk-add-if-missing
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_setup_fee
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_setup_fee_rate_plan
+                foreignKeyTableName: rate_plan_setup_fee
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_setup_fee
+            baseColumnNames: rate_plan_id
+            constraintName: fk_setup_fee_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE
+
+  - changeSet:
+      id: extras-discount-fk-drop-if-exists
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_discount
+        - foreignKeyConstraintExists:
+            foreignKeyName: fk_discount_rate_plan
+            foreignKeyTableName: rate_plan_discount
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: rate_plan_discount
+            constraintName: fk_discount_rate_plan
+
+  - changeSet:
+      id: extras-discount-fk-add-if-missing
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_discount
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_discount_rate_plan
+                foreignKeyTableName: rate_plan_discount
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_discount
+            baseColumnNames: rate_plan_id
+            constraintName: fk_discount_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE
+
+  - changeSet:
+      id: extras-freemium-fk-drop-if-exists
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_freemium
+        - foreignKeyConstraintExists:
+            foreignKeyName: fk_freemium_rate_plan
+            foreignKeyTableName: rate_plan_freemium
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: rate_plan_freemium
+            constraintName: fk_freemium_rate_plan
+
+  - changeSet:
+      id: extras-freemium-fk-add-if-missing
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_freemium
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_freemium_rate_plan
+                foreignKeyTableName: rate_plan_freemium
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_freemium
+            baseColumnNames: rate_plan_id
+            constraintName: fk_freemium_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE
+
+  - changeSet:
+      id: extras-minimum-commitment-fk-drop-if-exists
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_minimum_commitment
+        - foreignKeyConstraintExists:
+            foreignKeyName: fk_minimum_commitment_rate_plan
+            foreignKeyTableName: rate_plan_minimum_commitment
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: rate_plan_minimum_commitment
+            constraintName: fk_minimum_commitment_rate_plan
+
+  - changeSet:
+      id: extras-minimum-commitment-fk-add-if-missing
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_minimum_commitment
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_minimum_commitment_rate_plan
+                foreignKeyTableName: rate_plan_minimum_commitment
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_minimum_commitment
+            baseColumnNames: rate_plan_id
+            constraintName: fk_minimum_commitment_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE

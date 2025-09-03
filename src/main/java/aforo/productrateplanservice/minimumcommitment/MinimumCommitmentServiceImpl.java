@@ -41,6 +41,14 @@ public class MinimumCommitmentServiceImpl implements MinimumCommitmentService {
     }
 
     @Override
+    public List<MinimumCommitmentDTO> getAll() {
+        return repository.findAll()
+                .stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public MinimumCommitmentDTO getById(Long ratePlanId, Long id) {
         MinimumCommitment entity = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Minimum Commitment not found"));

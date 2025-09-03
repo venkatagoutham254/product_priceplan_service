@@ -1,0 +1,58 @@
+databaseChangeLog:
+  - changeSet:
+      id: usage-based-pricing-fk-cascade-drop-dynamic
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_usage_based_pricing
+        - tableExists:
+            tableName: aforo_rate_plan
+      changes:
+        - sql:
+            comment: Drop existing FK from usage_based_pricing->aforo_rate_plan if any (unknown name)
+            splitStatements: false
+            sql: |
+              DO $$
+              DECLARE
+                cname text;
+              BEGIN
+                SELECT pc.conname
+                  INTO cname
+                FROM pg_constraint pc
+                JOIN pg_class c ON c.oid = pc.conrelid
+                JOIN pg_attribute a ON a.attrelid = pc.conrelid AND a.attnum = ANY(pc.conkey)
+                JOIN pg_class rc ON rc.oid = pc.confrelid
+                WHERE pc.contype = 'f'
+                  AND c.relname = 'rate_plan_usage_based_pricing'
+                  AND rc.relname = 'aforo_rate_plan'
+                  AND a.attname = 'rate_plan_id'
+                LIMIT 1;
+
+                IF cname IS NOT NULL THEN
+                  EXECUTE format('ALTER TABLE public.rate_plan_usage_based_pricing DROP CONSTRAINT %I', cname);
+                END IF;
+              END
+              $$;
+
+  - changeSet:
+      id: usage-based-pricing-fk-cascade-add
+      author: cascade
+      preConditions:
+        - onFail: CONTINUE
+        - tableExists:
+            tableName: rate_plan_usage_based_pricing
+        - tableExists:
+            tableName: aforo_rate_plan
+        - not:
+            - foreignKeyConstraintExists:
+                foreignKeyName: fk_usage_based_rate_plan
+                foreignKeyTableName: rate_plan_usage_based_pricing
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: rate_plan_usage_based_pricing
+            baseColumnNames: rate_plan_id
+            constraintName: fk_usage_based_rate_plan
+            referencedTableName: aforo_rate_plan
+            referencedColumnNames: rate_plan_id
+            onDelete: CASCADE

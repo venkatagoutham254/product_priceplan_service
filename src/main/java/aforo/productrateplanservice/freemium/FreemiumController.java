@@ -25,6 +25,11 @@ public class FreemiumController {
         return ResponseEntity.ok(freemiumService.getAllByRatePlanId(ratePlanId));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<FreemiumDTO>> getAll() {
+        return ResponseEntity.ok(freemiumService.getAll());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<FreemiumDTO> getById(
             @PathVariable Long ratePlanId,
