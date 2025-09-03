@@ -9,6 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class BillableMetricClient {
@@ -48,6 +49,7 @@ public class BillableMetricClient {
                             .build())
                     .retrieve()
                     .bodyToFlux(BillableMetricResponse.class)
+                    .filter(bm -> bm != null && bm.getStatus() != null && bm.getStatus().equalsIgnoreCase("ACTIVE"))
                     .collectList()
                     .block();
         } catch (WebClientResponseException.NotFound e) {

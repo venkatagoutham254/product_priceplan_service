@@ -13,7 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+    // IMPORTANT: Do NOT import OpenAPI RequestBody unqualified, it clashes with Spring's @RequestBody
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -30,7 +30,7 @@ public class ProductResource {
 
     // Multipart variant to create product with optional icon file, like CustomerService style
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @RequestBody(
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Multipart payload containing JSON 'request' and optional 'icon' file",
             required = true,
             content = @Content(
@@ -62,7 +62,7 @@ public class ProductResource {
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> updateProductFully(
             @PathVariable Long id,
-            @RequestBody @Valid UpdateProductRequest request) {
+            @org.springframework.web.bind.annotation.RequestBody @Valid UpdateProductRequest request) {
         ProductDTO updated = productService.updateProductFully(id, request);
         return ResponseEntity.ok(updated);
     }
@@ -70,7 +70,7 @@ public class ProductResource {
     @PatchMapping("/{id}")
     public ResponseEntity<ProductDTO> updateProductPartially(
             @PathVariable Long id,
-            @RequestBody UpdateProductRequest request) {
+            @org.springframework.web.bind.annotation.RequestBody UpdateProductRequest request) {
         ProductDTO updated = productService.updateProductPartially(id, request);
         return ResponseEntity.ok(updated);
     }
