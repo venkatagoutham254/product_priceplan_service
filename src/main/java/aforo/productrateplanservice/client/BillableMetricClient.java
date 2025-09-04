@@ -57,7 +57,7 @@ public class BillableMetricClient {
                             .queryParam("productId", productId)
                             .build())
                     .header("X-Organization-Id", String.valueOf(orgId))
-                    .header("Authorization", "Bearer " + token) // 👈 forward token
+                    .header("Authorization", "Bearer " + token) // 
                     .retrieve()
                     .bodyToFlux(BillableMetricResponse.class)
                     .filter(bm -> bm != null && bm.getStatus() != null && bm.getStatus().equalsIgnoreCase("ACTIVE"))
@@ -68,10 +68,52 @@ public class BillableMetricClient {
         } catch (WebClientResponseException.BadRequest e) {
             return List.of();
         } catch (Exception e) {
-            System.err.println("⚠️ Failed to fetch billable metrics for productId " + productId + ": " + e.getMessage());
+            System.err.println(" Failed to fetch billable metrics for productId " + productId + ": " + e.getMessage());
             return List.of();
         }
     }
     
-    
+    /**
+     * Fetch a single billable metric by id.
+     * Throws ValidationException if metric is not found or response cannot be parsed.
+     */
+    public BillableMetricResponse fetchMetric(Long id) {
+        try {
+            Long orgId = TenantContext.require();
+            String token = TenantContext.getJwt();
+
+            return webClient.get()
+                    .uri("/api/billable-metrics/{id}", id)
+                    .header("X-Organization-Id", String.valueOf(orgId))
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .bodyToMono(BillableMetricResponse.class)
+                    .block();
+        } catch (WebClientResponseException.NotFound e) {
+            throw new ValidationException("Invalid billableMetricId: " + id);
+        } catch (Exception e) {
+            throw new ValidationException("Failed to fetch billable metric " + id + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Validate that the metric exists, is ACTIVE, and when productId is provided,
+     * that the metric belongs to that product.
+     */
+    public void validateActiveForProduct(Long metricId, Long productId) {
+        BillableMetricResponse metric = fetchMetric(metricId);
+        if (metric == null) {
+            throw new ValidationException("Invalid billableMetricId: " + metricId);
+        }
+
+        String status = metric.getStatus();
+        if (status == null || !"ACTIVE".equalsIgnoreCase(status)) {
+            throw new ValidationException("Billable metric " + metricId + " is not ACTIVE");
+        }
+
+        if (productId != null && metric.getProductId() != null && !productId.equals(metric.getProductId())) {
+            throw new ValidationException("Billable metric " + metricId + " does not belong to product " + productId);
+        }
+    }
+
 }

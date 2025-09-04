@@ -35,8 +35,10 @@ public class RatePlanServiceImpl implements RatePlanService {
                         .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
             }
         }
+        // If metricId is provided, ensure it exists, is ACTIVE, and (when product known) belongs to that product
         if (request.getBillableMetricId() != null) {
-            billableMetricClient.validateMetricId(request.getBillableMetricId());
+            Long productId = (product != null && product.getProductId() != null) ? product.getProductId() : null;
+            billableMetricClient.validateActiveForProduct(request.getBillableMetricId(), productId);
         }
         RatePlanDTO dto = RatePlanDTO.builder()
                 .ratePlanName(request.getRatePlanName())
@@ -103,7 +105,8 @@ public class RatePlanServiceImpl implements RatePlanService {
         }
 
         if (request.getBillableMetricId() != null) {
-            billableMetricClient.validateMetricId(request.getBillableMetricId());
+            Long productId = (ratePlan.getProduct() != null) ? ratePlan.getProduct().getProductId() : null;
+            billableMetricClient.validateActiveForProduct(request.getBillableMetricId(), productId);
             ratePlan.setBillableMetricId(request.getBillableMetricId());
         }
 
@@ -146,7 +149,8 @@ public class RatePlanServiceImpl implements RatePlanService {
         }
 
         if (request.getBillableMetricId() != null) {
-            billableMetricClient.validateMetricId(request.getBillableMetricId());
+            Long productId = (ratePlan.getProduct() != null) ? ratePlan.getProduct().getProductId() : null;
+            billableMetricClient.validateActiveForProduct(request.getBillableMetricId(), productId);
             ratePlan.setBillableMetricId(request.getBillableMetricId());
         }
 
@@ -168,9 +172,10 @@ public class RatePlanServiceImpl implements RatePlanService {
         if (ratePlan.getBillableMetricId() == null) {
             throw new ValidationException("Billable Metric ID is required before finalizing a RatePlan.");
         }
-    
-        // ✅ validate with external service
-        billableMetricClient.validateMetricId(ratePlan.getBillableMetricId());
+        
+        // ✅ validate with external service: must be ACTIVE and (if product known) belong to product
+        Long productId = (ratePlan.getProduct() != null) ? ratePlan.getProduct().getProductId() : null;
+        billableMetricClient.validateActiveForProduct(ratePlan.getBillableMetricId(), productId);
     
         ratePlan.setStatus(RatePlanStatus.ACTIVE);
         ratePlan = ratePlanRepository.save(ratePlan);
