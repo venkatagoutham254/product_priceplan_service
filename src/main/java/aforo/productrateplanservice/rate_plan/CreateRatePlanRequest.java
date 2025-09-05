@@ -1,7 +1,5 @@
 package aforo.productrateplanservice.rate_plan;
 
-
-import jakarta.validation.constraints.NotNull;
 import aforo.productrateplanservice.rate_plan.RatePlan.PaymentType;
 import lombok.*;
     
@@ -13,7 +11,7 @@ import lombok.*;
 public class CreateRatePlanRequest {
 
     private String ratePlanName;
-    private String productName;
+    private Long productId;
     private String description;
     private BillingFrequency billingFrequency;
     private PaymentType paymentType;

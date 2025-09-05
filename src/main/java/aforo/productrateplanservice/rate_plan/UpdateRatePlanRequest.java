@@ -14,7 +14,7 @@ import jakarta.validation.constraints.NotNull;
 public class UpdateRatePlanRequest {
 
     private String ratePlanName;
-    private String productName;
+    private Long productId;
     private String description;
     private BillingFrequency billingFrequency;
     private PaymentType paymentType;

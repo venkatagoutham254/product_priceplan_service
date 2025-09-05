@@ -26,14 +26,12 @@ public class RatePlanServiceImpl implements RatePlanService {
     @Override
     public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
         Long orgId = TenantContext.require();
-        String productName = request.getProductName();
         Product product = null;
-        if (productName != null) {
-            final String trimmedName = productName.trim();
-            if (!trimmedName.isEmpty()) {
-                product = productRepository.findByProductNameIgnoreCaseAndOrganizationId(trimmedName, orgId)
-                        .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
-            }
+        if (request.getProductId() != null) {
+            Long requestedProductId = request.getProductId();
+            product = productRepository
+                    .findByProductIdAndOrganizationId(requestedProductId, orgId)
+                    .orElseThrow(() -> new NotFoundException("Product not found with ID: " + requestedProductId));
         }
         // If metricId is provided, ensure it exists, is ACTIVE, and (when product known) belongs to that product
         if (request.getBillableMetricId() != null) {
@@ -93,10 +91,11 @@ public class RatePlanServiceImpl implements RatePlanService {
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
 
-        if (request.getProductName() != null && !request.getProductName().trim().isEmpty()) {
-            String trimmedName = request.getProductName().trim();
-            Product product = productRepository.findByProductNameIgnoreCaseAndOrganizationId(trimmedName, orgId)
-                    .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
+        if (request.getProductId() != null) {
+            Long requestedProductId = request.getProductId();
+            Product product = productRepository
+                    .findByProductIdAndOrganizationId(requestedProductId, orgId)
+                    .orElseThrow(() -> new NotFoundException("Product not found with ID: " + requestedProductId));
             ratePlan.setProduct(product);
         }
 
@@ -125,10 +124,11 @@ public class RatePlanServiceImpl implements RatePlanService {
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
 
-        if (request.getProductName() != null && !request.getProductName().trim().isEmpty()) {
-            String trimmedName = request.getProductName().trim();
-            Product product = productRepository.findByProductNameIgnoreCaseAndOrganizationId(trimmedName, orgId)
-                    .orElseThrow(() -> new NotFoundException("Product not found: " + trimmedName));
+        if (request.getProductId() != null) {
+            Long requestedProductId = request.getProductId();
+            Product product = productRepository
+                    .findByProductIdAndOrganizationId(requestedProductId, orgId)
+                    .orElseThrow(() -> new NotFoundException("Product not found with ID: " + requestedProductId));
             ratePlan.setProduct(product);
         }
 
