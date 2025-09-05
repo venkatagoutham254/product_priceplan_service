@@ -23,6 +23,29 @@ public class RatePlanServiceImpl implements RatePlanService {
     private final RatePlanAssembler ratePlanAssembler;
     private final BillableMetricClient billableMetricClient;
 
+    /**
+     * Ensure the billableMetricId on a rate plan still points to an existing Billable Metric.
+     * If the metric was deleted in the external service, we null out the reference and persist.
+     */
+    private RatePlan ensureMetricStillExists(RatePlan ratePlan) {
+        Long metricId = ratePlan.getBillableMetricId();
+        if (metricId == null) {
+            return ratePlan;
+        }
+        boolean exists;
+        try {
+            exists = billableMetricClient.metricExists(metricId);
+        } catch (Exception e) {
+            // If validation service is down, don't mutate state on reads; just return as-is
+            return ratePlan;
+        }
+        if (!exists) {
+            ratePlan.setBillableMetricId(null);
+            return ratePlanRepository.save(ratePlan);
+        }
+        return ratePlan;
+    }
+
     @Override
     public RatePlanDTO createRatePlan(CreateRatePlanRequest request) {
         Long orgId = TenantContext.require();
@@ -56,6 +79,7 @@ public class RatePlanServiceImpl implements RatePlanService {
         Long orgId = TenantContext.require();
         return ratePlanRepository.findAllByOrganizationId(orgId)
                 .stream()
+                .map(this::ensureMetricStillExists)
                 .map(ratePlanMapper::toDTO)
                 .collect(Collectors.toList());
     }
@@ -65,6 +89,7 @@ public class RatePlanServiceImpl implements RatePlanService {
         Long orgId = TenantContext.require();
         return ratePlanRepository.findByProduct_ProductIdAndOrganizationId(productId, orgId)
                 .stream()
+                .map(this::ensureMetricStillExists)
                 .map(ratePlanMapper::toDTO)
                 .collect(Collectors.toList());
     }
@@ -74,6 +99,7 @@ public class RatePlanServiceImpl implements RatePlanService {
         Long orgId = TenantContext.require();
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
+        ratePlan = ensureMetricStillExists(ratePlan);
         return ratePlanMapper.toDTO(ratePlan);
     }
 
