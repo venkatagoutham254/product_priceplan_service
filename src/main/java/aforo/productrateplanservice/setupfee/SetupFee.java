@@ -23,7 +23,7 @@ public class SetupFee {
     @JoinColumn(name = "rate_plan_id", nullable = false)
     private RatePlan ratePlan;
 
-    @Column(name = "setup_fee", nullable = false)
+    @Column(name = "setup_fee")
     private BigDecimal setupFee;
 
     @Column(name = "application_timing")

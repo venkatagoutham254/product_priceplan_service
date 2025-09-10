@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-09-09-org-unique-products
+      author: aforo.ai
+      changes:
+        # Drop global unique constraints from the initial reset
+        - dropUniqueConstraint:
+            tableName: aforo_product
+            constraintName: uq_aforo_product__product_name
+        - dropUniqueConstraint:
+            tableName: aforo_product
+            constraintName: uq_aforo_product__internal_sku_code
+
+        # Add org-scoped unique constraints
+        - addUniqueConstraint:
+            tableName: aforo_product
+            columnNames: organization_id, product_name
+            constraintName: uq_aforo_product__org_name
+        - addUniqueConstraint:
+            tableName: aforo_product
+            columnNames: organization_id, internal_sku_code
+            constraintName: uq_aforo_product__org_sku

@@ -8,6 +8,7 @@ import aforo.productrateplanservice.product.mapper.ProductSQLResultMapper;
 import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductSQLResultRequest;
 import aforo.productrateplanservice.product.request.UpdateProductSQLResultRequest;
+import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +30,18 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
     @Override
     @Transactional
     public ProductSQLResultDTO create(Long productId, CreateProductSQLResultRequest request) {
-        Product product = productRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
         // Ensure only one config type per product
-        if (sqlResultRepository.existsById(productId)) {
+        if (sqlResultRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has SQL Result configuration.");
         }
-        if (productAPIRepository.existsById(productId)
-         || productFlatFileRepository.existsById(productId)
-         || productLLMTokenRepository.existsById(productId)
-         || productStorageRepository.existsById(productId)) {
+        if (productAPIRepository.existsByProduct_ProductId(productId)
+         || productFlatFileRepository.existsByProduct_ProductId(productId)
+         || productLLMTokenRepository.existsByProduct_ProductId(productId)
+         || productStorageRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException(
                     "Product " + productId + " already has a different configuration type. " +
                     "A product can only have one configuration type."
@@ -59,7 +61,9 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
     @Override
     @Transactional(readOnly = true)
     public ProductSQLResultDTO getByProductId(Long productId) {
-        ProductSQLResult entity = sqlResultRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        ProductSQLResult entity = sqlResultRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
         return mapper.toDTO(entity);
     }
@@ -67,7 +71,8 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductSQLResultDTO> getAll() {
-        return sqlResultRepository.findAll()
+        Long orgId = TenantContext.require();
+        return sqlResultRepository.findAllByProduct_OrganizationId(orgId)
                 .stream()
                 .map(mapper::toDTO)
                 .toList();
@@ -76,7 +81,9 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
     @Override
     @Transactional
     public ProductSQLResultDTO update(Long productId, UpdateProductSQLResultRequest request) {
-        ProductSQLResult existing = sqlResultRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        ProductSQLResult existing = sqlResultRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
 
         // Require all fields for full update
@@ -94,7 +101,9 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
     @Override
     @Transactional
     public ProductSQLResultDTO partialUpdate(Long productId, UpdateProductSQLResultRequest request) {
-        ProductSQLResult existing = sqlResultRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        ProductSQLResult existing = sqlResultRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
 
         if (request.getDbType() != null) existing.setDbType(request.getDbType());
@@ -107,9 +116,10 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
     @Override
     @Transactional
     public void delete(Long productId) {
-        if (!sqlResultRepository.existsById(productId)) {
-            throw new NotFoundException("SQL Result configuration not found for product " + productId);
-        }
+        Long orgId = TenantContext.require();
+        sqlResultRepository
+            .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
+            .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
         sqlResultRepository.deleteById(productId);
     }
 }

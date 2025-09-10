@@ -13,6 +13,25 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import aforo.productrateplanservice.flatfee.FlatFeeRepository;
+import aforo.productrateplanservice.flatfee.FlatFeeMapper;
+import aforo.productrateplanservice.tieredpricing.TieredPricingRepository;
+import aforo.productrateplanservice.tieredpricing.TieredPricingMapper;
+import aforo.productrateplanservice.volumepricing.VolumePricingRepository;
+import aforo.productrateplanservice.volumepricing.VolumePricingMapper;
+import aforo.productrateplanservice.usagebasedpricing.UsageBasedPricingRepository;
+import aforo.productrateplanservice.usagebasedpricing.UsageBasedPricingMapper;
+import aforo.productrateplanservice.stairsteppricing.StairStepPricingRepository;
+import aforo.productrateplanservice.stairsteppricing.StairStepPricingMapper;
+import aforo.productrateplanservice.setupfee.SetupFeeRepository;
+import aforo.productrateplanservice.setupfee.SetupFeeMapper;
+import aforo.productrateplanservice.discount.DiscountRepository;
+import aforo.productrateplanservice.discount.DiscountMapper;
+import aforo.productrateplanservice.freemium.FreemiumRepository;
+import aforo.productrateplanservice.freemium.FreemiumMapper;
+import aforo.productrateplanservice.minimumcommitment.MinimumCommitmentRepository;
+import aforo.productrateplanservice.minimumcommitment.MinimumCommitmentMapper;
+
 @Service
 @RequiredArgsConstructor
 public class RatePlanServiceImpl implements RatePlanService {
@@ -22,6 +41,26 @@ public class RatePlanServiceImpl implements RatePlanService {
     private final RatePlanMapper ratePlanMapper;
     private final RatePlanAssembler ratePlanAssembler;
     private final BillableMetricClient billableMetricClient;
+    // Pricing repos + mappers
+    private final FlatFeeRepository flatFeeRepository;
+    private final FlatFeeMapper flatFeeMapper;
+    private final TieredPricingRepository tieredPricingRepository;
+    private final TieredPricingMapper tieredPricingMapper;
+    private final VolumePricingRepository volumePricingRepository;
+    private final VolumePricingMapper volumePricingMapper;
+    private final UsageBasedPricingRepository usageBasedPricingRepository;
+    private final UsageBasedPricingMapper usageBasedPricingMapper;
+    private final StairStepPricingRepository stairStepPricingRepository;
+    private final StairStepPricingMapper stairStepPricingMapper;
+    // Extras repos + mappers
+    private final SetupFeeRepository setupFeeRepository;
+    private final SetupFeeMapper setupFeeMapper;
+    private final DiscountRepository discountRepository;
+    private final DiscountMapper discountMapper;
+    private final FreemiumRepository freemiumRepository;
+    private final FreemiumMapper freemiumMapper;
+    private final MinimumCommitmentRepository minimumCommitmentRepository;
+    private final MinimumCommitmentMapper minimumCommitmentMapper;
 
     /**
      * Ensure the billableMetricId on a rate plan still points to an existing Billable Metric.
@@ -44,6 +83,64 @@ public class RatePlanServiceImpl implements RatePlanService {
             return ratePlanRepository.save(ratePlan);
         }
         return ratePlan;
+    }
+
+    private RatePlanDTO toDetailedDTO(RatePlan ratePlan) {
+        RatePlanDTO dto = ratePlanMapper.toDTO(ratePlan);
+        Long ratePlanId = dto.getRatePlanId();
+
+        // Pricing configurations
+        // FlatFee - at most one
+        flatFeeRepository.findByRatePlanId(ratePlanId)
+                .ifPresent(entity -> dto.setFlatFee(flatFeeMapper.toDTO(entity)));
+
+        dto.setTieredPricings(
+                tieredPricingRepository.findByRatePlan_RatePlanId(ratePlanId).stream()
+                        .map(tieredPricingMapper::toDTO)
+                        .collect(Collectors.toList())
+        );
+
+        dto.setVolumePricings(
+                volumePricingRepository.findByRatePlanRatePlanId(ratePlanId).stream()
+                        .map(volumePricingMapper::toDTO)
+                        .collect(Collectors.toList())
+        );
+
+        dto.setUsageBasedPricings(
+                usageBasedPricingRepository.findByRatePlanRatePlanId(ratePlanId).stream()
+                        .map(usageBasedPricingMapper::toDTO)
+                        .collect(Collectors.toList())
+        );
+
+        dto.setStairStepPricings(
+                stairStepPricingRepository.findByRatePlanRatePlanId(ratePlanId).stream()
+                        .map(stairStepPricingMapper::toDTO)
+                        .collect(Collectors.toList())
+        );
+
+        // Extras
+        dto.setSetupFees(
+                setupFeeRepository.findByRatePlan_RatePlanId(ratePlanId).stream()
+                        .map(setupFeeMapper::toDTO)
+                        .collect(Collectors.toList())
+        );
+        dto.setDiscounts(
+                discountRepository.findByRatePlan_RatePlanId(ratePlanId).stream()
+                        .map(discountMapper::toDTO)
+                        .collect(Collectors.toList())
+        );
+        dto.setFreemiums(
+                freemiumRepository.findByRatePlan_RatePlanId(ratePlanId).stream()
+                        .map(freemiumMapper::toDTO)
+                        .collect(Collectors.toList())
+        );
+        dto.setMinimumCommitments(
+                minimumCommitmentRepository.findByRatePlan_RatePlanId(ratePlanId).stream()
+                        .map(minimumCommitmentMapper::toDTO)
+                        .collect(Collectors.toList())
+        );
+
+        return dto;
     }
 
     @Override
@@ -80,7 +177,7 @@ public class RatePlanServiceImpl implements RatePlanService {
         return ratePlanRepository.findAllByOrganizationId(orgId)
                 .stream()
                 .map(this::ensureMetricStillExists)
-                .map(ratePlanMapper::toDTO)
+                .map(this::toDetailedDTO)
                 .collect(Collectors.toList());
     }
 
@@ -90,7 +187,7 @@ public class RatePlanServiceImpl implements RatePlanService {
         return ratePlanRepository.findByProduct_ProductIdAndOrganizationId(productId, orgId)
                 .stream()
                 .map(this::ensureMetricStillExists)
-                .map(ratePlanMapper::toDTO)
+                .map(this::toDetailedDTO)
                 .collect(Collectors.toList());
     }
 
@@ -100,7 +197,7 @@ public class RatePlanServiceImpl implements RatePlanService {
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
         ratePlan = ensureMetricStillExists(ratePlan);
-        return ratePlanMapper.toDTO(ratePlan);
+        return toDetailedDTO(ratePlan);
     }
 
     @Override
@@ -194,19 +291,19 @@ public class RatePlanServiceImpl implements RatePlanService {
             throw new IllegalStateException("RatePlan is already ACTIVE");
         }
 
-        // ✅ enforce billableMetricId must exist before activating
+        // enforce billableMetricId must exist before activating
         if (ratePlan.getBillableMetricId() == null) {
             throw new ValidationException("Billable Metric ID is required before finalizing a RatePlan.");
         }
         
-        // ✅ validate with external service: must be ACTIVE and (if product known) belong to product
+        // validate with external service: must be ACTIVE and (if product known) belong to product
         Long productId = (ratePlan.getProduct() != null) ? ratePlan.getProduct().getProductId() : null;
         billableMetricClient.validateActiveForProduct(ratePlan.getBillableMetricId(), productId);
     
         ratePlan.setStatus(RatePlanStatus.ACTIVE);
         ratePlan = ratePlanRepository.save(ratePlan);
     
-        return ratePlanMapper.toDTO(ratePlan);
+        return toDetailedDTO(ratePlan);
     }
     
 }

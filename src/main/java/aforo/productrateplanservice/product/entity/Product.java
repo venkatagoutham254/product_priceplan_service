@@ -20,7 +20,8 @@ import aforo.productrateplanservice.product.util.JsonListConverter;
 @Table(
     name = "aforo_product",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uc_product_name_trimmed", columnNames = {"product_name"})
+        @UniqueConstraint(name = "uq_aforo_product__org_name", columnNames = {"organization_id", "product_name"}),
+        @UniqueConstraint(name = "uq_aforo_product__org_sku", columnNames = {"organization_id", "internal_sku_code"})
     }
 )
 @Data
@@ -33,7 +34,7 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long productId;
 
-    @Column(name = "product_name", unique = true)
+    @Column(name = "product_name")
     private String productName;
 
     @Column(name = "organization_id", nullable = false)
@@ -53,7 +54,7 @@ public class Product {
     @Column(name = "product_type", nullable = true)
     private ProductType productType;
 
-    @Column(unique = true)
+    @Column(name = "internal_sku_code")
     private String internalSkuCode;
 
     @Column(name = "icon", nullable = true, length = 1024)

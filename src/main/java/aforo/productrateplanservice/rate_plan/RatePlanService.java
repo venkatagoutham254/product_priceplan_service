@@ -17,5 +17,4 @@ public interface RatePlanService {
     RatePlanDTO updateRatePlanFully(Long ratePlanId, UpdateRatePlanRequest request);
     RatePlanDTO updateRatePlanPartially(Long ratePlanId, UpdateRatePlanRequest request);
     RatePlanDTO confirmRatePlan(Long ratePlanId);
- 
 }

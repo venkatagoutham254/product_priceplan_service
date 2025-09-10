@@ -13,6 +13,7 @@ import aforo.productrateplanservice.product.repository.ProductLLMTokenRepository
 import aforo.productrateplanservice.product.repository.ProductStorageRepository;
 import aforo.productrateplanservice.product.request.CreateProductAPIRequest;
 import aforo.productrateplanservice.product.request.UpdateProductAPIRequest;
+import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,17 +36,18 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     @Override
     @Transactional
     public ProductAPIDTO create(Long productId, CreateProductAPIRequest request) {
-        Product product = productRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
         // ensure one API config per product and no other config types exist
-        if (productAPIRepository.existsById(productId)) {
+        if (productAPIRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has API configuration.");
         }
-        if (productFlatFileRepository.existsById(productId) ||
-            productSQLResultRepository.existsById(productId) ||
-            productLLMTokenRepository.existsById(productId) ||
-            productStorageRepository.existsById(productId)) {
+        if (productFlatFileRepository.existsByProduct_ProductId(productId) ||
+            productSQLResultRepository.existsByProduct_ProductId(productId) ||
+            productLLMTokenRepository.existsByProduct_ProductId(productId) ||
+            productStorageRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException(
                 "Product " + productId + " already has a different configuration type. " +
                 "A product can have only one configuration type."
@@ -64,7 +66,9 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     @Override
     @Transactional(readOnly = true)
     public ProductAPIDTO getByProductId(Long productId) {
-        ProductAPI api = productAPIRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        ProductAPI api = productAPIRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("API configuration not found for product " + productId));
         return productAPIMapper.toDTO(api);
     }
@@ -72,7 +76,8 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductAPIDTO> getAll() {
-        return productAPIRepository.findAll()
+        Long orgId = TenantContext.require();
+        return productAPIRepository.findAllByProduct_OrganizationId(orgId)
                 .stream()
                 .map(productAPIMapper::toDTO)
                 .toList();
@@ -81,7 +86,9 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     @Override
     @Transactional
     public ProductAPIDTO updateFully(Long productId, UpdateProductAPIRequest request) {
-        ProductAPI existing = productAPIRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        ProductAPI existing = productAPIRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("API configuration not found for product " + productId));
 
         // PUT = both fields required
@@ -98,7 +105,9 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     @Override
     @Transactional
     public ProductAPIDTO updatePartially(Long productId, UpdateProductAPIRequest request) {
-        ProductAPI existing = productAPIRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        ProductAPI existing = productAPIRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("API configuration not found for product " + productId));
 
         if (request.getEndpointUrl() != null) {
@@ -114,9 +123,10 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     @Override
     @Transactional
     public void delete(Long productId) {
-        if (!productAPIRepository.existsById(productId)) {
-            throw new NotFoundException("API configuration not found for product " + productId);
-        }
+        Long orgId = TenantContext.require();
+        productAPIRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("API configuration not found for product " + productId));
         productAPIRepository.deleteById(productId);
     }
 }
