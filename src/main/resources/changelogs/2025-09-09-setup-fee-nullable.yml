@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: setup-fee-columns-nullable
+      author: cascade
+      changes:
+        - dropNotNullConstraint:
+            tableName: rate_plan_setup_fee
+            columnName: setup_fee
+            columnDataType: DECIMAL(12,4)

@@ -305,7 +305,8 @@ public class ProductServiceImpl implements ProductService {
         if (icon == null || icon.isEmpty()) {
             throw new IllegalArgumentException("Icon file is required");
         }
-        Product product = productRepository.findById(id)
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
         // delete previous file if any
@@ -322,7 +323,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deleteIcon(Long id) {
-        Product product = productRepository.findById(id)
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
         if (product.getIcon() != null) {
             iconStorageService.deleteByUrl(product.getIcon());

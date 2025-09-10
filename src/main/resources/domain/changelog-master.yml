@@ -57,3 +57,7 @@ databaseChangeLog:
       file: changelogs/2025-09-03-usage-based-fk-cascade.yml
   - include:
       file: changelogs/2025-09-02_add_tenancy.yml
+  - include:
+      file: changelogs/2025-09-09-org-unique-products.yml
+  - include:
+      file: changelogs/2025-09-09-setup-fee-nullable.yml

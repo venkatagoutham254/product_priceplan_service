@@ -8,6 +8,7 @@ import aforo.productrateplanservice.product.mapper.ProductFlatFileMapper;
 import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductFlatFileRequest;
 import aforo.productrateplanservice.product.request.UpdateProductFlatFileRequest;
+import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +30,18 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     @Override
     @Transactional
     public ProductFlatFileDTO create(Long productId, CreateProductFlatFileRequest request) {
-        Product product = productRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
         // Ensure only one config type per product
-        if (flatFileRepository.existsById(productId)) {
+        if (flatFileRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has FlatFile configuration.");
         }
-        if (productAPIRepository.existsById(productId)
-         || productLLMTokenRepository.existsById(productId)
-         || productSQLResultRepository.existsById(productId)
-         || productStorageRepository.existsById(productId)) {
+        if (productAPIRepository.existsByProduct_ProductId(productId)
+         || productLLMTokenRepository.existsByProduct_ProductId(productId)
+         || productSQLResultRepository.existsByProduct_ProductId(productId)
+         || productStorageRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException(
                     "Product " + productId + " already has a different configuration type. " +
                     "A product can only have one configuration type."
@@ -58,7 +60,9 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     @Override
     @Transactional(readOnly = true)
     public ProductFlatFileDTO getByProductId(Long productId) {
-        ProductFlatFile entity = flatFileRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        ProductFlatFile entity = flatFileRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("FlatFile configuration not found for product " + productId));
         return mapper.toDTO(entity);
     }
@@ -66,7 +70,8 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductFlatFileDTO> getAll() {
-        return flatFileRepository.findAll()
+        Long orgId = TenantContext.require();
+        return flatFileRepository.findAllByProduct_OrganizationId(orgId)
                 .stream()
                 .map(mapper::toDTO)
                 .toList();
@@ -75,7 +80,9 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     @Override
     @Transactional
     public ProductFlatFileDTO update(Long productId, UpdateProductFlatFileRequest request) {
-        ProductFlatFile existing = flatFileRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        ProductFlatFile existing = flatFileRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("FlatFile configuration not found for product " + productId));
 
         // Full update requires both fields
@@ -92,7 +99,9 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     @Override
     @Transactional
     public ProductFlatFileDTO partialUpdate(Long productId, UpdateProductFlatFileRequest request) {
-        ProductFlatFile existing = flatFileRepository.findById(productId)
+        Long orgId = TenantContext.require();
+        ProductFlatFile existing = flatFileRepository
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("FlatFile configuration not found for product " + productId));
 
         if (request.getFileLocation() != null) existing.setFileLocation(request.getFileLocation());
@@ -104,9 +113,10 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     @Override
     @Transactional
     public void delete(Long productId) {
-        if (!flatFileRepository.existsById(productId)) {
-            throw new NotFoundException("FlatFile configuration not found for product " + productId);
-        }
+        Long orgId = TenantContext.require();
+        flatFileRepository
+            .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
+            .orElseThrow(() -> new NotFoundException("FlatFile configuration not found for product " + productId));
         flatFileRepository.deleteById(productId);
     }
 }
