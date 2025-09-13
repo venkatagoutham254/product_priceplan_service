@@ -68,6 +68,10 @@ public class RatePlanResource {
         return ResponseEntity.ok(ratePlanService.confirmRatePlan(ratePlanId));
     }
     
-
-
+    // INTERNAL: called by Billable Metrics Service when a metric is deleted
+    @DeleteMapping("/internal/billable-metrics/{metricId}")
+    public ResponseEntity<Void> deleteByBillableMetric(@PathVariable("metricId") Long metricId) {
+        ratePlanService.deleteByBillableMetricId(metricId);
+        return ResponseEntity.noContent().build();
     }
+}

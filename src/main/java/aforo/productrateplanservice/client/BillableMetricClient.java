@@ -1,7 +1,6 @@
 package aforo.productrateplanservice.client;
 
 import aforo.productrateplanservice.exception.ValidationException;
-import aforo.productrateplanservice.client.BillableMetricResponse;
 import aforo.productrateplanservice.tenant.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -10,7 +9,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class BillableMetricClient {
@@ -24,6 +22,28 @@ public class BillableMetricClient {
             throw new ValidationException("Invalid billableMetricId: " + id);
         }
     }
+    /**
+     * Delete all billable metrics for the given product in the current organization.
+     * Calls the internal endpoint exposed by the Billable Metrics service.
+     */
+    public void deleteMetricsByProductId(Long productId) {
+        try {
+            Long orgId = TenantContext.require();
+            String token = TenantContext.getJwt();
+
+            webClient.delete()
+                    .uri("/internal/products/{productId}", productId)
+                    .header("X-Organization-Id", String.valueOf(orgId))
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+        } catch (WebClientResponseException.NotFound e) {
+            // Nothing to delete
+        } catch (Exception e) {
+            System.err.println(" Failed to delete billable metrics for productId " + productId + ": " + e.getMessage());
+        }
+    }
 
     public boolean metricExists(Long id) {
         try {
@@ -33,7 +53,7 @@ public class BillableMetricClient {
             webClient.get()
                      .uri("/api/billable-metrics/{id}", id)
                      .header("X-Organization-Id", String.valueOf(orgId))
-                     .header("Authorization", "Bearer " + token) // 👈 forward token
+                     .header("Authorization", "Bearer " + token) // 
                      .retrieve()
                      .toBodilessEntity()
                      .block();
