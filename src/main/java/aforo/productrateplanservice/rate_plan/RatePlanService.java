@@ -17,4 +17,7 @@ public interface RatePlanService {
     RatePlanDTO updateRatePlanFully(Long ratePlanId, UpdateRatePlanRequest request);
     RatePlanDTO updateRatePlanPartially(Long ratePlanId, UpdateRatePlanRequest request);
     RatePlanDTO confirmRatePlan(Long ratePlanId);
+
+    // INTERNAL: delete all rate plans linked to a billable metric for the current tenant
+    void deleteByBillableMetricId(Long billableMetricId);
 }

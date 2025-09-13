@@ -306,4 +306,11 @@ public class RatePlanServiceImpl implements RatePlanService {
         return toDetailedDTO(ratePlan);
     }
     
+    @Override
+    public void deleteByBillableMetricId(Long billableMetricId) {
+        Long orgId = TenantContext.require();
+        // Best-effort cleanup of rate plans pointing to this metric for the current tenant
+        ratePlanRepository.deleteByBillableMetricIdAndOrganizationId(billableMetricId, orgId);
+    }
+    
 }

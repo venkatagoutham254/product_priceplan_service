@@ -20,4 +20,7 @@ public interface RatePlanRepository extends JpaRepository<RatePlan, Long> {
     List<RatePlan> findAllByOrganizationId(Long organizationId);
     Optional<RatePlan> findByRatePlanIdAndOrganizationId(Long ratePlanId, Long organizationId);
 
+    // Delete by billable metric id for a given tenant
+    void deleteByBillableMetricIdAndOrganizationId(Long billableMetricId, Long organizationId);
+
 }

@@ -190,6 +190,9 @@ public class ProductServiceImpl implements ProductService {
         // delete child rate plans first
         ratePlanRepository.deleteByProduct_ProductIdAndOrganizationId(productId, orgId);
 
+        // delete billable metrics linked to this product in external service
+        billableMetricClient.deleteMetricsByProductId(productId);
+
         productRepository.deleteByProductIdAndOrganizationId(productId, orgId);
     }
 
