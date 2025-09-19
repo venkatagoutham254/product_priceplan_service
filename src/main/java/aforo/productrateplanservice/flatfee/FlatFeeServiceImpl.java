@@ -15,7 +15,7 @@ public class FlatFeeServiceImpl implements FlatFeeService {
 
     private final FlatFeeRepository flatFeeRepository;
     private final FlatFeeMapper flatFeeMapper;
-    private final RatePlanRepository ratePlanRepository; // ✅ added
+    private final RatePlanRepository ratePlanRepository; // 
 
     @Override
     public FlatFeeDTO createFlatFee(Long ratePlanId, FlatFeeCreateUpdateDTO dto) {
@@ -23,7 +23,7 @@ public class FlatFeeServiceImpl implements FlatFeeService {
             throw new IllegalStateException("FlatFee already exists for ratePlanId: " + ratePlanId);
         }
 
-        // ✅ Validate that the ratePlanId exists
+        // 
         RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
                 .orElseThrow(() -> new EntityNotFoundException("RatePlan not found with ID: " + ratePlanId));
 
@@ -33,26 +33,20 @@ public class FlatFeeServiceImpl implements FlatFeeService {
     }
 
     @Override
-    public FlatFeeDTO updateFlatFee(Long ratePlanId, FlatFeeCreateUpdateDTO dto) {
-        FlatFee existing = flatFeeRepository.findByRatePlanId(ratePlanId)
-                .orElseThrow(() -> new EntityNotFoundException("FlatFee config not found for ratePlanId: " + ratePlanId));
+    public FlatFeeDTO updateFlatFee(Long ratePlanId, Long flatFeeId, FlatFeeCreateUpdateDTO dto) {
+        // 
+        ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new EntityNotFoundException("RatePlan not found with ID: " + ratePlanId));
 
-        // ✅ Update only the provided fields (partial update behavior)
-        if (dto.getFlatFeeAmount() != null) {
-            existing.setFlatFeeAmount(dto.getFlatFeeAmount());
-        }
+        // 
+        FlatFee existing = flatFeeRepository.findById(flatFeeId)
+                .orElseThrow(() -> new EntityNotFoundException("FlatFee not found with ID: " + flatFeeId));
 
-        if (dto.getNumberOfApiCalls() != null) {
-            existing.setNumberOfApiCalls(dto.getNumberOfApiCalls());
-        }
+        // 
+        existing.setRatePlanId(ratePlanId);
 
-        if (dto.getOverageUnitRate() != null) {
-            existing.setOverageUnitRate(dto.getOverageUnitRate());
-        }
-
-        if (dto.getGraceBuffer() != null) {
-            existing.setGraceBuffer(dto.getGraceBuffer());
-        }
+        // 
+        flatFeeMapper.updateEntity(existing, dto);
 
         FlatFee updated = flatFeeRepository.save(existing);
         return flatFeeMapper.toDTO(updated);
@@ -79,5 +73,13 @@ public class FlatFeeServiceImpl implements FlatFeeService {
                 .orElseThrow(() -> new EntityNotFoundException("FlatFee config not found for ratePlanId: " + ratePlanId));
 
         flatFeeRepository.delete(entity);
+    }
+
+    @Override
+    public void deleteById(Long flatFeeId) {
+        if (!flatFeeRepository.existsById(flatFeeId)) {
+            throw new EntityNotFoundException("FlatFee not found with ID: " + flatFeeId);
+        }
+        flatFeeRepository.deleteById(flatFeeId);
     }
 }

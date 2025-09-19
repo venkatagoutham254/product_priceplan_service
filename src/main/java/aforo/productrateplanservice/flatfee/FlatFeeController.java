@@ -22,12 +22,13 @@ public class FlatFeeController {
         return ResponseEntity.ok(flatFeeService.createFlatFee(ratePlanId, request));
     }
 
-    @PutMapping
+    @PutMapping("/{flatFeeId}")
     public ResponseEntity<FlatFeeDTO> updateFlatFee(
             @PathVariable Long ratePlanId,
+            @PathVariable Long flatFeeId,
             @Valid @RequestBody FlatFeeCreateUpdateDTO request
     ) {
-        return ResponseEntity.ok(flatFeeService.updateFlatFee(ratePlanId, request));
+        return ResponseEntity.ok(flatFeeService.updateFlatFee(ratePlanId, flatFeeId, request));
     }
 
     @GetMapping
@@ -40,9 +41,9 @@ public class FlatFeeController {
         return ResponseEntity.ok(flatFeeService.getAllFlatFees());
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> deleteFlatFee(@PathVariable Long ratePlanId) {
-        flatFeeService.deleteFlatFeeByRatePlanId(ratePlanId);
+    @DeleteMapping("/{flatFeeId}")
+    public ResponseEntity<Void> deleteFlatFee(@PathVariable Long flatFeeId) {
+        flatFeeService.deleteById(flatFeeId);
         return ResponseEntity.noContent().build();
     }
 }

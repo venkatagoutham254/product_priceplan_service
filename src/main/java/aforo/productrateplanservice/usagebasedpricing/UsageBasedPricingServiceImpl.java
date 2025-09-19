@@ -29,10 +29,14 @@ public class UsageBasedPricingServiceImpl implements UsageBasedPricingService {
 
     @Override
     @Transactional
-    public UsageBasedPricingDTO update(Long usageBasedPricingId, UsageBasedPricingCreateUpdateDTO dto) {
+    public UsageBasedPricingDTO update(Long ratePlanId, Long usageBasedPricingId, UsageBasedPricingCreateUpdateDTO dto) {
         UsageBasedPricing existing = repository.findById(usageBasedPricingId)
                 .orElseThrow(() -> new ResourceNotFoundException("UsageBasedPricing not found with ID: " + usageBasedPricingId));
 
+        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new ResourceNotFoundException("RatePlan not found with ID: " + ratePlanId));
+
+        existing.setRatePlan(ratePlan);
         mapper.updateEntity(existing, dto);
         return mapper.toDTO(repository.save(existing));
     }

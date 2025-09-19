@@ -23,9 +23,10 @@ public class UsageBasedPricingController {
 
     @PutMapping("/{usageBasedPricingId}")
     public ResponseEntity<UsageBasedPricingDTO> update(
+            @PathVariable Long ratePlanId,
             @PathVariable Long usageBasedPricingId,
             @Valid @RequestBody UsageBasedPricingCreateUpdateDTO dto) {
-        return ResponseEntity.ok(usageBasedPricingService.update(usageBasedPricingId, dto));
+        return ResponseEntity.ok(usageBasedPricingService.update(ratePlanId, usageBasedPricingId, dto));
     }
 
     @GetMapping

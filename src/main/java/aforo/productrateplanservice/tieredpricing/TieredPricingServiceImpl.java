@@ -35,10 +35,14 @@ public class TieredPricingServiceImpl implements TieredPricingService {
 
     @Override
     @Transactional
-    public TieredPricingDTO update(Long tieredPricingId, TieredPricingCreateUpdateDTO dto) {
+    public TieredPricingDTO update(Long ratePlanId, Long tieredPricingId, TieredPricingCreateUpdateDTO dto) {
         TieredPricing existing = tieredPricingRepository.findById(tieredPricingId)
                 .orElseThrow(() -> new ResourceNotFoundException("TieredPricing not found with ID: " + tieredPricingId));
 
+        RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
+                .orElseThrow(() -> new ResourceNotFoundException("RatePlan not found with ID: " + ratePlanId));
+
+        existing.setRatePlan(ratePlan);
         tieredPricingMapper.updateEntity(existing, dto);
         // Set parent reference for all tiers
         if (existing.getTiers() != null) {
