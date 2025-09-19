@@ -23,9 +23,10 @@ public class TieredPricingController {
 
     @PutMapping("/{tieredPricingId}")
     public ResponseEntity<TieredPricingDTO> update(
+            @PathVariable Long ratePlanId,
             @PathVariable Long tieredPricingId,
             @Valid @RequestBody TieredPricingCreateUpdateDTO dto) {
-        return ResponseEntity.ok(tieredPricingService.update(tieredPricingId, dto));
+        return ResponseEntity.ok(tieredPricingService.update(ratePlanId, tieredPricingId, dto));
     }
 
     @GetMapping

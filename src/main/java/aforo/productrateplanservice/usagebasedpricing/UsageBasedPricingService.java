@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface UsageBasedPricingService {
     UsageBasedPricingDTO create(Long ratePlanId, UsageBasedPricingCreateUpdateDTO dto);
-    UsageBasedPricingDTO update(Long usageBasedPricingId, UsageBasedPricingCreateUpdateDTO dto);
+    UsageBasedPricingDTO update(Long ratePlanId, Long usageBasedPricingId, UsageBasedPricingCreateUpdateDTO dto);
     List<UsageBasedPricingDTO> getAllByRatePlanId(Long ratePlanId);
     List<UsageBasedPricingDTO> getAll();
     UsageBasedPricingDTO getById(Long id);
