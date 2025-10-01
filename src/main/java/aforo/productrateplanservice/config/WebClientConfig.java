@@ -24,10 +24,19 @@ public class WebClientConfig {
 
 
     @Bean
-public WebClient ratePlanServiceWebClient() {
-    // Update this line - change /rate-plans to /rateplans
-    return WebClient.builder()
-            .baseUrl("http://54.238.204.246:8080/api/rateplans")  // Fixed path
-            .build();
+    public WebClient ratePlanServiceWebClient(
+            WebClient.Builder builder,
+            @Value("${product.service.url:http://54.238.204.246:8080}") String productServiceBaseUrl) {
+        return builder
+                .baseUrl(productServiceBaseUrl + "/api/rateplans")
+                .build();
+    }
+
+    @Bean(name = "subscriptionWebClient")
+    public WebClient subscriptionWebClient(
+            WebClient.Builder builder,
+            @Value("${subscriptions.service.url:http://localhost:8084}") String baseUrl) {
+        return builder.baseUrl(baseUrl).build();
+    }
 }
-}
+
