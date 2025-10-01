@@ -21,6 +21,7 @@ import aforo.productrateplanservice.product.request.CreateProductRequest;
 import aforo.productrateplanservice.product.request.UpdateProductRequest;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import aforo.productrateplanservice.client.BillableMetricClient;
+import aforo.productrateplanservice.product.status.ProductStatusResolver;
 import aforo.productrateplanservice.storage.IconStorageService;
 import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductLLMTokenRepository productLLMTokenRepository;
     private final ProductStorageRepository productStorageRepository;
     private final IconStorageService iconStorageService;
+    private final ProductStatusResolver productStatusResolver;
 
     @Override
     @Transactional
@@ -99,6 +101,8 @@ public class ProductServiceImpl implements ProductService {
         ProductDTO dto = productAssembler.toDTO(product);
         // fetch only metrics for this product
         dto.setBillableMetrics(billableMetricClient.getMetricsByProductId(productId));
+        // compute derived status
+        dto.setStatus(productStatusResolver.compute(product));
         return dto;
     }
     
@@ -113,6 +117,8 @@ public class ProductServiceImpl implements ProductService {
                     dto.setBillableMetrics(
                             billableMetricClient.getMetricsByProductId(product.getProductId())
                     );
+                    // compute derived status
+                    dto.setStatus(productStatusResolver.compute(product));
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -285,10 +291,11 @@ public class ProductServiceImpl implements ProductService {
             throw new IllegalArgumentException("Multiple type configurations found. Only one product type is allowed per product.");
         }
 
-        // All good → activate
-        product.setStatus(ProductStatus.ACTIVE);
+        // All good → validations passed; do not mutate status field (status is derived)
         Product saved = productRepository.save(product);
-        return productAssembler.toDTO(saved);
+        ProductDTO dto = productAssembler.toDTO(saved);
+        dto.setStatus(productStatusResolver.compute(saved));
+        return dto;
     }
 
     // ---- helpers ----

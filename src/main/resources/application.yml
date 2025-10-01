@@ -46,6 +46,16 @@ billableMetrics:
   service:
     url: http://18.182.19.181:8081  
 
+# Base URL for Product/RatePlan API (used by ratePlanServiceWebClient). Can be overridden via PRODUCT_SERVICE_URL env.
+product:
+  service:
+    url: ${PRODUCT_SERVICE_URL:http://54.238.204.246:8080}
+
+# Base URL for Subscription Service used for LIVE status checks. Must be set in deploy.
+subscriptions:
+  service:
+    url: ${SUBSCRIPTIONS_SERVICE_URL:http://13.113.70.183:8084}
+
 ---
 # PostgreSQL-specific configurations
 spring:

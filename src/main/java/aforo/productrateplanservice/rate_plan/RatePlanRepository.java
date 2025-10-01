@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
+import aforo.productrateplanservice.product.enums.RatePlanStatus;
 
 public interface RatePlanRepository extends JpaRepository<RatePlan, Long> {
 
@@ -23,4 +24,8 @@ public interface RatePlanRepository extends JpaRepository<RatePlan, Long> {
     // Delete by billable metric id for a given tenant
     void deleteByBillableMetricIdAndOrganizationId(Long billableMetricId, Long organizationId);
 
+    // Efficient count for ACTIVE rate plans by product and org
+    long countByProduct_ProductIdAndOrganizationIdAndStatus(Long productId, Long organizationId, RatePlanStatus status);
+
 }
+
