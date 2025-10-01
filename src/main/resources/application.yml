@@ -63,15 +63,23 @@ spring:
     activate:
       on-profile: postgres
   datasource:
-    url: jdbc:postgresql://productrateplanservice.cx2owwes8uyb.us-east-1.rds.amazonaws.com:5432/productrateplanservice
+    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://productrateplanservice.cx2owwes8uyb.us-east-1.rds.amazonaws.com:5432/productrateplanservice}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:P4ssword!}
     hikari:
       driver-class-name: org.postgresql.Driver
-    username: root
-    password: P4ssword!
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:15}
+      minimum-idle: ${HIKARI_MIN_IDLE:2}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT_MS:10000}
+      validation-timeout: ${HIKARI_VALIDATION_TIMEOUT_MS:5000}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:600000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME_MS:1800000}
   jpa:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
   liquibase:
     enabled: true
     change-log: classpath:/domain/changelog-master.yml
