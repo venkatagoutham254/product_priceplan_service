@@ -75,6 +75,9 @@ spring:
       validation-timeout: ${HIKARI_VALIDATION_TIMEOUT_MS:5000}
       idle-timeout: ${HIKARI_IDLE_TIMEOUT_MS:600000}
       max-lifetime: ${HIKARI_MAX_LIFETIME_MS:1800000}
+      keepalive-time: ${HIKARI_KEEPALIVE_TIME_MS:300000}
+      connection-test-query: ${HIKARI_TEST_QUERY:SELECT 1}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION_MS:20000}
   jpa:
     hibernate:
       ddl-auto: update
