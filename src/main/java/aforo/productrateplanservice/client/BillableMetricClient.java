@@ -127,8 +127,13 @@ public class BillableMetricClient {
         }
 
         String status = metric.getStatus();
-        if (status == null || !"ACTIVE".equalsIgnoreCase(status)) {
-            throw new ValidationException("Billable metric " + metricId + " is not ACTIVE");
+        // Accept new lifecycle from UsageMetrics: CONFIGURED or beyond
+        if (status == null) {
+            throw new ValidationException("Billable metric " + metricId + " is not ready (no status)");
+        }
+        String st = status.trim().toUpperCase();
+        if (!("CONFIGURED".equals(st) || "PRICED".equals(st) || "LIVE".equals(st))) {
+            throw new ValidationException("Billable metric " + metricId + " is not finalized (status=" + status + ")");
         }
 
         if (productId != null && metric.getProductId() != null && !productId.equals(metric.getProductId())) {
