@@ -292,6 +292,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // All good → validations passed; do not mutate status field (status is derived)
+        // Move lifecycle from DRAFT -> CONFIGURED on explicit finalize
+        product.setStatus(ProductStatus.CONFIGURED);
         Product saved = productRepository.save(product);
         ProductDTO dto = productAssembler.toDTO(saved);
         dto.setStatus(productStatusResolver.compute(saved));
