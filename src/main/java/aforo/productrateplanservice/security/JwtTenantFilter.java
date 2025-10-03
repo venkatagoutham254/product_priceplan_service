@@ -60,6 +60,13 @@ public class JwtTenantFilter extends OncePerRequestFilter {
                     }
                 }
             }
+            // Store raw JWT for downstream service-to-service calls
+            try {
+                String token = jwt.getTokenValue();
+                if (token != null && !token.isBlank()) {
+                    TenantContext.setJwt(token);
+                }
+            } catch (Exception ignored) { }
             if (TenantContext.get() == null) {
                 logger.debug("No tenant claim found in JWT. Checked keys: {}", CLAIM_KEYS);
             }

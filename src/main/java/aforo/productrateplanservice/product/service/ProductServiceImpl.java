@@ -97,13 +97,8 @@ public class ProductServiceImpl implements ProductService {
         Long orgId = TenantContext.require();
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
-    
-        ProductDTO dto = productAssembler.toDTO(product);
-        // fetch only metrics for this product
-        dto.setBillableMetrics(billableMetricClient.getMetricsByProductId(productId));
-        // compute derived status
-        dto.setStatus(productStatusResolver.compute(product));
-        return dto;
+        // Lightweight: avoid downstream calls to UsageMetrics/Subscriptions on read
+        return productAssembler.toDTO(product);
     }
     
     @Override
@@ -111,14 +106,39 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductDTO> getAllProducts() {
         Long orgId = TenantContext.require();
         return productRepository.findAllByOrganizationId(orgId).stream()
-                .map(product -> {
-                    ProductDTO dto = productAssembler.toDTO(product);
-                    // fetch only metrics linked to each product
-                    dto.setBillableMetrics(
-                            billableMetricClient.getMetricsByProductId(product.getProductId())
-                    );
-                    // compute derived status
-                    dto.setStatus(productStatusResolver.compute(product));
+                .map(productAssembler::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    // --- Lite overloads for internal callers ---
+    @Override
+    @Transactional(readOnly = true)
+    public ProductDTO getProductById(Long productId, boolean lite) {
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
+        if (lite) return productAssembler.toDTO(product);
+        ProductDTO dto = productAssembler.toDTO(product);
+        dto.setBillableMetrics(billableMetricClient.getMetricsByProductId(productId));
+        dto.setStatus(productStatusResolver.compute(product));
+        return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductDTO> getAllProducts(boolean lite) {
+        Long orgId = TenantContext.require();
+        List<Product> products = productRepository.findAllByOrganizationId(orgId);
+        if (lite) {
+            return products.stream()
+                    .map(productAssembler::toDTO)
+                    .collect(Collectors.toList());
+        }
+        return products.stream()
+                .map(p -> {
+                    ProductDTO dto = productAssembler.toDTO(p);
+                    dto.setBillableMetrics(billableMetricClient.getMetricsByProductId(p.getProductId()));
+                    dto.setStatus(productStatusResolver.compute(p));
                     return dto;
                 })
                 .collect(Collectors.toList());
