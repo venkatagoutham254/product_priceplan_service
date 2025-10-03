@@ -94,20 +94,15 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductDTO getProductById(Long productId) {
-        Long orgId = TenantContext.require();
-        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
-                .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
-        // Lightweight: avoid downstream calls to UsageMetrics/Subscriptions on read
-        return productAssembler.toDTO(product);
+        // Enriched by default for UI: include billableMetrics and derived status
+        return getProductById(productId, false);
     }
     
     @Override
     @Transactional(readOnly = true)
     public List<ProductDTO> getAllProducts() {
-        Long orgId = TenantContext.require();
-        return productRepository.findAllByOrganizationId(orgId).stream()
-                .map(productAssembler::toDTO)
-                .collect(Collectors.toList());
+        // Enriched by default for UI
+        return getAllProducts(false);
     }
 
     // --- Lite overloads for internal callers ---

@@ -80,7 +80,8 @@ public class BillableMetricClient {
                     .header("Authorization", "Bearer " + token) // 
                     .retrieve()
                     .bodyToFlux(BillableMetricResponse.class)
-                    .filter(bm -> bm != null && bm.getStatus() != null && bm.getStatus().equalsIgnoreCase("ACTIVE"))
+                    // Include all metrics regardless of status; product 'MEASURED' requires at least one metric linked
+                    .filter(bm -> bm != null)
                     .collectList()
                     .block();
         } catch (WebClientResponseException.NotFound e) {
