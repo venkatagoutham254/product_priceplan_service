@@ -18,7 +18,7 @@ public class HomeResource {
     @GetMapping("/")
 public RepresentationModel<?> index() {
     return RepresentationModel.of(null)
-        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ProductResource.class).getAllProducts()).withRel("products"))
+        .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ProductResource.class).getAllProducts(false)).withRel("products"))
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RatePlanResource.class).getAllRatePlans()).withRel("ratePlans"))
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SetupFeeController.class).getAllByRatePlan(1L)).withRel("setupFees"))
         .add(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(DiscountController.class).getAll(1L)).withRel("discounts"))
