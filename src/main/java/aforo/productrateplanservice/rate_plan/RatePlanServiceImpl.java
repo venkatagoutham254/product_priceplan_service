@@ -9,6 +9,7 @@ import aforo.productrateplanservice.product.repository.ProductRepository;
 import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -282,6 +283,7 @@ public class RatePlanServiceImpl implements RatePlanService {
     }
 
     @Override
+    @Transactional
     public RatePlanDTO confirmRatePlan(Long ratePlanId) {
         Long orgId = TenantContext.require();
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
