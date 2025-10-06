@@ -287,8 +287,9 @@ public class RatePlanServiceImpl implements RatePlanService {
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("RatePlan not found"));
 
-        if (ratePlan.getStatus() == RatePlanStatus.ACTIVE) {
-            throw new IllegalStateException("RatePlan is already ACTIVE");
+        if (ratePlan.getStatus() == RatePlanStatus.CONFIGURED
+                || ratePlan.getStatus() == RatePlanStatus.LIVE) {
+            throw new IllegalStateException("RatePlan is already confirmed");
         }
 
         // enforce billableMetricId must exist before activating
@@ -300,9 +301,9 @@ public class RatePlanServiceImpl implements RatePlanService {
         Long productId = (ratePlan.getProduct() != null) ? ratePlan.getProduct().getProductId() : null;
         billableMetricClient.validateActiveForProduct(ratePlan.getBillableMetricId(), productId);
     
-        ratePlan.setStatus(RatePlanStatus.ACTIVE);
+        ratePlan.setStatus(RatePlanStatus.CONFIGURED);
         ratePlan = ratePlanRepository.save(ratePlan);
-    
+
         return toDetailedDTO(ratePlan);
     }
     
