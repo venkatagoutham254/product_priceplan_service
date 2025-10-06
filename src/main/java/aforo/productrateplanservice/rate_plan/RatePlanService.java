@@ -20,4 +20,7 @@ public interface RatePlanService {
 
     // INTERNAL: delete all rate plans linked to a billable metric for the current tenant
     void deleteByBillableMetricId(Long billableMetricId);
+
+    // INTERNAL: check linkage for UsageMetrics (CONFIGURED/LIVE only)
+    boolean hasLinkedActivePlan(Long productId, Long billableMetricId);
 }

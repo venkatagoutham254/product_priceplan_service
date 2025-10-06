@@ -31,5 +31,12 @@ public interface RatePlanRepository extends JpaRepository<RatePlan, Long> {
     // Efficient count for ACTIVE rate plans by product and org
     long countByProduct_ProductIdAndOrganizationIdAndStatus(Long productId, Long organizationId, RatePlanStatus status);
 
+    // Count plans linked to a specific metric in configured/live states
+    long countByProduct_ProductIdAndOrganizationIdAndBillableMetricIdAndStatusIn(
+            Long productId,
+            Long organizationId,
+            Long billableMetricId,
+            java.util.List<RatePlanStatus> statuses);
+
 }
 
