@@ -39,12 +39,13 @@ public class ProductStatusResolver {
         } catch (Exception ignored) { /* treat as 0 */ }
         if (activeMetrics == 0) return ProductStatus.CONFIGURED;
 
-        // MEASURED -> PRICED (if at least one ACTIVE rate plan exists)
+        // MEASURED -> PRICED (if at least one CONFIGURED rate plan exists)
         Long orgId = TenantContext.require();
         long activePlans = 0;
         try {
-            activePlans = ratePlanRepository
-                    .countByProduct_ProductIdAndOrganizationIdAndStatus(productId, orgId, RatePlanStatus.ACTIVE);
+            activePlans =
+                    ratePlanRepository.countByProduct_ProductIdAndOrganizationIdAndStatus(productId, orgId, RatePlanStatus.CONFIGURED)
+                  + ratePlanRepository.countByProduct_ProductIdAndOrganizationIdAndStatus(productId, orgId, RatePlanStatus.LIVE);
         } catch (Exception ignored) {
             activePlans = 0;
         }
