@@ -9,6 +9,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
+import java.time.Duration;
 
 @Component
 public class BillableMetricClient {
@@ -37,7 +38,7 @@ public class BillableMetricClient {
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .toBodilessEntity()
-                    .block();
+                    .block(Duration.ofSeconds(6));
         } catch (WebClientResponseException.NotFound e) {
             // Nothing to delete
         } catch (Exception e) {
@@ -56,7 +57,7 @@ public class BillableMetricClient {
                      .header("Authorization", "Bearer " + token) // 
                      .retrieve()
                      .toBodilessEntity()
-                     .block();
+                     .block(Duration.ofSeconds(6));
             return true;
         } catch (WebClientResponseException.NotFound e) {
             return false;
@@ -80,10 +81,14 @@ public class BillableMetricClient {
                     .header("Authorization", "Bearer " + token) // 
                     .retrieve()
                     .bodyToFlux(BillableMetricResponse.class)
-                    // Include all metrics regardless of status; product 'MEASURED' requires at least one metric linked
-                    .filter(bm -> bm != null)
+                    // Exclude DRAFT metrics; product should only expose finalized (non-DRAFT) metrics
+                    .filter(bm -> {
+                        if (bm == null) return false;
+                        String st = bm.getStatus();
+                        return st == null || !"DRAFT".equalsIgnoreCase(st.trim());
+                    })
                     .collectList()
-                    .block();
+                    .block(Duration.ofSeconds(6));
         } catch (WebClientResponseException.NotFound e) {
             return List.of();
         } catch (WebClientResponseException.BadRequest e) {
@@ -109,7 +114,7 @@ public class BillableMetricClient {
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .bodyToMono(BillableMetricResponse.class)
-                    .block();
+                    .block(Duration.ofSeconds(6));
         } catch (WebClientResponseException.NotFound e) {
             throw new ValidationException("Invalid billableMetricId: " + id);
         } catch (Exception e) {
