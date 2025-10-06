@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Arrays;
 
 import aforo.productrateplanservice.flatfee.FlatFeeRepository;
 import aforo.productrateplanservice.flatfee.FlatFeeMapper;
@@ -64,8 +65,9 @@ public class RatePlanServiceImpl implements RatePlanService {
     private final MinimumCommitmentMapper minimumCommitmentMapper;
 
     /**
-     * Ensure the billableMetricId on a rate plan still points to an existing Billable Metric.
-     * If the metric was deleted in the external service, we null out the reference and persist.
+     * Best-effort check: validate the billableMetricId points to an existing Billable Metric.
+     * IMPORTANT: Do NOT mutate state on reads. If the validation service says 404 or is unavailable,
+     * we simply return the entity as-is. Unlinking should be an explicit admin action, not a side effect of reads.
      */
     private RatePlan ensureMetricStillExists(RatePlan ratePlan) {
         Long metricId = ratePlan.getBillableMetricId();
@@ -79,10 +81,7 @@ public class RatePlanServiceImpl implements RatePlanService {
             // If validation service is down, don't mutate state on reads; just return as-is
             return ratePlan;
         }
-        if (!exists) {
-            ratePlan.setBillableMetricId(null);
-            return ratePlanRepository.save(ratePlan);
-        }
+        // Do not unlink on read even if not exists; caller may decide how to handle
         return ratePlan;
     }
 
@@ -333,6 +332,19 @@ public class RatePlanServiceImpl implements RatePlanService {
         Long orgId = TenantContext.require();
         // Best-effort cleanup of rate plans pointing to this metric for the current tenant
         ratePlanRepository.deleteByBillableMetricIdAndOrganizationId(billableMetricId, orgId);
+    }
+    
+    @Override
+    public boolean hasLinkedActivePlan(Long productId, Long billableMetricId) {
+        if (productId == null || billableMetricId == null) return false;
+        Long orgId = TenantContext.require();
+        return ratePlanRepository
+                .countByProduct_ProductIdAndOrganizationIdAndBillableMetricIdAndStatusIn(
+                        productId,
+                        orgId,
+                        billableMetricId,
+                        Arrays.asList(RatePlanStatus.CONFIGURED, RatePlanStatus.LIVE)
+                ) > 0;
     }
     
 }

@@ -57,6 +57,9 @@ public class SecurityConfig {
                         "/api/health").permitAll()
                 // Allow preflight requests
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // Internal endpoints for service-to-service calls
+                .requestMatchers(HttpMethod.GET, "/api/rateplans/internal/**").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/api/rateplans/internal/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/product-rate-plans/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/product-rate-plans/**").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/api/product-rate-plans/**").authenticated()

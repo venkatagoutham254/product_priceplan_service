@@ -74,4 +74,12 @@ public class RatePlanResource {
         ratePlanService.deleteByBillableMetricId(metricId);
         return ResponseEntity.noContent().build();
     }
+
+    // INTERNAL: check if there exists a CONFIGURED/LIVE rate plan linked to the metric for the given product
+    @GetMapping("/internal/active-link")
+    public ResponseEntity<Boolean> hasLinkedActivePlan(
+            @RequestParam("productId") Long productId,
+            @RequestParam("billableMetricId") Long billableMetricId) {
+        return ResponseEntity.ok(ratePlanService.hasLinkedActivePlan(productId, billableMetricId));
+    }
 }
