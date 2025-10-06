@@ -4,6 +4,7 @@ import aforo.productrateplanservice.exception.ValidationException;
 import aforo.productrateplanservice.tenant.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -17,6 +18,9 @@ public class BillableMetricClient {
     @Autowired
     @Qualifier("billableMetricWebClient")
     private WebClient webClient;
+
+    @Value("${clients.billablemetrics.timeout.sec:12}")
+    private int bmTimeoutSec;
 
     public void validateMetricId(Long id) {
         if (!metricExists(id)) {
@@ -38,7 +42,7 @@ public class BillableMetricClient {
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .toBodilessEntity()
-                    .block(Duration.ofSeconds(6));
+                    .block(Duration.ofSeconds(bmTimeoutSec));
         } catch (WebClientResponseException.NotFound e) {
             // Nothing to delete
         } catch (Exception e) {
@@ -57,7 +61,7 @@ public class BillableMetricClient {
                      .header("Authorization", "Bearer " + token) // 
                      .retrieve()
                      .toBodilessEntity()
-                     .block(Duration.ofSeconds(6));
+                     .block(Duration.ofSeconds(bmTimeoutSec));
             return true;
         } catch (WebClientResponseException.NotFound e) {
             return false;
@@ -88,7 +92,7 @@ public class BillableMetricClient {
                         return st == null || !"DRAFT".equalsIgnoreCase(st.trim());
                     })
                     .collectList()
-                    .block(Duration.ofSeconds(6));
+                    .block(Duration.ofSeconds(bmTimeoutSec));
         } catch (WebClientResponseException.NotFound e) {
             return List.of();
         } catch (WebClientResponseException.BadRequest e) {
@@ -114,7 +118,7 @@ public class BillableMetricClient {
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
                     .bodyToMono(BillableMetricResponse.class)
-                    .block(Duration.ofSeconds(6));
+                    .block(Duration.ofSeconds(bmTimeoutSec));
         } catch (WebClientResponseException.NotFound e) {
             throw new ValidationException("Invalid billableMetricId: " + id);
         } catch (Exception e) {
@@ -127,13 +131,20 @@ public class BillableMetricClient {
      * that the metric belongs to that product.
      */
     public void validateActiveForProduct(Long metricId, Long productId) {
+        // Prefer fast path: list-by-product (already excludes DRAFT)
+        if (productId != null) {
+            List<BillableMetricResponse> list = getMetricsByProductId(productId);
+            boolean found = list.stream()
+                    .anyMatch(m -> m != null && m.getMetricId() != null && m.getMetricId().equals(metricId));
+            if (found) return; // finalized and belongs to product
+        }
+
+        // Fallback: fetch by id and validate status + ownership
         BillableMetricResponse metric = fetchMetric(metricId);
         if (metric == null) {
             throw new ValidationException("Invalid billableMetricId: " + metricId);
         }
-
         String status = metric.getStatus();
-        // Accept new lifecycle from UsageMetrics: CONFIGURED or beyond
         if (status == null) {
             throw new ValidationException("Billable metric " + metricId + " is not ready (no status)");
         }
@@ -141,7 +152,6 @@ public class BillableMetricClient {
         if (!("CONFIGURED".equals(st) || "PRICED".equals(st) || "LIVE".equals(st))) {
             throw new ValidationException("Billable metric " + metricId + " is not finalized (status=" + status + ")");
         }
-
         if (productId != null && metric.getProductId() != null && !productId.equals(metric.getProductId())) {
             throw new ValidationException("Billable metric " + metricId + " does not belong to product " + productId);
         }

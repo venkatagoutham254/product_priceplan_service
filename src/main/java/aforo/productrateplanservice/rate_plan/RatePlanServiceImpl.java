@@ -299,9 +299,28 @@ public class RatePlanServiceImpl implements RatePlanService {
             throw new ValidationException("Billable Metric ID is required before finalizing a RatePlan.");
         }
         
-        // validate with external service: must be ACTIVE and (if product known) belong to product
+        // validate with external service: must be finalized and (if product known) belong to product
         Long productId = (ratePlan.getProduct() != null) ? ratePlan.getProduct().getProductId() : null;
-        billableMetricClient.validateActiveForProduct(ratePlan.getBillableMetricId(), productId);
+        try {
+            billableMetricClient.validateActiveForProduct(ratePlan.getBillableMetricId(), productId);
+        } catch (aforo.productrateplanservice.exception.ValidationException vex) {
+            String msg = vex.getMessage() == null ? "" : vex.getMessage().toLowerCase();
+            // If upstream is slow/unavailable, proceed; but keep failing for real validation problems
+            boolean upstreamIssue =
+                    msg.contains("failed to fetch") ||
+                    msg.contains("timeout") ||
+                    msg.contains("service unavailable") ||
+                    msg.contains("validation failed for id");
+            boolean hardValidation =
+                    msg.contains("invalid billablemetricid") ||
+                    msg.contains("not finalized") ||
+                    msg.contains("not ready") ||
+                    msg.contains("does not belong");
+            if (!upstreamIssue || hardValidation) {
+                throw vex;
+            }
+            // else: best-effort confirm during upstream outage
+        }
     
         ratePlan.setStatus(RatePlanStatus.CONFIGURED);
         ratePlan = ratePlanRepository.save(ratePlan);
