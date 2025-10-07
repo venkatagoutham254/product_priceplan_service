@@ -172,6 +172,7 @@ public class RatePlanServiceImpl implements RatePlanService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<RatePlanDTO> getAllRatePlans() {
         Long orgId = TenantContext.require();
         return ratePlanRepository.findAllByOrganizationId(orgId)
@@ -182,6 +183,7 @@ public class RatePlanServiceImpl implements RatePlanService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<RatePlanDTO> getRatePlansByProductId(Long productId) {
         Long orgId = TenantContext.require();
         return ratePlanRepository.findByProduct_ProductIdAndOrganizationId(productId, orgId)
@@ -192,6 +194,7 @@ public class RatePlanServiceImpl implements RatePlanService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public RatePlanDTO getRatePlanById(Long ratePlanId) {
         Long orgId = TenantContext.require();
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
