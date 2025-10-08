@@ -60,4 +60,51 @@ public class ProductStatusResolver {
 
         return ProductStatus.LIVE;
     }
+
+    /**
+     * Optimized variant that can leverage prefetched data to avoid N+1 remote calls.
+     * If hints are null, falls back to computing them.
+     */
+    public ProductStatus computeWithHints(Product product, Integer activeMetricsHint, Boolean liveSubscriptionHint) {
+        if (product == null || product.getProductId() == null) {
+            return ProductStatus.DRAFT;
+        }
+
+        ProductStatus stored = product.getStatus() == null ? ProductStatus.DRAFT : product.getStatus();
+        if (stored == ProductStatus.DRAFT) {
+            return ProductStatus.DRAFT;
+        }
+
+        Long productId = product.getProductId();
+
+        // CONFIGURED -> MEASURED
+        int activeMetrics = activeMetricsHint != null ? activeMetricsHint : 0;
+        if (activeMetricsHint == null) {
+            try {
+                activeMetrics = billableMetricClient.getMetricsByProductId(productId).size();
+            } catch (Exception ignored) { activeMetrics = 0; }
+        }
+        if (activeMetrics == 0) return ProductStatus.CONFIGURED;
+
+        // MEASURED -> PRICED
+        Long orgId = TenantContext.require();
+        long activePlans = 0;
+        try {
+            activePlans =
+                    ratePlanRepository.countByProduct_ProductIdAndOrganizationIdAndStatus(productId, orgId, RatePlanStatus.CONFIGURED)
+                  + ratePlanRepository.countByProduct_ProductIdAndOrganizationIdAndStatus(productId, orgId, RatePlanStatus.LIVE);
+        } catch (Exception ignored) { activePlans = 0; }
+        if (activePlans == 0) return ProductStatus.MEASURED;
+
+        // PRICED -> LIVE
+        boolean live = liveSubscriptionHint != null ? liveSubscriptionHint : false;
+        if (liveSubscriptionHint == null) {
+            try {
+                live = subscriptionServiceClient.hasActiveSubscriptionForProduct(productId);
+            } catch (Exception ignored) { live = false; }
+        }
+        if (!live) return ProductStatus.PRICED;
+
+        return ProductStatus.LIVE;
+    }
 }

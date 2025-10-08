@@ -54,6 +54,7 @@ public class TieredPricingServiceImpl implements TieredPricingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TieredPricingDTO> getAllByRatePlanId(Long ratePlanId) {
         return tieredPricingRepository.findByRatePlan_RatePlanId(ratePlanId)
                 .stream()
@@ -62,6 +63,7 @@ public class TieredPricingServiceImpl implements TieredPricingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TieredPricingDTO> getAll() {
         return tieredPricingRepository.findAll()
                 .stream()
@@ -70,8 +72,9 @@ public class TieredPricingServiceImpl implements TieredPricingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TieredPricingDTO getById(Long tieredPricingId) {
-        return tieredPricingRepository.findById(tieredPricingId)
+        return tieredPricingRepository.findByTieredPricingId(tieredPricingId)
                 .map(tieredPricingMapper::toDTO)
                 .orElseThrow(() -> new ResourceNotFoundException("TieredPricing not found with ID: " + tieredPricingId));
     }

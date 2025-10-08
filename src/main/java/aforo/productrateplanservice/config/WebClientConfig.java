@@ -4,6 +4,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
+import reactor.netty.http.client.HttpClient;
+
+import java.time.Duration;
 
 @Configuration
 public class WebClientConfig {
@@ -21,13 +29,25 @@ public class WebClientConfig {
     private int writeTimeoutSec;
 
     private WebClient build(WebClient.Builder builder, String baseUrl) {
-        // Keep it simple and portable: rely on default client; timeouts can be handled at infra level
-        return builder.baseUrl(baseUrl).build();
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeoutMs)
+                .responseTimeout(Duration.ofMillis(responseTimeoutMs))
+                .doOnConnected(conn -> conn
+                        .addHandlerLast(new ReadTimeoutHandler(readTimeoutSec))
+                        .addHandlerLast(new WriteTimeoutHandler(writeTimeoutSec))
+                );
+
+        return builder
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .baseUrl(baseUrl)
+                .build();
     }
 
     @Bean(name = "customerWebClient")
-    public WebClient customerWebClient(WebClient.Builder builder) {
-       return build(builder, "http://44.203.171.98:8082");  // Customer service
+    public WebClient customerWebClient(
+            WebClient.Builder builder,
+            @Value("${customer.service.url}") String url) {
+       return build(builder, url);
     }
 
     @Bean(name = "billableMetricWebClient")

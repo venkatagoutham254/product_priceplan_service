@@ -21,6 +21,7 @@ import aforo.productrateplanservice.product.request.CreateProductRequest;
 import aforo.productrateplanservice.product.request.UpdateProductRequest;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import aforo.productrateplanservice.client.BillableMetricClient;
+import aforo.productrateplanservice.client.SubscriptionServiceClient;
 import aforo.productrateplanservice.product.status.ProductStatusResolver;
 import aforo.productrateplanservice.storage.IconStorageService;
 import aforo.productrateplanservice.tenant.TenantContext;
@@ -28,20 +29,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+ 
 
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
-
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final ProductAssembler productAssembler;
     private final RatePlanRepository ratePlanRepository;
     private final BillableMetricClient billableMetricClient;
+    private final SubscriptionServiceClient subscriptionServiceClient;
     private final ProductAPIRepository productAPIRepository;
     private final ProductFlatFileRepository productFlatFileRepository;
     private final ProductSQLResultRepository productSQLResultRepository;
@@ -94,49 +95,54 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductDTO getProductById(Long productId) {
-        // Enriched by default for UI: include billableMetrics and derived status
-        return getProductById(productId, false);
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProductDTO> getAllProducts() {
-        // Enriched by default for UI
-        return getAllProducts(false);
-    }
-
-    // --- Lite overloads for internal callers ---
-    @Override
-    @Transactional(readOnly = true)
-    public ProductDTO getProductById(Long productId, boolean lite) {
         Long orgId = TenantContext.require();
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
-        if (lite) return productAssembler.toDTO(product);
         ProductDTO dto = productAssembler.toDTO(product);
         dto.setBillableMetrics(billableMetricClient.getMetricsByProductId(productId));
         dto.setStatus(productStatusResolver.compute(product));
         return dto;
     }
-
+    
     @Override
     @Transactional(readOnly = true)
-    public List<ProductDTO> getAllProducts(boolean lite) {
+    public List<ProductDTO> getAllProducts() {
         Long orgId = TenantContext.require();
+        String jwt = TenantContext.getJwt();
         List<Product> products = productRepository.findAllByOrganizationId(orgId);
-        if (lite) {
-            return products.stream()
-                    .map(productAssembler::toDTO)
-                    .collect(Collectors.toList());
+        // Prefetch live subscriptions once
+        java.util.Set<Long> liveProductIds;
+        try {
+            liveProductIds = subscriptionServiceClient.fetchActiveSubscriptionProductIds();
+        } catch (Exception e) {
+            liveProductIds = java.util.Set.of();
         }
-        return products.stream()
-                .map(p -> {
-                    ProductDTO dto = productAssembler.toDTO(p);
-                    dto.setBillableMetrics(billableMetricClient.getMetricsByProductId(p.getProductId()));
-                    dto.setStatus(productStatusResolver.compute(p));
+        final java.util.Set<Long> finalLiveProductIds = liveProductIds;
+
+        return products.parallelStream().map(p -> {
+            // Propagate tenant context into worker thread
+            TenantContext.set(orgId);
+            if (jwt != null && !jwt.isBlank()) {
+                TenantContext.setJwt(jwt);
+            }
+            try {
+                ProductDTO dto = productAssembler.toDTO(p);
+                // Fast-path: DRAFT products do not require remote calls
+                if (p.getStatus() == null || p.getStatus() == ProductStatus.DRAFT) {
+                    dto.setBillableMetrics(java.util.List.of());
+                    dto.setStatus(ProductStatus.DRAFT);
                     return dto;
-                })
-                .collect(Collectors.toList());
+                }
+                var metrics = billableMetricClient.getMetricsByProductId(p.getProductId());
+                dto.setBillableMetrics(metrics);
+                boolean liveHint = finalLiveProductIds.contains(p.getProductId());
+                dto.setStatus(productStatusResolver.computeWithHints(p, metrics != null ? metrics.size() : 0, liveHint));
+                return dto;
+            } finally {
+                // Avoid leaking tenant context across reused worker threads
+                TenantContext.clear();
+            }
+        }).collect(Collectors.toList());
     }
     
     @Override
@@ -311,7 +317,8 @@ public class ProductServiceImpl implements ProductService {
         product.setStatus(ProductStatus.CONFIGURED);
         Product saved = productRepository.save(product);
         ProductDTO dto = productAssembler.toDTO(saved);
-        dto.setStatus(productStatusResolver.compute(saved));
+        // Avoid remote calls here; finalize is a write path and should be fast.
+        dto.setStatus(productStatusResolver.computeWithHints(saved, 0, false));
         return dto;
     }
 

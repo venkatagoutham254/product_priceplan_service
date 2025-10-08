@@ -5,6 +5,7 @@ import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class VolumePricingServiceImpl implements VolumePricingService {
     private final RatePlanRepository ratePlanRepository;
 
     @Override
+    @Transactional
     public VolumePricingDTO create(Long ratePlanId, VolumePricingCreateUpdateDTO dto) {
         // ✅ Validate RatePlan
         RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
@@ -32,6 +34,7 @@ public class VolumePricingServiceImpl implements VolumePricingService {
     }
 
     @Override
+    @Transactional
     public VolumePricingDTO update(Long ratePlanId, Long volumePricingId, VolumePricingCreateUpdateDTO dto) {
         // ✅ Validate existing VolumePricing
         VolumePricing existing = repository.findById(volumePricingId)
@@ -54,6 +57,7 @@ public class VolumePricingServiceImpl implements VolumePricingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<VolumePricingDTO> getAllByRatePlanId(Long ratePlanId) {
         return repository.findByRatePlanRatePlanId(ratePlanId)
                 .stream()
@@ -62,6 +66,7 @@ public class VolumePricingServiceImpl implements VolumePricingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<VolumePricingDTO> getAll() {
         return repository.findAll()
                 .stream()
@@ -70,13 +75,15 @@ public class VolumePricingServiceImpl implements VolumePricingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public VolumePricingDTO getById(Long id) {
-        return repository.findById(id)
+        return repository.findByVolumePricingId(id)
                 .map(mapper::toDTO)
                 .orElseThrow(() -> new ResourceNotFoundException("VolumePricing not found with ID: " + id));
     }
 
     @Override
+    @Transactional
     public void deleteById(Long id) {
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("VolumePricing not found with ID: " + id);

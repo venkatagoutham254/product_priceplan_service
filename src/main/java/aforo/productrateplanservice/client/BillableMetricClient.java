@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 import java.time.Duration;
@@ -21,6 +22,11 @@ public class BillableMetricClient {
 
     @Value("${clients.billablemetrics.timeout.sec:12}")
     private int bmTimeoutSec;
+
+    // Helper for SpEL cache keys; avoids T(fully.qualified.Class) references
+    public Long tenantId() {
+        return TenantContext.get();
+    }
 
     public void validateMetricId(Long id) {
         if (!metricExists(id)) {
@@ -50,6 +56,7 @@ public class BillableMetricClient {
         }
     }
 
+    @Cacheable(value = "metricExists", key = "T(String).valueOf(#root.target.tenantId()) + ':' + #id")
     public boolean metricExists(Long id) {
         try {
             Long orgId = TenantContext.require();
@@ -71,6 +78,7 @@ public class BillableMetricClient {
         }
     }
     
+    @Cacheable(value = "billableMetricsByProduct", key = "T(String).valueOf(#root.target.tenantId()) + ':' + #productId")
     public List<BillableMetricResponse> getMetricsByProductId(Long productId) {
         try {
             Long orgId = TenantContext.require();
