@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.Arrays;
 
@@ -64,26 +65,7 @@ public class RatePlanServiceImpl implements RatePlanService {
     private final MinimumCommitmentRepository minimumCommitmentRepository;
     private final MinimumCommitmentMapper minimumCommitmentMapper;
 
-    /**
-     * Best-effort check: validate the billableMetricId points to an existing Billable Metric.
-     * IMPORTANT: Do NOT mutate state on reads. If the validation service says 404 or is unavailable,
-     * we simply return the entity as-is. Unlinking should be an explicit admin action, not a side effect of reads.
-     */
-    private RatePlan ensureMetricStillExists(RatePlan ratePlan) {
-        Long metricId = ratePlan.getBillableMetricId();
-        if (metricId == null) {
-            return ratePlan;
-        }
-        boolean exists;
-        try {
-            exists = billableMetricClient.metricExists(metricId);
-        } catch (Exception e) {
-            // If validation service is down, don't mutate state on reads; just return as-is
-            return ratePlan;
-        }
-        // Do not unlink on read even if not exists; caller may decide how to handle
-        return ratePlan;
-    }
+    
 
     private RatePlanDTO toDetailedDTO(RatePlan ratePlan) {
         RatePlanDTO dto = ratePlanMapper.toDTO(ratePlan);
@@ -175,22 +157,16 @@ public class RatePlanServiceImpl implements RatePlanService {
     @Transactional(readOnly = true)
     public List<RatePlanDTO> getAllRatePlans() {
         Long orgId = TenantContext.require();
-        return ratePlanRepository.findAllByOrganizationId(orgId)
-                .stream()
-                .map(this::ensureMetricStillExists)
-                .map(this::toDetailedDTO)
-                .collect(Collectors.toList());
+        List<RatePlan> plans = ratePlanRepository.findAllByOrganizationId(orgId);
+        return toDetailedDTOs(plans);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<RatePlanDTO> getRatePlansByProductId(Long productId) {
         Long orgId = TenantContext.require();
-        return ratePlanRepository.findByProduct_ProductIdAndOrganizationId(productId, orgId)
-                .stream()
-                .map(this::ensureMetricStillExists)
-                .map(this::toDetailedDTO)
-                .collect(Collectors.toList());
+        List<RatePlan> plans = ratePlanRepository.findByProduct_ProductIdAndOrganizationId(productId, orgId);
+        return toDetailedDTOs(plans);
     }
 
     @Override
@@ -199,8 +175,82 @@ public class RatePlanServiceImpl implements RatePlanService {
         Long orgId = TenantContext.require();
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
-        ratePlan = ensureMetricStillExists(ratePlan);
         return toDetailedDTO(ratePlan);
+    }
+
+    // Build DTOs in batch to avoid N+1 queries
+    private List<RatePlanDTO> toDetailedDTOs(List<RatePlan> plans) {
+        if (plans == null || plans.isEmpty()) return List.of();
+        List<Long> ids = plans.stream().map(RatePlan::getRatePlanId).collect(Collectors.toList());
+
+        // Flat fee (0..1 per plan)
+        Map<Long, aforo.productrateplanservice.flatfee.FlatFee> flatFees =
+                flatFeeRepository.findByRatePlanIdIn(ids).stream()
+                        .collect(Collectors.toMap(aforo.productrateplanservice.flatfee.FlatFee::getRatePlanId, f -> f, (a,b)->a));
+
+        // Tiered pricing (with tiers)
+        Map<Long, List<aforo.productrateplanservice.tieredpricing.TieredPricing>> tiered =
+                tieredPricingRepository.findByRatePlan_RatePlanIdIn(ids).stream()
+                        .collect(Collectors.groupingBy(tp -> tp.getRatePlan().getRatePlanId()));
+
+        // Volume pricing (with tiers)
+        Map<Long, List<aforo.productrateplanservice.volumepricing.VolumePricing>> volume =
+                volumePricingRepository.findByRatePlan_RatePlanIdIn(ids).stream()
+                        .collect(Collectors.groupingBy(vp -> vp.getRatePlan().getRatePlanId()));
+
+        // Usage based
+        Map<Long, List<aforo.productrateplanservice.usagebasedpricing.UsageBasedPricing>> usage =
+                usageBasedPricingRepository.findByRatePlan_RatePlanIdIn(ids).stream()
+                        .collect(Collectors.groupingBy(up -> up.getRatePlan().getRatePlanId()));
+
+        // Stair step (with tiers)
+        Map<Long, List<aforo.productrateplanservice.stairsteppricing.StairStepPricing>> stair =
+                stairStepPricingRepository.findByRatePlan_RatePlanIdIn(ids).stream()
+                        .collect(Collectors.groupingBy(sp -> sp.getRatePlan().getRatePlanId()));
+
+        // Extras
+        Map<Long, List<aforo.productrateplanservice.setupfee.SetupFee>> setupFees =
+                setupFeeRepository.findByRatePlan_RatePlanIdIn(ids).stream()
+                        .collect(Collectors.groupingBy(sf -> sf.getRatePlan().getRatePlanId()));
+        Map<Long, List<aforo.productrateplanservice.discount.Discount>> discounts =
+                discountRepository.findByRatePlan_RatePlanIdIn(ids).stream()
+                        .collect(Collectors.groupingBy(d -> d.getRatePlan().getRatePlanId()));
+        Map<Long, List<aforo.productrateplanservice.freemium.Freemium>> freemiums =
+                freemiumRepository.findByRatePlan_RatePlanIdIn(ids).stream()
+                        .collect(Collectors.groupingBy(f -> f.getRatePlan().getRatePlanId()));
+        Map<Long, List<aforo.productrateplanservice.minimumcommitment.MinimumCommitment>> minCommit =
+                minimumCommitmentRepository.findByRatePlan_RatePlanIdIn(ids).stream()
+                        .collect(Collectors.groupingBy(m -> m.getRatePlan().getRatePlanId()));
+
+        return plans.stream().map(rp -> {
+            RatePlanDTO dto = ratePlanMapper.toDTO(rp);
+            Long id = rp.getRatePlanId();
+            // FlatFee
+            var ff = flatFees.get(id);
+            if (ff != null) dto.setFlatFee(flatFeeMapper.toDTO(ff));
+            // Tiered
+            dto.setTieredPricings(tiered.getOrDefault(id, List.of()).stream()
+                    .map(tieredPricingMapper::toDTO).collect(Collectors.toList()));
+            // Volume
+            dto.setVolumePricings(volume.getOrDefault(id, List.of()).stream()
+                    .map(volumePricingMapper::toDTO).collect(Collectors.toList()));
+            // Usage-based
+            dto.setUsageBasedPricings(usage.getOrDefault(id, List.of()).stream()
+                    .map(usageBasedPricingMapper::toDTO).collect(Collectors.toList()));
+            // Stair-step
+            dto.setStairStepPricings(stair.getOrDefault(id, List.of()).stream()
+                    .map(stairStepPricingMapper::toDTO).collect(Collectors.toList()));
+            // Extras
+            dto.setSetupFees(setupFees.getOrDefault(id, List.of()).stream()
+                    .map(setupFeeMapper::toDTO).collect(Collectors.toList()));
+            dto.setDiscounts(discounts.getOrDefault(id, List.of()).stream()
+                    .map(discountMapper::toDTO).collect(Collectors.toList()));
+            dto.setFreemiums(freemiums.getOrDefault(id, List.of()).stream()
+                    .map(freemiumMapper::toDTO).collect(Collectors.toList()));
+            dto.setMinimumCommitments(minCommit.getOrDefault(id, List.of()).stream()
+                    .map(minimumCommitmentMapper::toDTO).collect(Collectors.toList()));
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     @Override

@@ -1,0 +1,140 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-10-08-perf-indexes-1
+      author: cascade
+      changes:
+        # Core rate plan lookups
+        - createIndex:
+            indexName: idx_aforo_rate_plan_org
+            tableName: aforo_rate_plan
+            ifNotExists: true
+            columns:
+              - column:
+                  name: organization_id
+        - createIndex:
+            indexName: idx_aforo_rate_plan_org_product
+            tableName: aforo_rate_plan
+            ifNotExists: true
+            columns:
+              - column:
+                  name: organization_id
+              - column:
+                  name: product_id
+        - createIndex:
+            indexName: idx_aforo_rate_plan_org_product_status
+            tableName: aforo_rate_plan
+            ifNotExists: true
+            columns:
+              - column:
+                  name: organization_id
+              - column:
+                  name: product_id
+              - column:
+                  name: status
+        - createIndex:
+            indexName: idx_aforo_rate_plan_org_bm_status
+            tableName: aforo_rate_plan
+            ifNotExists: true
+            columns:
+              - column:
+                  name: organization_id
+              - column:
+                  name: billable_metric_id
+              - column:
+                  name: status
+
+        # Child tables by rate_plan_id
+        - createIndex:
+            indexName: idx_rate_plan_flat_fee_rate_plan_id
+            tableName: rate_plan_flat_fee
+            ifNotExists: true
+            columns:
+              - column:
+                  name: rate_plan_id
+        - createIndex:
+            indexName: idx_rate_plan_tiered_pricing_rate_plan_id
+            tableName: rate_plan_tiered_pricing
+            ifNotExists: true
+            columns:
+              - column:
+                  name: rate_plan_id
+        - createIndex:
+            indexName: idx_rate_plan_tiered_tier_parent
+            tableName: rate_plan_tiered_tier
+            ifNotExists: true
+            columns:
+              - column:
+                  name: tiered_pricing_id
+        - createIndex:
+            indexName: idx_rate_plan_volume_pricing_rate_plan_id
+            tableName: rate_plan_volume_pricing
+            ifNotExists: true
+            columns:
+              - column:
+                  name: rate_plan_id
+        - createIndex:
+            indexName: idx_rate_plan_volume_tier_parent
+            tableName: rate_plan_volume_tier
+            ifNotExists: true
+            columns:
+              - column:
+                  name: volume_pricing_id
+        - createIndex:
+            indexName: idx_rate_plan_usage_based_pricing_rate_plan_id
+            tableName: rate_plan_usage_based_pricing
+            ifNotExists: true
+            columns:
+              - column:
+                  name: rate_plan_id
+        - createIndex:
+            indexName: idx_rate_plan_setup_fee_rate_plan_id
+            tableName: rate_plan_setup_fee
+            ifNotExists: true
+            columns:
+              - column:
+                  name: rate_plan_id
+        - createIndex:
+            indexName: idx_rate_plan_discount_rate_plan_id
+            tableName: rate_plan_discount
+            ifNotExists: true
+            columns:
+              - column:
+                  name: rate_plan_id
+        - createIndex:
+            indexName: idx_rate_plan_freemium_rate_plan_id
+            tableName: rate_plan_freemium
+            ifNotExists: true
+            columns:
+              - column:
+                  name: rate_plan_id
+        - createIndex:
+            indexName: idx_rate_plan_stair_step_pricing_rate_plan_id
+            tableName: rate_plan_stair_step_pricing
+            ifNotExists: true
+            columns:
+              - column:
+                  name: rate_plan_id
+        - createIndex:
+            indexName: idx_rate_plan_stair_step_tier_parent
+            tableName: rate_plan_stair_step_tier
+            ifNotExists: true
+            columns:
+              - column:
+                  name: stair_step_pricing_id
+
+        - createIndex:
+            indexName: idx_rate_plan_minimum_commitment_rate_plan_id
+            tableName: rate_plan_minimum_commitment
+            ifNotExists: true
+            columns:
+              - column:
+                  name: rate_plan_id
+
+        # Product table by organization
+        - createIndex:
+            indexName: idx_aforo_product_org
+            tableName: aforo_product
+            ifNotExists: true
+            columns:
+              - column:
+                  name: organization_id

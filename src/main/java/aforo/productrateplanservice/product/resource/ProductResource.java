@@ -55,17 +55,14 @@ public class ProductResource {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get product by ID")
-    public ResponseEntity<ProductDTO> getProductById(
-            @PathVariable Long id,
-            @RequestParam(name = "lite", defaultValue = "false") boolean lite) {
-        return ResponseEntity.ok(productService.getProductById(id, lite));
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @GetMapping
     @Operation(summary = "List products")
-    public ResponseEntity<List<ProductDTO>> getAllProducts(
-            @RequestParam(name = "lite", defaultValue = "false") boolean lite) {
-        return ResponseEntity.ok(productService.getAllProducts(lite));
+    public ResponseEntity<List<ProductDTO>> getAllProducts() {
+        return ResponseEntity.ok(productService.getAllProducts());
     }
 
     @PutMapping("/{id}")

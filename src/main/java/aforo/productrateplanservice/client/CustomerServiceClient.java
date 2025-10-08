@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
+import java.time.Duration;
 
 @Component
 public class CustomerServiceClient {
@@ -23,7 +24,7 @@ public class CustomerServiceClient {
                     .uri("/v1/api/customers/{customerId}", customerId)
                     .retrieve()
                     .toBodilessEntity()
-                    .block();
+                    .block(Duration.ofSeconds(7));
 
             return true;
         } catch (WebClientResponseException.NotFound e) {
@@ -39,7 +40,7 @@ public class CustomerServiceClient {
                     .uri("/v1/api/organizations/{organizationId}", organizationId)
                     .retrieve()
                     .toBodilessEntity()
-                    .block();
+                    .block(Duration.ofSeconds(7));
 
             return true;
         } catch (WebClientResponseException.NotFound e) {
@@ -55,7 +56,7 @@ public class CustomerServiceClient {
                     .uri("/v1/api/divisions/{divisionId}", divisionId)
                     .retrieve()
                     .toBodilessEntity()
-                    .block();
+                    .block(Duration.ofSeconds(7));
 
             return true;
         } catch (WebClientResponseException.NotFound e) {

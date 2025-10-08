@@ -5,6 +5,7 @@ import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
     private final RatePlanRepository ratePlanRepository;
 
     @Override
+    @Transactional
     public StairStepPricingDTO create(Long ratePlanId, StairStepPricingCreateUpdateDTO dto) {
         // ✅ Validate RatePlan
         RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
@@ -32,6 +34,7 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
     }
 
     @Override
+    @Transactional
     public StairStepPricingDTO update(Long ratePlanId, Long stairStepPricingId, StairStepPricingCreateUpdateDTO dto) {
         // ✅ Validate existing StairStepPricing
         StairStepPricing existing = repository.findById(stairStepPricingId)
@@ -54,6 +57,7 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<StairStepPricingDTO> getAllByRatePlanId(Long ratePlanId) {
         return repository.findByRatePlanRatePlanId(ratePlanId)
                 .stream()
@@ -62,6 +66,7 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<StairStepPricingDTO> getAll() {
         return repository.findAll()
                 .stream()
@@ -70,13 +75,15 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public StairStepPricingDTO getById(Long id) {
-        return repository.findById(id)
+        return repository.findByStairStepPricingId(id)
                 .map(mapper::toDTO)
                 .orElseThrow(() -> new ResourceNotFoundException("StairStepPricing not found with ID: " + id));
     }
 
     @Override
+    @Transactional
     public void deleteById(Long id) {
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("StairStepPricing not found with ID: " + id);

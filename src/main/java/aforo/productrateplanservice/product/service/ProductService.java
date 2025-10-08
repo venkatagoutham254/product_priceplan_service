@@ -12,9 +12,6 @@ public interface ProductService {
     ProductDTO createProduct(CreateProductRequest request, MultipartFile icon);
     ProductDTO getProductById(Long productId);
     List<ProductDTO> getAllProducts();
-    // Lite variants: skip downstream calls (billable metrics, derived status) for fast internal use
-    ProductDTO getProductById(Long productId, boolean lite);
-    List<ProductDTO> getAllProducts(boolean lite);
     void deleteProduct(Long productId);
     ProductDTO updateProductFully(Long id, UpdateProductRequest request);
     ProductDTO updateProductPartially(Long id, UpdateProductRequest request);
