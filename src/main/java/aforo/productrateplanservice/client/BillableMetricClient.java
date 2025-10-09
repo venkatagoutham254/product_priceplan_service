@@ -78,33 +78,51 @@ public class BillableMetricClient {
         }
     }
     
-    @Cacheable(value = "billableMetricsByProduct", key = "T(String).valueOf(#root.target.tenantId()) + ':' + #productId")
+    @Cacheable(value = "billableMetricsByProduct", key = "T(String).valueOf(#root.target.tenantId()) + ':' + #productId", unless = "#result == null || #result.isEmpty()")
     public List<BillableMetricResponse> getMetricsByProductId(Long productId) {
         try {
             Long orgId = TenantContext.require();
             String token = TenantContext.getJwt();
-    
-            return webClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/api/billable-metrics/by-product")
-                            .queryParam("productId", productId)
-                            .build())
-                    .header("X-Organization-Id", String.valueOf(orgId))
-                    .header("Authorization", "Bearer " + token) // 
-                    .retrieve()
-                    .bodyToFlux(BillableMetricResponse.class)
-                    // Exclude DRAFT metrics; product should only expose finalized (non-DRAFT) metrics
-                    .filter(bm -> {
-                        if (bm == null) return false;
-                        String st = bm.getStatus();
-                        return st == null || !"DRAFT".equalsIgnoreCase(st.trim());
-                    })
-                    .collectList()
-                    .block(Duration.ofSeconds(bmTimeoutSec));
-        } catch (WebClientResponseException.NotFound e) {
-            return List.of();
-        } catch (WebClientResponseException.BadRequest e) {
-            return List.of();
+            
+            // Primary endpoint: by-product
+            try {
+                List<BillableMetricResponse> primary = webClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/api/billable-metrics/by-product")
+                                .queryParam("productId", productId)
+                                .build())
+                        .header("X-Organization-Id", String.valueOf(orgId))
+                        .header("Authorization", "Bearer " + token)
+                        .retrieve()
+                        .bodyToFlux(BillableMetricResponse.class)
+                        .filter(bm -> bm != null && (bm.getStatus() == null || !"DRAFT".equalsIgnoreCase(bm.getStatus().trim())))
+                        .collectList()
+                        .block(Duration.ofSeconds(bmTimeoutSec));
+                if (primary != null && !primary.isEmpty()) return primary;
+            } catch (WebClientResponseException.NotFound | WebClientResponseException.BadRequest ex) {
+                // fall through to legacy fallback
+            }
+
+            // Fallback: legacy list endpoint + client-side filtering by productId
+            try {
+                List<BillableMetricResponse> legacy = webClient.get()
+                        .uri(uriBuilder -> uriBuilder
+                                .path("/api/billable-metrics")
+                                .build())
+                        .header("X-Organization-Id", String.valueOf(orgId))
+                        .header("Authorization", "Bearer " + token)
+                        .retrieve()
+                        .bodyToFlux(BillableMetricResponse.class)
+                        .filter(bm -> bm != null
+                                && bm.getProductId() != null && bm.getProductId().equals(productId)
+                                && (bm.getStatus() == null || !"DRAFT".equalsIgnoreCase(bm.getStatus().trim())))
+                        .collectList()
+                        .block(Duration.ofSeconds(bmTimeoutSec));
+                return legacy == null ? List.of() : legacy;
+            } catch (Exception ex2) {
+                System.err.println(" Failed legacy fetch for billable metrics productId " + productId + ": " + ex2.getMessage());
+                return List.of();
+            }
         } catch (Exception e) {
             System.err.println(" Failed to fetch billable metrics for productId " + productId + ": " + e.getMessage());
             return List.of();

@@ -90,19 +90,19 @@ spring:
     date-format: dd MMM, yyyy HH:mm z
     time-zone: Asia/Kolkata
 
-# Fast-fail HTTP client timeouts for postgres profile
+# HTTP client timeouts for postgres profile (tuned for cross-region calls)
 clients:
   http:
     connectTimeoutMs: 1000
-    responseTimeoutMs: 2000
-    readTimeoutSec: 2
-    writeTimeoutSec: 2
+    responseTimeoutMs: 7000
+    readTimeoutSec: 7
+    writeTimeoutSec: 7
   billablemetrics:
     timeout:
-      sec: 2
+      sec: 7
   subscriptions:
     timeout:
-      sec: 2
+      sec: 7
 
 springdoc:
   swagger-ui:
