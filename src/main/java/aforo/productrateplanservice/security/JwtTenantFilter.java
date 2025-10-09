@@ -41,36 +41,40 @@ public class JwtTenantFilter extends OncePerRequestFilter {
             } catch (NumberFormatException e) {
                 logger.warn("Invalid X-Organization-Id header value: {}", headerOrg);
             }
-        } else if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {
-            // 2) Extract from JWT using multiple possible claim keys
-            Map<String, Object> claims = jwt.getClaims();
-            Object found = null;
-            for (String key : CLAIM_KEYS) {
-                if (claims.containsKey(key)) {
-                    found = claims.get(key);
-                    if (found != null) {
-                        try {
-                            Long parsed = Long.parseLong(found.toString());
-                            TenantContext.set(parsed);
-                            logger.debug("Tenant set from JWT claim '{}': {}", key, found);
-                            break;
-                        } catch (NumberFormatException e) {
-                            logger.warn("Invalid numeric value for JWT claim '{}': {}", key, found);
+        }
+
+        if (auth != null && auth.getPrincipal() instanceof Jwt jwt) {
+            // 2) Extract org from JWT only if not set by header
+            if (TenantContext.get() == null) {
+                Map<String, Object> claims = jwt.getClaims();
+                Object found = null;
+                for (String key : CLAIM_KEYS) {
+                    if (claims.containsKey(key)) {
+                        found = claims.get(key);
+                        if (found != null) {
+                            try {
+                                Long parsed = Long.parseLong(found.toString());
+                                TenantContext.set(parsed);
+                                logger.debug("Tenant set from JWT claim '{}': {}", key, found);
+                                break;
+                            } catch (NumberFormatException e) {
+                                logger.warn("Invalid numeric value for JWT claim '{}': {}", key, found);
+                            }
                         }
                     }
                 }
+                if (TenantContext.get() == null) {
+                    logger.debug("No tenant claim found in JWT. Checked keys: {}", CLAIM_KEYS);
+                }
             }
-            // Store raw JWT for downstream service-to-service calls
+            // Always store raw JWT for downstream calls
             try {
                 String token = jwt.getTokenValue();
                 if (token != null && !token.isBlank()) {
                     TenantContext.setJwt(token);
                 }
             } catch (Exception ignored) { }
-            if (TenantContext.get() == null) {
-                logger.debug("No tenant claim found in JWT. Checked keys: {}", CLAIM_KEYS);
-            }
-        } else {
+        } else if (TenantContext.get() == null) {
             logger.debug("No Authentication/JWT present in SecurityContext at tenant filter stage");
         }
 
