@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 import java.util.Collection;
@@ -30,6 +29,16 @@ public class BillableMetricClient {
     // Helper for SpEL cache keys; avoids T(fully.qualified.Class) references
     public Long tenantId() {
         return TenantContext.get();
+    }
+
+    // Build a stable, sorted key for batch ids to use in cache keys
+    public String idsKey(Collection<Long> ids) {
+        if (ids == null) return "[]";
+        return ids.stream()
+                .filter(java.util.Objects::nonNull)
+                .sorted()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
     }
 
     /**
@@ -118,7 +127,6 @@ public class BillableMetricClient {
         }
     }
 
-    @Cacheable(value = "metricExists", key = "T(String).valueOf(#root.target.tenantId()) + ':' + #id")
     public boolean metricExists(Long id) {
         try {
             Long orgId = TenantContext.require();
@@ -140,7 +148,6 @@ public class BillableMetricClient {
         }
     }
     
-    @Cacheable(value = "billableMetricsByProduct", key = "T(String).valueOf(#root.target.tenantId()) + ':' + #productId", unless = "#result == null || #result.isEmpty()")
     public List<BillableMetricResponse> getMetricsByProductId(Long productId) {
         try {
             Long orgId = TenantContext.require();

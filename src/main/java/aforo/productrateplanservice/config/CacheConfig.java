@@ -24,6 +24,7 @@ public class CacheConfig {
     public CacheManager cacheManager(Caffeine<Object, Object> caffeine) {
         CaffeineCacheManager manager = new CaffeineCacheManager(
                 "billableMetricsByProduct",
+                "billableMetricsBatch",
                 "metricExists",
                 "activeSubscriptionByProduct",
                 "activeSubscriptionProductIds"

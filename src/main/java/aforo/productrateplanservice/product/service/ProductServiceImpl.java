@@ -320,6 +320,25 @@ public class ProductServiceImpl implements ProductService {
         ProductDTO dto = productAssembler.toDTO(saved);
         // Avoid remote calls here; finalize is a write path and should be fast.
         dto.setStatus(productStatusResolver.computeWithHints(saved, 0, false));
+        // Pre-warm caches asynchronously so the next GET is fast (do not block finalize)
+        try {
+            Long orgIdSnapshot = orgId;
+            String jwtSnapshot = TenantContext.getJwt();
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                TenantContext.set(orgIdSnapshot);
+                if (jwtSnapshot != null && !jwtSnapshot.isBlank()) {
+                    TenantContext.setJwt(jwtSnapshot);
+                }
+                try {
+                    // Warm metrics and subscriptions caches
+                    billableMetricClient.getMetricsByProductId(id);
+                    subscriptionServiceClient.fetchActiveSubscriptionProductIds();
+                } catch (Exception ignored) {
+                } finally {
+                    TenantContext.clear();
+                }
+            });
+        } catch (Exception ignored) { }
         return dto;
     }
 
