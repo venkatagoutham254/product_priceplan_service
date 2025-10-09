@@ -25,7 +25,8 @@ public class CacheConfig {
         CaffeineCacheManager manager = new CaffeineCacheManager(
                 "billableMetricsByProduct",
                 "metricExists",
-                "activeSubscriptionByProduct"
+                "activeSubscriptionByProduct",
+                "activeSubscriptionProductIds"
         );
         manager.setCaffeine(caffeine);
         return manager;

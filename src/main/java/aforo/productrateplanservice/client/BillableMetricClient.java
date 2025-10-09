@@ -11,6 +11,10 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.time.Duration;
 
 @Component
@@ -26,6 +30,64 @@ public class BillableMetricClient {
     // Helper for SpEL cache keys; avoids T(fully.qualified.Class) references
     public Long tenantId() {
         return TenantContext.get();
+    }
+
+    /**
+     * Batch fetch metrics for many products with a single network call.
+     * Tries /by-product-ids first; if not available, falls back to /api/billable-metrics
+     * and filters client-side. Excludes DRAFT metrics.
+     */
+    public Map<Long, List<BillableMetricResponse>> getMetricsForProducts(Collection<Long> productIds) {
+        try {
+            Long orgId = TenantContext.require();
+            String token = TenantContext.getJwt();
+            if (productIds == null || productIds.isEmpty()) return Map.of();
+            Set<Long> ids = productIds.stream().filter(java.util.Objects::nonNull).collect(Collectors.toSet());
+            if (ids.isEmpty()) return Map.of();
+
+            // Try batch endpoint if present
+            try {
+                List<BillableMetricResponse> batch = webClient.get()
+                        .uri(uriBuilder -> {
+                            var b = uriBuilder.path("/api/billable-metrics/by-product-ids");
+                            ids.forEach(id -> b.queryParam("productId", id));
+                            return b.build();
+                        })
+                        .header("X-Organization-Id", String.valueOf(orgId))
+                        .header("Authorization", "Bearer " + token)
+                        .retrieve()
+                        .bodyToFlux(BillableMetricResponse.class)
+                        .filter(bm -> bm != null
+                                && bm.getProductId() != null && ids.contains(bm.getProductId())
+                                && (bm.getStatus() == null || !"DRAFT".equalsIgnoreCase(bm.getStatus().trim())))
+                        .collectList()
+                        .block(Duration.ofSeconds(bmTimeoutSec));
+                if (batch != null) {
+                    return batch.stream().collect(Collectors.groupingBy(BillableMetricResponse::getProductId));
+                }
+            } catch (WebClientResponseException.NotFound | WebClientResponseException.BadRequest ignored) {
+                // fallback below
+            }
+
+            // Fallback: fetch once and group client-side
+            List<BillableMetricResponse> all = webClient.get()
+                    .uri("/api/billable-metrics")
+                    .header("X-Organization-Id", String.valueOf(orgId))
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .bodyToFlux(BillableMetricResponse.class)
+                    .filter(bm -> bm != null
+                            && bm.getProductId() != null && ids.contains(bm.getProductId())
+                            && (bm.getStatus() == null || !"DRAFT".equalsIgnoreCase(bm.getStatus().trim())))
+                    .collectList()
+                    .block(Duration.ofSeconds(bmTimeoutSec));
+
+            if (all == null || all.isEmpty()) return Map.of();
+            return all.stream().collect(Collectors.groupingBy(BillableMetricResponse::getProductId));
+        } catch (Exception e) {
+            System.err.println(" Failed to batch fetch billable metrics for products " + productIds + ": " + e.getMessage());
+            return java.util.Collections.emptyMap();
+        }
     }
 
     public void validateMetricId(Long id) {
