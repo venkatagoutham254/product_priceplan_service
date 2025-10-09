@@ -32,7 +32,6 @@ public class SubscriptionServiceClient {
      * Returns true if there exists at least one ACTIVE subscription in subscriptionservice
      * for the given productId of the current tenant.
      */
-    @Cacheable(value = "activeSubscriptionByProduct", key = "T(String).valueOf(#root.target.tenantId()) + ':' + #productId")
     public boolean hasActiveSubscriptionForProduct(Long productId) {
         try {
             Long orgId = TenantContext.require();
@@ -71,7 +70,6 @@ public class SubscriptionServiceClient {
      * Fetch all ACTIVE subscriptions for the current tenant and return the set of productIds.
      * Used to avoid N+1 remote calls when computing status across many products.
      */
-    @Cacheable(value = "activeSubscriptionProductIds", key = "T(String).valueOf(#root.target.tenantId())")
     public java.util.Set<Long> fetchActiveSubscriptionProductIds() {
         try {
             Long orgId = TenantContext.require();
