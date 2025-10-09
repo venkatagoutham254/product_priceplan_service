@@ -110,6 +110,7 @@ public class ProductServiceImpl implements ProductService {
         Long orgId = TenantContext.require();
         String jwt = TenantContext.getJwt();
         List<Product> products = productRepository.findAllByOrganizationId(orgId);
+
         // Prefetch live subscriptions once
         java.util.Set<Long> liveProductIds;
         try {
@@ -117,31 +118,31 @@ public class ProductServiceImpl implements ProductService {
         } catch (Exception e) {
             liveProductIds = java.util.Set.of();
         }
-        final java.util.Set<Long> finalLiveProductIds = liveProductIds;
 
-        return products.parallelStream().map(p -> {
-            // Propagate tenant context into worker thread
-            TenantContext.set(orgId);
-            if (jwt != null && !jwt.isBlank()) {
-                TenantContext.setJwt(jwt);
-            }
-            try {
-                ProductDTO dto = productAssembler.toDTO(p);
-                // Fast-path: DRAFT products do not require remote calls
-                if (p.getStatus() == null || p.getStatus() == ProductStatus.DRAFT) {
-                    dto.setBillableMetrics(java.util.List.of());
-                    dto.setStatus(ProductStatus.DRAFT);
-                    return dto;
-                }
-                var metrics = billableMetricClient.getMetricsByProductId(p.getProductId());
-                dto.setBillableMetrics(metrics);
-                boolean liveHint = finalLiveProductIds.contains(p.getProductId());
-                dto.setStatus(productStatusResolver.computeWithHints(p, metrics != null ? metrics.size() : 0, liveHint));
+        // Batch fetch billable metrics for all non-DRAFT products with a single call
+        java.util.Set<Long> productIds = products.stream()
+                .filter(p -> p.getProductId() != null)
+                .filter(p -> p.getStatus() != null && p.getStatus() != ProductStatus.DRAFT)
+                .map(Product::getProductId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        java.util.Map<Long, java.util.List<aforo.productrateplanservice.client.BillableMetricResponse>> metricsMap =
+                billableMetricClient.getMetricsForProducts(productIds);
+
+        // Build DTOs sequentially (we already did the heavy network work above)
+        final java.util.Set<Long> finalLiveProductIds = liveProductIds;
+        return products.stream().map(p -> {
+            ProductDTO dto = productAssembler.toDTO(p);
+            if (p.getStatus() == null || p.getStatus() == ProductStatus.DRAFT) {
+                dto.setBillableMetrics(java.util.List.of());
+                dto.setStatus(ProductStatus.DRAFT);
                 return dto;
-            } finally {
-                // Avoid leaking tenant context across reused worker threads
-                TenantContext.clear();
             }
+            var metrics = metricsMap.getOrDefault(p.getProductId(), java.util.List.of());
+            dto.setBillableMetrics(metrics);
+            boolean liveHint = finalLiveProductIds.contains(p.getProductId());
+            dto.setStatus(productStatusResolver.computeWithHints(p, metrics != null ? metrics.size() : 0, liveHint));
+            return dto;
         }).collect(Collectors.toList());
     }
     

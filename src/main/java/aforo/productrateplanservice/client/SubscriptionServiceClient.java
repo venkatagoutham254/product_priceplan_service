@@ -71,6 +71,7 @@ public class SubscriptionServiceClient {
      * Fetch all ACTIVE subscriptions for the current tenant and return the set of productIds.
      * Used to avoid N+1 remote calls when computing status across many products.
      */
+    @Cacheable(value = "activeSubscriptionProductIds", key = "T(String).valueOf(#root.target.tenantId())")
     public java.util.Set<Long> fetchActiveSubscriptionProductIds() {
         try {
             Long orgId = TenantContext.require();
