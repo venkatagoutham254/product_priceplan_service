@@ -4,19 +4,10 @@ import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.product.assembler.ProductAssembler;
 import aforo.productrateplanservice.product.dto.ProductDTO;
 import aforo.productrateplanservice.product.entity.Product;
-import aforo.productrateplanservice.product.entity.ProductAPI;
-import aforo.productrateplanservice.product.entity.ProductFlatFile;
-import aforo.productrateplanservice.product.entity.ProductLLMToken;
-import aforo.productrateplanservice.product.entity.ProductSQLResult;
-import aforo.productrateplanservice.product.entity.ProductStorage;
+import aforo.productrateplanservice.product.entity.*;
 import aforo.productrateplanservice.product.enums.ProductStatus;
 import aforo.productrateplanservice.product.mapper.ProductMapper;
-import aforo.productrateplanservice.product.repository.ProductAPIRepository;
-import aforo.productrateplanservice.product.repository.ProductFlatFileRepository;
-import aforo.productrateplanservice.product.repository.ProductLLMTokenRepository;
-import aforo.productrateplanservice.product.repository.ProductRepository;
-import aforo.productrateplanservice.product.repository.ProductSQLResultRepository;
-import aforo.productrateplanservice.product.repository.ProductStorageRepository;
+import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductRequest;
 import aforo.productrateplanservice.product.request.UpdateProductRequest;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
@@ -29,14 +20,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.List;
-import java.util.Optional;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
- 
 
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
+
+    private static final long ENRICHMENT_DEADLINE_MS = 1500; // hard cap
+
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final ProductAssembler productAssembler;
@@ -55,27 +51,19 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductDTO createProduct(CreateProductRequest request) {
         Long orgId = TenantContext.require();
-        // normalize inputs
         String name = trim(request.getProductName());
         String sku  = trim(request.getInternalSkuCode());
 
-        // For drafts, productName may be omitted
-
-        // uniqueness
         if (name != null && productRepository.findByProductNameIgnoreCaseAndOrganizationId(name, orgId).isPresent()) {
             throw new IllegalArgumentException("productName already exists");
         }
-        // internalSkuCode is optional for drafts; only validate when provided
         if (sku != null && productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
             throw new IllegalArgumentException("internalSkuCode already exists");
         }
 
         Product product = productMapper.toEntity(request);
         product.setProductName(name);
-        // set only when provided (draft creation may omit it)
-        if (sku != null) {
-            product.setInternalSkuCode(sku);
-        }
+        if (sku != null) product.setInternalSkuCode(sku);
         product.setOrganizationId(orgId);
 
         Product saved = productRepository.save(product);
@@ -99,53 +87,65 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
         ProductDTO dto = productAssembler.toDTO(product);
+        // Keep single-product enrichment (short timeout already enforced in client)
         dto.setBillableMetrics(billableMetricClient.getMetricsByProductId(productId));
         dto.setStatus(productStatusResolver.compute(product));
         return dto;
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public List<ProductDTO> getAllProducts() {
         Long orgId = TenantContext.require();
-        String jwt = TenantContext.getJwt();
         List<Product> products = productRepository.findAllByOrganizationId(orgId);
 
-        // Prefetch live subscriptions once
-        java.util.Set<Long> liveProductIds;
-        try {
-            liveProductIds = subscriptionServiceClient.fetchActiveSubscriptionProductIds();
-        } catch (Exception e) {
-            liveProductIds = java.util.Set.of();
-        }
-
-        // Batch fetch billable metrics for all non-DRAFT products with a single call
-        java.util.Set<Long> productIds = products.stream()
+        // Collect finalized productIds only (avoid draft noise)
+        Set<Long> finalizedIds = products.stream()
                 .filter(p -> p.getProductId() != null)
                 .filter(p -> p.getStatus() != null && p.getStatus() != ProductStatus.DRAFT)
                 .map(Product::getProductId)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
-        java.util.Map<Long, java.util.List<aforo.productrateplanservice.client.BillableMetricResponse>> metricsMap =
-                billableMetricClient.getMetricsForProducts(productIds);
+        // Fire both remote calls concurrently with a hard deadline. If they don't finish, proceed.
+        CompletableFuture<Map<Long, List<aforo.productrateplanservice.client.BillableMetricResponse>>> metricsF =
+                CompletableFuture.supplyAsync(() -> billableMetricClient.getMetricsForProducts(finalizedIds));
 
-        // Build DTOs sequentially (we already did the heavy network work above)
-        final java.util.Set<Long> finalLiveProductIds = liveProductIds;
+        CompletableFuture<Set<Long>> liveProductsF =
+                CompletableFuture.supplyAsync(subscriptionServiceClient::fetchActiveSubscriptionProductIds);
+
+        Map<Long, List<aforo.productrateplanservice.client.BillableMetricResponse>> metricsMap = Map.of();
+        Set<Long> liveProductIds = Set.of();
+
+        try {
+            metricsMap = metricsF.get(ENRICHMENT_DEADLINE_MS, TimeUnit.MILLISECONDS);
+        } catch (Exception ignored) { /* best-effort */ }
+
+        try {
+            liveProductIds = liveProductsF.get(ENRICHMENT_DEADLINE_MS, TimeUnit.MILLISECONDS);
+        } catch (Exception ignored) { /* best-effort */ }
+
+        final Set<Long> finalLiveProductIds = liveProductIds;
+        final Map<Long, List<aforo.productrateplanservice.client.BillableMetricResponse>> finalMetricsMap = metricsMap;
+
         return products.stream().map(p -> {
             ProductDTO dto = productAssembler.toDTO(p);
+
             if (p.getStatus() == null || p.getStatus() == ProductStatus.DRAFT) {
-                dto.setBillableMetrics(java.util.List.of());
+                dto.setBillableMetrics(List.of());
                 dto.setStatus(ProductStatus.DRAFT);
                 return dto;
             }
-            var metrics = metricsMap.getOrDefault(p.getProductId(), java.util.List.of());
+
+            List<aforo.productrateplanservice.client.BillableMetricResponse> metrics =
+                    finalMetricsMap.getOrDefault(p.getProductId(), List.of());
             dto.setBillableMetrics(metrics);
+
             boolean liveHint = finalLiveProductIds.contains(p.getProductId());
-            dto.setStatus(productStatusResolver.computeWithHints(p, metrics != null ? metrics.size() : 0, liveHint));
+            dto.setStatus(productStatusResolver.computeWithHints(p, metrics.size(), liveHint));
             return dto;
-        }).collect(Collectors.toList());
+        }).toList();
     }
-    
+
     @Override
     @Transactional
     public ProductDTO updateProductFully(Long id, UpdateProductRequest request) {
@@ -153,19 +153,16 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
-        // PUT requires productName & internalSkuCode
         String name = trim(request.getProductName());
         String sku  = trim(request.getInternalSkuCode());
         if (name == null) throw new IllegalArgumentException("productName is required for PUT");
         if (sku  == null) throw new IllegalArgumentException("internalSkuCode is required for PUT");
 
-        // name uniqueness (ignore-case, trim) excluding self
         if (productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(name, id, orgId)) {
             throw new IllegalArgumentException("productName already exists");
         }
-        // sku uniqueness excluding self
         if (!sku.equals(product.getInternalSkuCode()) &&
-            productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
+                productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
             throw new IllegalArgumentException("internalSkuCode already exists");
         }
 
@@ -198,7 +195,7 @@ public class ProductServiceImpl implements ProductService {
             String sku = trim(request.getInternalSkuCode());
             if (sku == null) throw new IllegalArgumentException("internalSkuCode cannot be blank");
             if (!sku.equals(product.getInternalSkuCode()) &&
-                productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
+                    productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
                 throw new IllegalArgumentException("internalSkuCode already exists");
             }
             product.setInternalSkuCode(sku);
@@ -211,23 +208,12 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void deleteProduct(Long productId) {
         Long orgId = TenantContext.require();
-        // validate existence
         productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + productId));
 
-        // delete child rate plans first
         ratePlanRepository.deleteByProduct_ProductIdAndOrganizationId(productId, orgId);
-
-        // delete billable metrics linked to this product in external service
         billableMetricClient.deleteMetricsByProductId(productId);
-
         productRepository.deleteByProductIdAndOrganizationId(productId, orgId);
-    }
-
-    private static String trim(String s) {
-        if (s == null) return null;
-        String t = s.trim();
-        return t.isEmpty() ? null : t;
     }
 
     @Override
@@ -237,25 +223,19 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
 
-        // Only DRAFT can be finalized
         if (product.getStatus() != ProductStatus.DRAFT) {
             throw new IllegalStateException("Only DRAFT products can be finalized.");
         }
 
-        // 1) Product-level required fields
         requireNonBlank(product.getProductName(), "productName");
         requireNonBlank(product.getInternalSkuCode(), "internalSkuCode");
-
-        // Uniqueness (exclude self)
         String normalizedName = product.getProductName().trim();
         if (productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(normalizedName, id, orgId)) {
             throw new IllegalArgumentException("productName already exists");
         }
 
-        // 2) Exactly one complete type config
         int validTypeCount = 0;
 
-        // API
         Optional<ProductAPI> apiOpt = productAPIRepository.findById(id);
         if (apiOpt.isPresent()) {
             ProductAPI api = apiOpt.get();
@@ -265,18 +245,15 @@ public class ProductServiceImpl implements ProductService {
             validTypeCount++;
         }
 
-        // FlatFile
         Optional<ProductFlatFile> flatOpt = productFlatFileRepository.findById(id);
         if (flatOpt.isPresent()) {
             ProductFlatFile ff = flatOpt.get();
-            // For DRAFT you allowed nulls; for FINALIZE require both
             if (isBlank(ff.getFileLocation()) || ff.getFormat() == null) {
                 throw new IllegalArgumentException("Complete FlatFile config required: fileLocation, format.");
             }
             validTypeCount++;
         }
 
-        // SQL Result
         Optional<ProductSQLResult> sqlOpt = productSQLResultRepository.findById(id);
         if (sqlOpt.isPresent()) {
             ProductSQLResult sql = sqlOpt.get();
@@ -286,7 +263,6 @@ public class ProductServiceImpl implements ProductService {
             validTypeCount++;
         }
 
-        // LLM Token
         Optional<ProductLLMToken> llmOpt = productLLMTokenRepository.findById(id);
         if (llmOpt.isPresent()) {
             ProductLLMToken llm = llmOpt.get();
@@ -296,7 +272,6 @@ public class ProductServiceImpl implements ProductService {
             validTypeCount++;
         }
 
-        // Storage
         Optional<ProductStorage> storageOpt = productStorageRepository.findById(id);
         if (storageOpt.isPresent()) {
             ProductStorage st = storageOpt.get();
@@ -313,42 +288,23 @@ public class ProductServiceImpl implements ProductService {
             throw new IllegalArgumentException("Multiple type configurations found. Only one product type is allowed per product.");
         }
 
-        // All good → validations passed; do not mutate status field (status is derived)
-        // Move lifecycle from DRAFT -> CONFIGURED on explicit finalize
         product.setStatus(ProductStatus.CONFIGURED);
         Product saved = productRepository.save(product);
         ProductDTO dto = productAssembler.toDTO(saved);
-        // Avoid remote calls here; finalize is a write path and should be fast.
+
+        // compute with no external calls (write path should be fast)
         dto.setStatus(productStatusResolver.computeWithHints(saved, 0, false));
-        // Pre-warm caches asynchronously so the next GET is fast (do not block finalize)
-        try {
-            Long orgIdSnapshot = orgId;
-            String jwtSnapshot = TenantContext.getJwt();
-            java.util.concurrent.CompletableFuture.runAsync(() -> {
-                TenantContext.set(orgIdSnapshot);
-                if (jwtSnapshot != null && !jwtSnapshot.isBlank()) {
-                    TenantContext.setJwt(jwtSnapshot);
-                }
-                try {
-                    // Warm metrics and subscriptions caches
-                    billableMetricClient.getMetricsByProductId(id);
-                    subscriptionServiceClient.fetchActiveSubscriptionProductIds();
-                } catch (Exception ignored) {
-                } finally {
-                    TenantContext.clear();
-                }
-            });
-        } catch (Exception ignored) { }
         return dto;
     }
 
-    // ---- helpers ----
-    private static void requireNonBlank(String value, String fieldName) {
-        if (isBlank(value)) {
-            throw new IllegalArgumentException(fieldName + " is required");
-        }
+    private static String trim(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
     }
-
+    private static void requireNonBlank(String value, String fieldName) {
+        if (isBlank(value)) throw new IllegalArgumentException(fieldName + " is required");
+    }
     private static boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
     }
@@ -356,17 +312,12 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDTO updateIcon(Long id, MultipartFile icon) {
-        if (icon == null || icon.isEmpty()) {
-            throw new IllegalArgumentException("Icon file is required");
-        }
+        if (icon == null || icon.isEmpty()) throw new IllegalArgumentException("Icon file is required");
         Long orgId = TenantContext.require();
         Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
-        // delete previous file if any
-        if (product.getIcon() != null) {
-            iconStorageService.deleteByUrl(product.getIcon());
-        }
+        if (product.getIcon() != null) iconStorageService.deleteByUrl(product.getIcon());
 
         String url = iconStorageService.saveIcon(icon, id);
         product.setIcon(url);
@@ -386,5 +337,4 @@ public class ProductServiceImpl implements ProductService {
             productRepository.save(product);
         }
     }
-
 }

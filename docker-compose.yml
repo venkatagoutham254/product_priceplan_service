@@ -7,6 +7,8 @@ services:
       POSTGRES_DB: productrateplanservice
       POSTGRES_USER: root
       POSTGRES_PASSWORD: P4ssword!
+      TZ: Asia/Kolkata          # ✅ Add this line
+      PGTZ: Asia/Kolkata        # ✅ And this one for Postgres internal TZ
     ports:
       - "5433:5432"
     networks:
@@ -19,6 +21,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - SPRING_PROFILES_ACTIVE=postgres
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/productrateplanservice
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=P4ssword!

@@ -4,6 +4,7 @@ import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.product.dto.ProductFlatFileDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.entity.ProductFlatFile;
+import aforo.productrateplanservice.product.enums.ProductType;
 import aforo.productrateplanservice.product.mapper.ProductFlatFileMapper;
 import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductFlatFileRequest;
@@ -22,8 +23,8 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     private final ProductFlatFileRepository flatFileRepository;
     private final ProductRepository productRepository;
     private final ProductAPIRepository productAPIRepository;
-    private final ProductLLMTokenRepository productLLMTokenRepository;
     private final ProductSQLResultRepository productSQLResultRepository;
+    private final ProductLLMTokenRepository productLLMTokenRepository;
     private final ProductStorageRepository productStorageRepository;
     private final ProductFlatFileMapper mapper;
 
@@ -34,18 +35,17 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
-        // Ensure only one config type per product
         if (flatFileRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has FlatFile configuration.");
         }
         if (productAPIRepository.existsByProduct_ProductId(productId)
-         || productLLMTokenRepository.existsByProduct_ProductId(productId)
-         || productSQLResultRepository.existsByProduct_ProductId(productId)
-         || productStorageRepository.existsByProduct_ProductId(productId)) {
-            throw new IllegalStateException(
-                    "Product " + productId + " already has a different configuration type. " +
-                    "A product can only have one configuration type."
-            );
+                || productLLMTokenRepository.existsByProduct_ProductId(productId)
+                || productSQLResultRepository.existsByProduct_ProductId(productId)
+                || productStorageRepository.existsByProduct_ProductId(productId)) {
+            throw new IllegalStateException("Product " + productId + " already has a different configuration type.");
+        }
+        if (product.getProductType() != null && product.getProductType() != ProductType.FlatFile) {
+            throw new IllegalStateException("Product type already set to " + product.getProductType());
         }
 
         ProductFlatFile entity = ProductFlatFile.builder()
@@ -54,7 +54,12 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
                 .format(request.getFormat())
                 .build();
 
-        return mapper.toDTO(flatFileRepository.save(entity));
+        ProductFlatFileDTO dto = mapper.toDTO(flatFileRepository.save(entity));
+
+        product.setProductType(ProductType.FlatFile);
+        productRepository.save(product);
+
+        return dto;
     }
 
     @Override
@@ -72,9 +77,7 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     public List<ProductFlatFileDTO> getAll() {
         Long orgId = TenantContext.require();
         return flatFileRepository.findAllByProduct_OrganizationId(orgId)
-                .stream()
-                .map(mapper::toDTO)
-                .toList();
+                .stream().map(mapper::toDTO).toList();
     }
 
     @Override
@@ -85,7 +88,6 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
                 .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("FlatFile configuration not found for product " + productId));
 
-        // Full update requires both fields
         if (request.getFileLocation() == null || request.getFormat() == null) {
             throw new IllegalArgumentException("fileLocation and format are required for full update.");
         }
@@ -114,9 +116,17 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
     @Transactional
     public void delete(Long productId) {
         Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
+
         flatFileRepository
-            .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
-            .orElseThrow(() -> new NotFoundException("FlatFile configuration not found for product " + productId));
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("FlatFile configuration not found for product " + productId));
         flatFileRepository.deleteById(productId);
+
+        if (product.getProductType() == ProductType.FlatFile) {
+            product.setProductType(null);
+            productRepository.save(product);
+        }
     }
 }

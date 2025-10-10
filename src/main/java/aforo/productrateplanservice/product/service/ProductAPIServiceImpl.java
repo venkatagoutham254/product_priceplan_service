@@ -4,13 +4,9 @@ import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.product.dto.ProductAPIDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.entity.ProductAPI;
+import aforo.productrateplanservice.product.enums.ProductType;
 import aforo.productrateplanservice.product.mapper.ProductAPIMapper;
-import aforo.productrateplanservice.product.repository.ProductAPIRepository;
-import aforo.productrateplanservice.product.repository.ProductRepository;
-import aforo.productrateplanservice.product.repository.ProductFlatFileRepository;
-import aforo.productrateplanservice.product.repository.ProductSQLResultRepository;
-import aforo.productrateplanservice.product.repository.ProductLLMTokenRepository;
-import aforo.productrateplanservice.product.repository.ProductStorageRepository;
+import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductAPIRequest;
 import aforo.productrateplanservice.product.request.UpdateProductAPIRequest;
 import aforo.productrateplanservice.tenant.TenantContext;
@@ -40,18 +36,20 @@ public class ProductAPIServiceImpl implements ProductAPIService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
-        // ensure one API config per product and no other config types exist
+        // enforce exactly one type per product
         if (productAPIRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has API configuration.");
         }
-        if (productFlatFileRepository.existsByProduct_ProductId(productId) ||
-            productSQLResultRepository.existsByProduct_ProductId(productId) ||
-            productLLMTokenRepository.existsByProduct_ProductId(productId) ||
-            productStorageRepository.existsByProduct_ProductId(productId)) {
+        if (productFlatFileRepository.existsByProduct_ProductId(productId)
+                || productSQLResultRepository.existsByProduct_ProductId(productId)
+                || productLLMTokenRepository.existsByProduct_ProductId(productId)
+                || productStorageRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException(
-                "Product " + productId + " already has a different configuration type. " +
-                "A product can have only one configuration type."
-            );
+                    "Product " + productId + " already has a different configuration type.");
+        }
+        // also guard against stale productType
+        if (product.getProductType() != null && product.getProductType() != ProductType.API) {
+            throw new IllegalStateException("Product type already set to " + product.getProductType());
         }
 
         ProductAPI productAPI = ProductAPI.builder()
@@ -60,7 +58,13 @@ public class ProductAPIServiceImpl implements ProductAPIService {
                 .authType(request.getAuthType())
                 .build();
 
-        return productAPIMapper.toDTO(productAPIRepository.save(productAPI));
+        ProductAPIDTO dto = productAPIMapper.toDTO(productAPIRepository.save(productAPI));
+
+        // sync the type on the parent
+        product.setProductType(ProductType.API);
+        productRepository.save(product);
+
+        return dto;
     }
 
     @Override
@@ -91,7 +95,6 @@ public class ProductAPIServiceImpl implements ProductAPIService {
                 .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("API configuration not found for product " + productId));
 
-        // PUT = both fields required
         if (request.getEndpointUrl() == null || request.getAuthType() == null) {
             throw new IllegalArgumentException("endpointUrl and authType are required for full update.");
         }
@@ -110,12 +113,8 @@ public class ProductAPIServiceImpl implements ProductAPIService {
                 .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("API configuration not found for product " + productId));
 
-        if (request.getEndpointUrl() != null) {
-            existing.setEndpointUrl(request.getEndpointUrl());
-        }
-        if (request.getAuthType() != null) {
-            existing.setAuthType(request.getAuthType());
-        }
+        if (request.getEndpointUrl() != null) existing.setEndpointUrl(request.getEndpointUrl());
+        if (request.getAuthType() != null) existing.setAuthType(request.getAuthType());
 
         return productAPIMapper.toDTO(productAPIRepository.save(existing));
     }
@@ -124,9 +123,19 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     @Transactional
     public void delete(Long productId) {
         Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
+
         productAPIRepository
                 .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("API configuration not found for product " + productId));
+
         productAPIRepository.deleteById(productId);
+
+        // clear productType if it points to API
+        if (product.getProductType() == ProductType.API) {
+            product.setProductType(null);
+            productRepository.save(product);
+        }
     }
 }

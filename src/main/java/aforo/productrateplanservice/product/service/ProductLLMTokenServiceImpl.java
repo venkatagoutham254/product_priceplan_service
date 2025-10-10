@@ -4,6 +4,7 @@ import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.product.dto.ProductLLMTokenDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.entity.ProductLLMToken;
+import aforo.productrateplanservice.product.enums.ProductType;
 import aforo.productrateplanservice.product.mapper.ProductLLMTokenMapper;
 import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductLLMTokenRequest;
@@ -34,18 +35,17 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
-        // validation: ensure no other config type exists
         if (llmTokenRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has LLM Token configuration.");
         }
-        if (productAPIRepository.existsByProduct_ProductId(productId) ||
-            productFlatFileRepository.existsByProduct_ProductId(productId) ||
-            productSQLResultRepository.existsByProduct_ProductId(productId) ||
-            productStorageRepository.existsByProduct_ProductId(productId)) {
-            throw new IllegalStateException(
-                "Product " + productId + " already has a different configuration type. " +
-                "A product can have only one configuration type."
-            );
+        if (productAPIRepository.existsByProduct_ProductId(productId)
+                || productFlatFileRepository.existsByProduct_ProductId(productId)
+                || productSQLResultRepository.existsByProduct_ProductId(productId)
+                || productStorageRepository.existsByProduct_ProductId(productId)) {
+            throw new IllegalStateException("Product " + productId + " already has a different configuration type.");
+        }
+        if (product.getProductType() != null && product.getProductType() != ProductType.LLMToken) {
+            throw new IllegalStateException("Product type already set to " + product.getProductType());
         }
 
         ProductLLMToken entity = ProductLLMToken.builder()
@@ -55,7 +55,12 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
                 .authType(request.getAuthType())
                 .build();
 
-        return mapper.toDTO(llmTokenRepository.save(entity));
+        ProductLLMTokenDTO dto = mapper.toDTO(llmTokenRepository.save(entity));
+
+        product.setProductType(ProductType.LLMToken);
+        productRepository.save(product);
+
+        return dto;
     }
 
     @Override
@@ -73,9 +78,7 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
     public List<ProductLLMTokenDTO> getAll() {
         Long orgId = TenantContext.require();
         return llmTokenRepository.findAllByProduct_OrganizationId(orgId)
-                .stream()
-                .map(mapper::toDTO)
-                .toList();
+                .stream().map(mapper::toDTO).toList();
     }
 
     @Override
@@ -105,15 +108,9 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
                 .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("LLM Token configuration not found for product " + productId));
 
-        if (request.getModelName() != null) {
-            existing.setModelName(request.getModelName());
-        }
-        if (request.getEndpointUrl() != null) {
-            existing.setEndpointUrl(request.getEndpointUrl());
-        }
-        if (request.getAuthType() != null) {
-            existing.setAuthType(request.getAuthType());
-        }
+        if (request.getModelName() != null) existing.setModelName(request.getModelName());
+        if (request.getEndpointUrl() != null) existing.setEndpointUrl(request.getEndpointUrl());
+        if (request.getAuthType() != null) existing.setAuthType(request.getAuthType());
 
         return mapper.toDTO(llmTokenRepository.save(existing));
     }
@@ -122,9 +119,17 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
     @Transactional
     public void delete(Long productId) {
         Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
+
         llmTokenRepository
-            .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
-            .orElseThrow(() -> new NotFoundException("LLM Token configuration not found for product " + productId));
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("LLM Token configuration not found for product " + productId));
         llmTokenRepository.deleteById(productId);
+
+        if (product.getProductType() == ProductType.LLMToken) {
+            product.setProductType(null);
+            productRepository.save(product);
+        }
     }
 }
