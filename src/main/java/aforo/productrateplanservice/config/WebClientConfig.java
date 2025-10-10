@@ -16,16 +16,16 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${clients.http.connectTimeoutMs:3000}")
+    @Value("${clients.http.connectTimeoutMs:800}")
     private int connectTimeoutMs;
 
-    @Value("${clients.http.responseTimeoutMs:7000}")
+    @Value("${clients.http.responseTimeoutMs:1500}")
     private long responseTimeoutMs;
 
-    @Value("${clients.http.readTimeoutSec:7}")
+    @Value("${clients.http.readTimeoutSec:2}")
     private int readTimeoutSec;
 
-    @Value("${clients.http.writeTimeoutSec:7}")
+    @Value("${clients.http.writeTimeoutSec:2}")
     private int writeTimeoutSec;
 
     private WebClient build(WebClient.Builder builder, String baseUrl) {
@@ -47,7 +47,7 @@ public class WebClientConfig {
     public WebClient customerWebClient(
             WebClient.Builder builder,
             @Value("${customer.service.url}") String url) {
-       return build(builder, url);
+        return build(builder, url);
     }
 
     @Bean(name = "billableMetricWebClient")
@@ -56,7 +56,6 @@ public class WebClientConfig {
             @Value("${billableMetrics.service.url}") String url) {
         return build(builder, url);
     }
-
 
     @Bean
     public WebClient ratePlanServiceWebClient(
@@ -72,5 +71,3 @@ public class WebClientConfig {
         return build(builder, baseUrl);
     }
 }
-
-

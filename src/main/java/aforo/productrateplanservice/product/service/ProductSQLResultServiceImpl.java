@@ -4,6 +4,7 @@ import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.product.dto.ProductSQLResultDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.entity.ProductSQLResult;
+import aforo.productrateplanservice.product.enums.ProductType;
 import aforo.productrateplanservice.product.mapper.ProductSQLResultMapper;
 import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductSQLResultRequest;
@@ -34,18 +35,17 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
-        // Ensure only one config type per product
         if (sqlResultRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has SQL Result configuration.");
         }
         if (productAPIRepository.existsByProduct_ProductId(productId)
-         || productFlatFileRepository.existsByProduct_ProductId(productId)
-         || productLLMTokenRepository.existsByProduct_ProductId(productId)
-         || productStorageRepository.existsByProduct_ProductId(productId)) {
-            throw new IllegalStateException(
-                    "Product " + productId + " already has a different configuration type. " +
-                    "A product can only have one configuration type."
-            );
+                || productFlatFileRepository.existsByProduct_ProductId(productId)
+                || productLLMTokenRepository.existsByProduct_ProductId(productId)
+                || productStorageRepository.existsByProduct_ProductId(productId)) {
+            throw new IllegalStateException("Product " + productId + " already has a different configuration type.");
+        }
+        if (product.getProductType() != null && product.getProductType() != ProductType.SQLResult) {
+            throw new IllegalStateException("Product type already set to " + product.getProductType());
         }
 
         ProductSQLResult entity = ProductSQLResult.builder()
@@ -55,7 +55,12 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
                 .authType(request.getAuthType())
                 .build();
 
-        return mapper.toDTO(sqlResultRepository.save(entity));
+        ProductSQLResultDTO dto = mapper.toDTO(sqlResultRepository.save(entity));
+
+        product.setProductType(ProductType.SQLResult);
+        productRepository.save(product);
+
+        return dto;
     }
 
     @Override
@@ -73,9 +78,7 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
     public List<ProductSQLResultDTO> getAll() {
         Long orgId = TenantContext.require();
         return sqlResultRepository.findAllByProduct_OrganizationId(orgId)
-                .stream()
-                .map(mapper::toDTO)
-                .toList();
+                .stream().map(mapper::toDTO).toList();
     }
 
     @Override
@@ -86,7 +89,6 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
                 .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
 
-        // Require all fields for full update
         if (request.getDbType() == null || request.getConnectionString() == null || request.getAuthType() == null) {
             throw new IllegalArgumentException("dbType, connectionString, and authType are required for full update.");
         }
@@ -117,9 +119,17 @@ public class ProductSQLResultServiceImpl implements ProductSQLResultService {
     @Transactional
     public void delete(Long productId) {
         Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
+
         sqlResultRepository
-            .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
-            .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("SQL Result configuration not found for product " + productId));
         sqlResultRepository.deleteById(productId);
+
+        if (product.getProductType() == ProductType.SQLResult) {
+            product.setProductType(null);
+            productRepository.save(product);
+        }
     }
 }

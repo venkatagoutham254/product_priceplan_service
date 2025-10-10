@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.beans.factory.annotation.Value;
+
+import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 
 @Component
 public class SubscriptionServiceClient {
@@ -20,30 +23,26 @@ public class SubscriptionServiceClient {
     @Qualifier("subscriptionWebClient")
     private WebClient webClient;
 
-    @Value("${clients.subscriptions.timeout.sec:10}")
+    @Value("${clients.subscriptions.timeout.sec:2}") // default to 2s
     private int subsTimeoutSec;
 
-    // Helper for SpEL cache keys; avoids T(fully.qualified.Class) references
-    public Long tenantId() {
-        return aforo.productrateplanservice.tenant.TenantContext.get();
-    }
+    public Long tenantId() { return TenantContext.get(); }
 
-    /**
-     * Returns true if there exists at least one ACTIVE subscription in subscriptionservice
-     * for the given productId of the current tenant.
-     */
     public boolean hasActiveSubscriptionForProduct(Long productId) {
         try {
             Long orgId = TenantContext.require();
             String token = TenantContext.getJwt();
 
             String json = webClient.get()
-                    .uri("/api/subscriptions")
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/subscriptions")
+                            .queryParam("status", "ACTIVE") // use filter if backend supports it
+                            .build())
                     .header("X-Organization-Id", String.valueOf(orgId))
                     .header("Authorization", token != null ? ("Bearer " + token) : "")
                     .retrieve()
                     .bodyToMono(String.class)
-                    .block(java.time.Duration.ofSeconds(subsTimeoutSec));
+                    .block(Duration.ofSeconds(subsTimeoutSec));
 
             if (json == null || json.isBlank()) return false;
 
@@ -62,32 +61,34 @@ public class SubscriptionServiceClient {
         } catch (WebClientResponseException.NotFound e) {
             return false;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Failed to check product subscriptions", e);
+            // fail fast
+            return false;
         }
     }
 
-    /**
-     * Fetch all ACTIVE subscriptions for the current tenant and return the set of productIds.
-     * Used to avoid N+1 remote calls when computing status across many products.
-     */
-    public java.util.Set<Long> fetchActiveSubscriptionProductIds() {
+    public Set<Long> fetchActiveSubscriptionProductIds() {
         try {
             Long orgId = TenantContext.require();
             String token = TenantContext.getJwt();
 
             String json = webClient.get()
-                    .uri("/api/subscriptions")
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/subscriptions")
+                            .queryParam("status", "ACTIVE") // if unsupported, backend will ignore but we still cap time
+                            .build())
                     .header("X-Organization-Id", String.valueOf(orgId))
                     .header("Authorization", token != null ? ("Bearer " + token) : "")
                     .retrieve()
                     .bodyToMono(String.class)
-                    .block(java.time.Duration.ofSeconds(subsTimeoutSec));
+                    .block(Duration.ofSeconds(subsTimeoutSec));
 
-            java.util.Set<Long> result = new java.util.HashSet<>();
+            Set<Long> result = new HashSet<>();
             if (json == null || json.isBlank()) return result;
+
             ObjectMapper mapper = new ObjectMapper();
             JsonNode node = mapper.readTree(json);
             if (!node.isArray()) return result;
+
             for (JsonNode item : node) {
                 long pid = item.path("productId").asLong(-1);
                 String status = item.path("status").asText("");
@@ -97,9 +98,10 @@ public class SubscriptionServiceClient {
             }
             return result;
         } catch (WebClientResponseException.NotFound e) {
-            return java.util.Set.of();
+            return Set.of();
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Failed to fetch subscriptions", e);
+            // fail fast
+            return Set.of();
         }
     }
 }

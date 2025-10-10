@@ -4,6 +4,7 @@ import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.product.dto.ProductStorageDTO;
 import aforo.productrateplanservice.product.entity.Product;
 import aforo.productrateplanservice.product.entity.ProductStorage;
+import aforo.productrateplanservice.product.enums.ProductType;
 import aforo.productrateplanservice.product.mapper.ProductStorageMapper;
 import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductStorageRequest;
@@ -34,18 +35,17 @@ public class ProductStorageServiceImpl implements ProductStorageService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
-        // Ensure no other config type exists
         if (storageRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has Storage configuration.");
         }
         if (productAPIRepository.existsByProduct_ProductId(productId)
-         || productFlatFileRepository.existsByProduct_ProductId(productId)
-         || productSQLResultRepository.existsByProduct_ProductId(productId)
-         || productLLMTokenRepository.existsByProduct_ProductId(productId)) {
-            throw new IllegalStateException(
-                    "Product " + productId + " already has a different configuration type. " +
-                    "A product can have only one configuration type."
-            );
+                || productFlatFileRepository.existsByProduct_ProductId(productId)
+                || productSQLResultRepository.existsByProduct_ProductId(productId)
+                || productLLMTokenRepository.existsByProduct_ProductId(productId)) {
+            throw new IllegalStateException("Product " + productId + " already has a different configuration type.");
+        }
+        if (product.getProductType() != null && product.getProductType() != ProductType.Storage) {
+            throw new IllegalStateException("Product type already set to " + product.getProductType());
         }
 
         ProductStorage entity = ProductStorage.builder()
@@ -54,7 +54,12 @@ public class ProductStorageServiceImpl implements ProductStorageService {
                 .authType(request.getAuthType())
                 .build();
 
-        return mapper.toDTO(storageRepository.save(entity));
+        ProductStorageDTO dto = mapper.toDTO(storageRepository.save(entity));
+
+        product.setProductType(ProductType.Storage);
+        productRepository.save(product);
+
+        return dto;
     }
 
     @Override
@@ -72,9 +77,7 @@ public class ProductStorageServiceImpl implements ProductStorageService {
     public List<ProductStorageDTO> getAll() {
         Long orgId = TenantContext.require();
         return storageRepository.findAllByProduct_OrganizationId(orgId)
-                .stream()
-                .map(mapper::toDTO)
-                .toList();
+                .stream().map(mapper::toDTO).toList();
     }
 
     @Override
@@ -103,12 +106,8 @@ public class ProductStorageServiceImpl implements ProductStorageService {
                 .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Storage configuration not found for product " + productId));
 
-        if (request.getStorageLocation() != null) {
-            existing.setStorageLocation(request.getStorageLocation());
-        }
-        if (request.getAuthType() != null) {
-            existing.setAuthType(request.getAuthType());
-        }
+        if (request.getStorageLocation() != null) existing.setStorageLocation(request.getStorageLocation());
+        if (request.getAuthType() != null) existing.setAuthType(request.getAuthType());
 
         return mapper.toDTO(storageRepository.save(existing));
     }
@@ -117,9 +116,17 @@ public class ProductStorageServiceImpl implements ProductStorageService {
     @Transactional
     public void delete(Long productId) {
         Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
+
         storageRepository
-            .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
-            .orElseThrow(() -> new NotFoundException("Storage configuration not found for product " + productId));
+                .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("Storage configuration not found for product " + productId));
         storageRepository.deleteById(productId);
+
+        if (product.getProductType() == ProductType.Storage) {
+            product.setProductType(null);
+            productRepository.save(product);
+        }
     }
 }

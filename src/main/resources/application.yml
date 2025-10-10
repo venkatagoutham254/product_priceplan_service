@@ -5,16 +5,12 @@ spring:
     web-application-type: servlet
 
   # Common configurations
-  datasource:
-    url: jdbc:mysql://localhost:3312/productrateplanservice
-    username: root
-    password: P4ssword!
-    hikari:
-      driver-class-name: com.mysql.cj.jdbc.Driver
+  # NOTE: keep datasource empty in common to avoid cross-profile conflicts.
+  datasource: {}
   jpa:
     hibernate:
       ddl-auto: update
-    database-platform: org.hibernate.dialect.MySQLDialect
+    # IMPORTANT: do NOT set a dialect here; set per-profile below.
   liquibase:
     enabled: true
     change-log: classpath:/domain/changelog-master.yml
@@ -26,7 +22,6 @@ spring:
 uploads:
   dir: uploads
   public-base-url: /uploads
-
 
 server:
   port: 8080
@@ -48,14 +43,14 @@ customer:
 
 billableMetrics:
   service:
-    url: http://18.182.19.181:8081  
+    url: http://18.182.19.181:8081
 
-# Base URL for Product/RatePlan API (used by ratePlanServiceWebClient). Can be overridden via PRODUCT_SERVICE_URL env.
+# Base URL for Product/RatePlan API (used by ratePlanServiceWebClient).
 product:
   service:
     url: ${PRODUCT_SERVICE_URL:http://54.238.204.246:8080}
 
-# Base URL for Subscription Service used for LIVE status checks. Must be set in deploy.
+# Base URL for Subscription Service.
 subscriptions:
   service:
     url: ${SUBSCRIPTIONS_SERVICE_URL:http://13.113.70.183:8084}
@@ -68,7 +63,8 @@ spring:
       on-profile: postgres
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://productrateplanservice.cx2owwes8uyb.us-east-1.rds.amazonaws.com:5432/productrateplanservice?sslmode=require}
+    # Overridden by ENV in docker-compose; default kept for non-compose runs:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/productrateplanservice}
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:P4ssword!}
     hikari:
@@ -93,7 +89,7 @@ spring:
     date-format: dd MMM, yyyy HH:mm z
     time-zone: Asia/Kolkata
 
-# HTTP client timeouts for postgres profile (tuned for cross-region calls)
+# HTTP client timeouts for postgres profile
 clients:
   http:
     connectTimeoutMs: 1000
@@ -119,38 +115,32 @@ springdoc:
     display-operation-path: true
     custom-css-url: /swagger-ui/swagger-custom.css
 
-
-
 aforo:
   jwt:
     issuer: aforo-productrateplans
-    secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}  # env var or fallback
+    secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}
     expiryMinutes: 120
   cors:
-    # Comma-separated list; used by SecurityConfig.corsConfigurationSource()
-    # Include your frontend origin(s). Add https variants if applicable.
     allowed-origins: "http://13.115.248.133,http://localhost:3000"
     allowed-methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
     allowed-headers: "Authorization,Content-Type,X-Organization-Id"
     allow-credentials: true
 
-
 ---
-# MySQL-specific configurations
-#spring:
-#  config:
-#    activate:
-#      on-profile: mysql
-#  datasource:
-#    url: jdbc:mysql://localhost:3312/productrateplanservice
-#    hikari:
-#      driver-class-name: com.mysql.cj.jdbc.Driver
-#    username: root
-#    password: P4ssword!
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#    database-platform: org.hibernate.dialect.MySQLDialect
-#  liquibase:
-#    enabled: true
-#    change-log: classpath:/domain/changelog-master.yml
+# MySQL-specific configurations (disabled by default; keep for reference)
+# spring:
+#   config:
+#     activate:
+#       on-profile: mysql
+#   datasource:
+#     url: jdbc:mysql://localhost:3312/productrateplanservice
+#     username: root
+#     password: P4ssword!
+#     hikari:
+#       driver-class-name: com.mysql.cj.jdbc.Driver
+#   jpa:
+#     hibernate:
+#       ddl-auto: update
+#     database-platform: org.hibernate.dialect.MySQLDialect
+#   liquibase:
+#     enabled: true
