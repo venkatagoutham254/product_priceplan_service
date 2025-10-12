@@ -336,4 +336,24 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
+    @Override
+    @Transactional
+    public void clearProductTypeConfiguration(Long productId) {
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
+                .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
+
+        // Delete all possible product type configurations
+        // This allows the user to switch to a different product type
+        productAPIRepository.deleteById(productId);
+        productFlatFileRepository.deleteById(productId);
+        productSQLResultRepository.deleteById(productId);
+        productLLMTokenRepository.deleteById(productId);
+        productStorageRepository.deleteById(productId);
+        
+        // Clear the cached product type in the Product entity
+        product.setProductType(null);
+        productRepository.save(product);
+    }
+
 }

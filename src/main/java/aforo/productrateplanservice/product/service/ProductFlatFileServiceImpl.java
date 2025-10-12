@@ -34,18 +34,34 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
-        // Ensure only one config type per product
+        // Check if FlatFile config already exists
         if (flatFileRepository.existsByProduct_ProductId(productId)) {
-            throw new IllegalStateException("Product " + productId + " already has FlatFile configuration.");
+            throw new IllegalStateException("Product " + productId + " already has FlatFile configuration. Please delete it first to change.");
         }
-        if (productAPIRepository.existsByProduct_ProductId(productId)
-         || productLLMTokenRepository.existsByProduct_ProductId(productId)
-         || productSQLResultRepository.existsByProduct_ProductId(productId)
-         || productStorageRepository.existsByProduct_ProductId(productId)) {
-            throw new IllegalStateException(
-                    "Product " + productId + " already has a different configuration type. " +
-                    "A product can only have one configuration type."
-            );
+        
+        // Auto-clear other configuration types if they exist
+        boolean hasOtherConfig = false;
+        if (productAPIRepository.existsByProduct_ProductId(productId)) {
+            productAPIRepository.deleteById(productId);
+            hasOtherConfig = true;
+        }
+        if (productLLMTokenRepository.existsByProduct_ProductId(productId)) {
+            productLLMTokenRepository.deleteById(productId);
+            hasOtherConfig = true;
+        }
+        if (productSQLResultRepository.existsByProduct_ProductId(productId)) {
+            productSQLResultRepository.deleteById(productId);
+            hasOtherConfig = true;
+        }
+        if (productStorageRepository.existsByProduct_ProductId(productId)) {
+            productStorageRepository.deleteById(productId);
+            hasOtherConfig = true;
+        }
+        
+        // Log if we cleared any existing configuration
+        if (hasOtherConfig) {
+            // Configuration was automatically cleared to allow type switch
+            product.setProductType(null); // Clear the old type first
         }
 
         ProductFlatFile entity = ProductFlatFile.builder()
@@ -53,6 +69,10 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
                 .fileLocation(request.getFileLocation())
                 .format(request.getFormat())
                 .build();
+
+        // Update the product type in the Product entity
+        product.setProductType(aforo.productrateplanservice.product.enums.ProductType.FlatFile);
+        productRepository.save(product);
 
         return mapper.toDTO(flatFileRepository.save(entity));
     }

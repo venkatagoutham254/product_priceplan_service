@@ -2,6 +2,10 @@ package aforo.productrateplanservice.flatfee;
 
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
+import aforo.productrateplanservice.tieredpricing.TieredPricingRepository;
+import aforo.productrateplanservice.volumepricing.VolumePricingRepository;
+import aforo.productrateplanservice.usagebasedpricing.UsageBasedPricingRepository;
+import aforo.productrateplanservice.stairsteppricing.StairStepPricingRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +19,11 @@ public class FlatFeeServiceImpl implements FlatFeeService {
 
     private final FlatFeeRepository flatFeeRepository;
     private final FlatFeeMapper flatFeeMapper;
-    private final RatePlanRepository ratePlanRepository; // 
+    private final RatePlanRepository ratePlanRepository;
+    private final TieredPricingRepository tieredPricingRepository;
+    private final VolumePricingRepository volumePricingRepository;
+    private final UsageBasedPricingRepository usageBasedPricingRepository;
+    private final StairStepPricingRepository stairStepPricingRepository; 
 
     @Override
     public FlatFeeDTO createFlatFee(Long ratePlanId, FlatFeeCreateUpdateDTO dto) {
@@ -23,9 +31,27 @@ public class FlatFeeServiceImpl implements FlatFeeService {
             throw new IllegalStateException("FlatFee already exists for ratePlanId: " + ratePlanId);
         }
 
-        // 
+        // Verify rate plan exists
         RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
                 .orElseThrow(() -> new EntityNotFoundException("RatePlan not found with ID: " + ratePlanId));
+
+        // Auto-clear other pricing configurations if they exist
+        
+        // Clear tiered pricings
+        tieredPricingRepository.findByRatePlan_RatePlanId(ratePlanId)
+            .forEach(tieredPricingRepository::delete);
+        
+        // Clear volume pricings
+        volumePricingRepository.findByRatePlanRatePlanId(ratePlanId)
+            .forEach(volumePricingRepository::delete);
+        
+        // Clear usage based pricings
+        usageBasedPricingRepository.findByRatePlanRatePlanId(ratePlanId)
+            .forEach(usageBasedPricingRepository::delete);
+        
+        // Clear stair step pricings
+        stairStepPricingRepository.findByRatePlanRatePlanId(ratePlanId)
+            .forEach(stairStepPricingRepository::delete);
 
         FlatFee entity = flatFeeMapper.toEntity(ratePlanId, dto);
         FlatFee saved = flatFeeRepository.save(entity);
