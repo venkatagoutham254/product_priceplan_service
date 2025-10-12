@@ -40,11 +40,11 @@ aforo:
 
 customer:
   service:
-    url: http://44.203.171.98:8082
+    url: http://44.203.171.98:8082  #customer client
 
 billableMetrics:
   service:
-    url: http://18.182.19.181:8081  
+    url: http://18.182.19.181:8081  #billable metrics client
 
 ---
 # PostgreSQL-specific configurations
