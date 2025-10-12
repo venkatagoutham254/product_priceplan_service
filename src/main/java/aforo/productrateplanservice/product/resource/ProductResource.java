@@ -113,4 +113,12 @@ public class ProductResource {
     public ResponseEntity<ProductDTO> finalizeProduct(@PathVariable Long id) {
         return ResponseEntity.ok(productService.finalizeProduct(id));
     }
+    
+    @DeleteMapping("/{id}/configuration")
+    @Operation(summary = "Clear product type configuration", 
+               description = "Remove all product type configurations to allow switching to a different product type")
+    public ResponseEntity<Void> clearProductTypeConfiguration(@PathVariable Long id) {
+        productService.clearProductTypeConfiguration(id);
+        return ResponseEntity.noContent().build();
+    }
 }

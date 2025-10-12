@@ -313,4 +313,31 @@ public class RatePlanServiceImpl implements RatePlanService {
         ratePlanRepository.deleteByBillableMetricIdAndOrganizationId(billableMetricId, orgId);
     }
     
+    @Override
+    public void clearPricingConfiguration(Long ratePlanId) {
+        Long orgId = TenantContext.require();
+        // Verify rate plan exists for this organization
+        ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
+                .orElseThrow(() -> new NotFoundException("RatePlan not found"));
+        
+        // Delete all pricing configurations
+        flatFeeRepository.findByRatePlanId(ratePlanId).ifPresent(flatFeeRepository::delete);
+        
+        // Delete all tiered pricings
+        tieredPricingRepository.findByRatePlan_RatePlanId(ratePlanId)
+                .forEach(tieredPricingRepository::delete);
+        
+        // Delete all volume pricings
+        volumePricingRepository.findByRatePlanRatePlanId(ratePlanId)
+                .forEach(volumePricingRepository::delete);
+        
+        // Delete all usage based pricings
+        usageBasedPricingRepository.findByRatePlanRatePlanId(ratePlanId)
+                .forEach(usageBasedPricingRepository::delete);
+        
+        // Delete all stair step pricings
+        stairStepPricingRepository.findByRatePlanRatePlanId(ratePlanId)
+                .forEach(stairStepPricingRepository::delete);
+    }
+    
 }

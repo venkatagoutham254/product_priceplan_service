@@ -3,6 +3,10 @@ package aforo.productrateplanservice.usagebasedpricing;
 import aforo.productrateplanservice.exception.ResourceNotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
+import aforo.productrateplanservice.flatfee.FlatFeeRepository;
+import aforo.productrateplanservice.tieredpricing.TieredPricingRepository;
+import aforo.productrateplanservice.volumepricing.VolumePricingRepository;
+import aforo.productrateplanservice.stairsteppricing.StairStepPricingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,12 +20,33 @@ public class UsageBasedPricingServiceImpl implements UsageBasedPricingService {
     private final UsageBasedPricingRepository repository;
     private final UsageBasedPricingMapper mapper;
     private final RatePlanRepository ratePlanRepository;
+    private final FlatFeeRepository flatFeeRepository;
+    private final TieredPricingRepository tieredPricingRepository;
+    private final VolumePricingRepository volumePricingRepository;
+    private final StairStepPricingRepository stairStepPricingRepository;
 
     @Override
     @Transactional
     public UsageBasedPricingDTO create(Long ratePlanId, UsageBasedPricingCreateUpdateDTO dto) {
         RatePlan ratePlan = ratePlanRepository.findById(ratePlanId)
                 .orElseThrow(() -> new ResourceNotFoundException("RatePlan not found with ID: " + ratePlanId));
+
+        // Auto-clear other pricing configurations if they exist
+        
+        // Clear flat fee
+        flatFeeRepository.findByRatePlanId(ratePlanId).ifPresent(flatFeeRepository::delete);
+        
+        // Clear tiered pricings
+        tieredPricingRepository.findByRatePlan_RatePlanId(ratePlanId)
+                .forEach(tieredPricingRepository::delete);
+        
+        // Clear volume pricings
+        volumePricingRepository.findByRatePlanRatePlanId(ratePlanId)
+                .forEach(volumePricingRepository::delete);
+        
+        // Clear stair step pricings  
+        stairStepPricingRepository.findByRatePlanRatePlanId(ratePlanId)
+                .forEach(stairStepPricingRepository::delete);
 
         UsageBasedPricing entity = mapper.toEntity(dto, ratePlan);
         return mapper.toDTO(repository.save(entity));

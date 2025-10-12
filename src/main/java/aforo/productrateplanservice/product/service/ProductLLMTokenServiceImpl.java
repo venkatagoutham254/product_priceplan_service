@@ -28,24 +28,39 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
     private final ProductLLMTokenMapper mapper;
 
     @Override
-    @Transactional
     public ProductLLMTokenDTO create(Long productId, CreateProductLLMTokenRequest request) {
         Long orgId = TenantContext.require();
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
-        // validation: ensure no other config type exists
+        // Check if LLMToken config already exists
         if (llmTokenRepository.existsByProduct_ProductId(productId)) {
-            throw new IllegalStateException("Product " + productId + " already has LLM Token configuration.");
+            throw new IllegalStateException("Product " + productId + " already has LLMToken configuration. Please delete it first to change.");
         }
-        if (productAPIRepository.existsByProduct_ProductId(productId) ||
-            productFlatFileRepository.existsByProduct_ProductId(productId) ||
-            productSQLResultRepository.existsByProduct_ProductId(productId) ||
-            productStorageRepository.existsByProduct_ProductId(productId)) {
-            throw new IllegalStateException(
-                "Product " + productId + " already has a different configuration type. " +
-                "A product can have only one configuration type."
-            );
+        
+        // Auto-clear other configuration types if they exist
+        boolean hasOtherConfig = false;
+        if (productAPIRepository.existsByProduct_ProductId(productId)) {
+            productAPIRepository.deleteById(productId);
+            hasOtherConfig = true;
+        }
+        if (productFlatFileRepository.existsByProduct_ProductId(productId)) {
+            productFlatFileRepository.deleteById(productId);
+            hasOtherConfig = true;
+        }
+        if (productSQLResultRepository.existsByProduct_ProductId(productId)) {
+            productSQLResultRepository.deleteById(productId);
+            hasOtherConfig = true;
+        }
+        if (productStorageRepository.existsByProduct_ProductId(productId)) {
+            productStorageRepository.deleteById(productId);
+            hasOtherConfig = true;
+        }
+        
+        // Log if we cleared any existing configuration
+        if (hasOtherConfig) {
+            // Configuration was automatically cleared to allow type switch
+            product.setProductType(null); // Clear the old type first
         }
 
         ProductLLMToken entity = ProductLLMToken.builder()
@@ -54,6 +69,10 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
                 .endpointUrl(request.getEndpointUrl())
                 .authType(request.getAuthType())
                 .build();
+
+        // Update the product type in the Product entity
+        product.setProductType(aforo.productrateplanservice.product.enums.ProductType.LLMToken);
+        productRepository.save(product);
 
         return mapper.toDTO(llmTokenRepository.save(entity));
     }

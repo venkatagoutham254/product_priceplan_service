@@ -18,4 +18,5 @@ public interface ProductService {
     ProductDTO finalizeProduct(Long id);
     ProductDTO updateIcon(Long id, MultipartFile icon);
     void deleteIcon(Long id);
+    void clearProductTypeConfiguration(Long productId);
 }

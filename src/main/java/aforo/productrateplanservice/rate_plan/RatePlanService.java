@@ -20,4 +20,7 @@ public interface RatePlanService {
 
     // INTERNAL: delete all rate plans linked to a billable metric for the current tenant
     void deleteByBillableMetricId(Long billableMetricId);
+    
+    // Clear all pricing configurations for a rate plan
+    void clearPricingConfiguration(Long ratePlanId);
 }
