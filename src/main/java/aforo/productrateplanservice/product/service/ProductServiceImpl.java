@@ -303,6 +303,19 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public String getIconUrl(Long id) {
+        Long orgId = TenantContext.require();
+        Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+        String icon = product.getIcon();
+        if (icon == null || icon.trim().isEmpty()) {
+            throw new NotFoundException("Icon not found for product id: " + id);
+        }
+        return icon;
+    }
+
+    @Override
     @Transactional
     public ProductDTO updateIcon(Long id, MultipartFile icon) {
         if (icon == null || icon.isEmpty()) {

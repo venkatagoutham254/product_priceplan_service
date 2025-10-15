@@ -16,6 +16,7 @@ public interface ProductService {
     ProductDTO updateProductFully(Long id, UpdateProductRequest request);
     ProductDTO updateProductPartially(Long id, UpdateProductRequest request);
     ProductDTO finalizeProduct(Long id);
+    String getIconUrl(Long id);
     ProductDTO updateIcon(Long id, MultipartFile icon);
     void deleteIcon(Long id);
     void clearProductTypeConfiguration(Long productId);

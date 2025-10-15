@@ -20,6 +20,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
+import org.springframework.http.HttpStatus;
+import java.net.URI;
 
 @RestController
 @CrossOrigin(origins = {"http://13.115.248.133", "http://13.115.248.133:3001", "https://13.115.248.133", "https://13.115.248.133:3001"}, allowCredentials = "true")
@@ -91,6 +93,13 @@ public class ProductResource {
             @RequestPart("icon") MultipartFile icon) {
         ProductDTO updated = productService.updateIcon(id, icon);
         return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/{id}/icon")
+    @Operation(summary = "Get product icon (redirect)")
+    public ResponseEntity<Void> getIcon(@PathVariable Long id) {
+        String url = productService.getIconUrl(id);
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
 
     @DeleteMapping("/{id}")
