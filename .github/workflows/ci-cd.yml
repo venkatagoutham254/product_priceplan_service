@@ -19,7 +19,10 @@ jobs:
           java-version: "21"
 
       - name: Build JAR with Maven
-        run: mvn -B clean package -DskipTests
+        run: |
+          mvn -B clean package -DskipTests
+          # Copy the built JAR to app.jar for Docker compatibility
+          cp target/productrateplanservie-0.0.1-SNAPSHOT.jar app.jar
 
       - name: Decode EC2 SSH key
         run: |
@@ -28,7 +31,7 @@ jobs:
 
       - name: Copy files to EC2 via SCP
         run: |
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no target/app.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
+          scp -i ec2-key.pem -o StrictHostKeyChecking=no app.jar ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
           scp -i ec2-key.pem -o StrictHostKeyChecking=no Dockerfile ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
           scp -i ec2-key.pem -o StrictHostKeyChecking=no docker-compose.yml ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/
 
