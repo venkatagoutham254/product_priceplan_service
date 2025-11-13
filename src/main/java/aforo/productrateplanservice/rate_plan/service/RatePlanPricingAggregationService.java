@@ -1,17 +1,22 @@
 package aforo.productrateplanservice.rate_plan.service;
 
 import aforo.productrateplanservice.cache.CacheInvalidationService;
+import aforo.productrateplanservice.flatfee.FlatFee;
 import aforo.productrateplanservice.flatfee.FlatFeeMapper;
 import aforo.productrateplanservice.flatfee.FlatFeeRepository;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanDTO;
 import aforo.productrateplanservice.rate_plan.RatePlanMapper;
+import aforo.productrateplanservice.stairsteppricing.StairStepPricing;
 import aforo.productrateplanservice.stairsteppricing.StairStepPricingMapper;
 import aforo.productrateplanservice.stairsteppricing.StairStepPricingRepository;
+import aforo.productrateplanservice.tieredpricing.TieredPricing;
 import aforo.productrateplanservice.tieredpricing.TieredPricingMapper;
 import aforo.productrateplanservice.tieredpricing.TieredPricingRepository;
+import aforo.productrateplanservice.usagebasedpricing.UsageBasedPricing;
 import aforo.productrateplanservice.usagebasedpricing.UsageBasedPricingMapper;
 import aforo.productrateplanservice.usagebasedpricing.UsageBasedPricingRepository;
+import aforo.productrateplanservice.volumepricing.VolumePricing;
 import aforo.productrateplanservice.volumepricing.VolumePricingMapper;
 import aforo.productrateplanservice.volumepricing.VolumePricingRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +25,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -111,24 +118,43 @@ public class RatePlanPricingAggregationService {
                 .map(RatePlan::getRatePlanId)
                 .collect(Collectors.toList());
 
-        // ⚡ Batch fetch all related data (5 queries total instead of N*5)
-        var flatFees = flatFeeRepository.findByRatePlanIdIn(ratePlanIds);
-        var tieredPricings = tieredPricingRepository.findByRatePlanIdInWithTiers(ratePlanIds);
-        var volumePricings = volumePricingRepository.findByRatePlanIdInWithTiers(ratePlanIds);
-        var usageBasedPricings = usageBasedPricingRepository.findByRatePlanIdIn(ratePlanIds);
-        var stairStepPricings = stairStepPricingRepository.findByRatePlanIdInWithTiers(ratePlanIds);
+        // ⚡ Batch fetch all related data - using individual queries since batch methods don't exist
+        Map<Long, FlatFee> flatFeeMap = new HashMap<>();
+        Map<Long, List<TieredPricing>> tieredPricingMap = new HashMap<>();
+        Map<Long, List<VolumePricing>> volumePricingMap = new HashMap<>();
+        Map<Long, List<UsageBasedPricing>> usageBasedPricingMap = new HashMap<>();
+        Map<Long, List<StairStepPricing>> stairStepPricingMap = new HashMap<>();
 
-        // Group by rate plan ID for efficient lookup
-        var flatFeeMap = flatFees.stream()
-                .collect(Collectors.toMap(f -> f.getRatePlanId(), f -> f));
-        var tieredPricingMap = tieredPricings.stream()
-                .collect(Collectors.groupingBy(tp -> tp.getRatePlan().getRatePlanId()));
-        var volumePricingMap = volumePricings.stream()
-                .collect(Collectors.groupingBy(vp -> vp.getRatePlan().getRatePlanId()));
-        var usageBasedPricingMap = usageBasedPricings.stream()
-                .collect(Collectors.groupingBy(ubp -> ubp.getRatePlan().getRatePlanId()));
-        var stairStepPricingMap = stairStepPricings.stream()
-                .collect(Collectors.groupingBy(ssp -> ssp.getRatePlan().getRatePlanId()));
+        // Fetch data for each rate plan ID
+        for (Long ratePlanId : ratePlanIds) {
+            // Flat fees
+            flatFeeRepository.findByRatePlanId(ratePlanId)
+                    .ifPresent(flatFee -> flatFeeMap.put(ratePlanId, flatFee));
+            
+            // Tiered pricing
+            var tieredPricings = tieredPricingRepository.findByRatePlan_RatePlanId(ratePlanId);
+            if (!tieredPricings.isEmpty()) {
+                tieredPricingMap.put(ratePlanId, tieredPricings);
+            }
+            
+            // Volume pricing
+            var volumePricings = volumePricingRepository.findByRatePlanRatePlanId(ratePlanId);
+            if (!volumePricings.isEmpty()) {
+                volumePricingMap.put(ratePlanId, volumePricings);
+            }
+            
+            // Usage-based pricing
+            var usageBasedPricings = usageBasedPricingRepository.findByRatePlanRatePlanId(ratePlanId);
+            if (!usageBasedPricings.isEmpty()) {
+                usageBasedPricingMap.put(ratePlanId, usageBasedPricings);
+            }
+            
+            // Stair step pricing
+            var stairStepPricings = stairStepPricingRepository.findByRatePlanRatePlanId(ratePlanId);
+            if (!stairStepPricings.isEmpty()) {
+                stairStepPricingMap.put(ratePlanId, stairStepPricings);
+            }
+        }
 
         // Build DTOs using pre-loaded data
         return ratePlans.stream().map(ratePlan -> {
