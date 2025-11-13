@@ -1,0 +1,59 @@
+{
+  "family": "prp-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::418295695425:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "postgres",
+      "image": "postgres:15",
+      "essential": true,
+      "portMappings": [{ "containerPort": 5432, "protocol": "tcp" }],
+      "environment": [
+        { "name": "POSTGRES_DB", "value": "productrateplanservice" },
+        { "name": "POSTGRES_USER", "value": "root" },
+        { "name": "POSTGRES_PASSWORD", "value": "P4ssword!" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "pg_isready -U root -d productrateplanservice"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/productrateplanservice",
+          "awslogs-region": "ap-northeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    },
+    {
+      "name": "prp-app",
+      "image": "418295695425.dkr.ecr.ap-northeast-1.amazonaws.com/productrateplanservice:v0.0.1",
+      "essential": true,
+      "portMappings": [{ "containerPort": 8080, "protocol": "tcp" }],
+      "environment": [
+        { "name": "SPRING_DATASOURCE_URL", "value": "jdbc:postgresql://127.0.0.1:5432/productrateplanservice" },
+        { "name": "SPRING_DATASOURCE_USERNAME", "value": "root" },
+        { "name": "SPRING_DATASOURCE_PASSWORD", "value": "P4ssword!" },
+        { "name": "SPRING_PROFILES_ACTIVE", "value": "postgres" }
+      ],
+      "dependsOn": [
+        { "containerName": "postgres", "condition": "HEALTHY" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/productrateplanservice",
+          "awslogs-region": "ap-northeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

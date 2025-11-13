@@ -1,0 +1,819 @@
+openapi: 3.0.3
+info:
+  title: Aforo.ai Product Rate Plans Service API
+  description: API documentation for managing Product Rate Plans with multi-tenant support
+  version: 1.0.0
+  license:
+    name: Apache 2.0
+    url: http://springdoc.org
+
+servers:
+  - url: /
+    description: Default Server URL
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Health Check
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: Returns service health status
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+
+  # Home/Root
+  /:
+    get:
+      tags:
+        - Home
+      summary: API root with HATEOAS links
+      responses:
+        '200':
+          description: Root API response with navigation links
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # Products
+  /api/products:
+    get:
+      tags:
+        - Products
+      summary: List products
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductDTO'
+    post:
+      tags:
+        - Products
+      summary: Create product (multipart)
+      description: Create a product with an optional icon file using multipart form-data
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                request:
+                  type: string
+                  description: JSON string of CreateProductRequest
+                icon:
+                  type: string
+                  format: binary
+                  description: Optional product icon file
+      responses:
+        '200':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDTO'
+
+  /api/products/{id}:
+    get:
+      tags:
+        - Products
+      summary: Get product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDTO'
+    put:
+      tags:
+        - Products
+      summary: Update product (full)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDTO'
+    patch:
+      tags:
+        - Products
+      summary: Update product (partial)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDTO'
+    delete:
+      tags:
+        - Products
+      summary: Delete product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Product deleted successfully
+
+  /api/products/{id}/finalize:
+    post:
+      tags:
+        - Products
+      summary: Finalize product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Product finalized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDTO'
+
+  # Rate Plans
+  /api/rateplans:
+    get:
+      tags:
+        - Rate Plans
+      summary: List rate plans
+      responses:
+        '200':
+          description: List of rate plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RatePlanDTO'
+    post:
+      tags:
+        - Rate Plans
+      summary: Create rate plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRatePlanRequest'
+      responses:
+        '200':
+          description: Rate plan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatePlanDTO'
+
+  /api/rateplans/{ratePlanId}:
+    get:
+      tags:
+        - Rate Plans
+      summary: Get rate plan by ID
+      parameters:
+        - name: ratePlanId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Rate plan details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatePlanDTO'
+    put:
+      tags:
+        - Rate Plans
+      summary: Update rate plan (full)
+      parameters:
+        - name: ratePlanId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRatePlanRequest'
+      responses:
+        '200':
+          description: Rate plan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatePlanDTO'
+    patch:
+      tags:
+        - Rate Plans
+      summary: Update rate plan (partial)
+      parameters:
+        - name: ratePlanId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRatePlanRequest'
+      responses:
+        '200':
+          description: Rate plan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatePlanDTO'
+    delete:
+      tags:
+        - Rate Plans
+      summary: Delete rate plan
+      parameters:
+        - name: ratePlanId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Rate plan deleted successfully
+
+  /api/rateplans/{ratePlanId}/confirm:
+    post:
+      tags:
+        - Rate Plans
+      summary: Confirm rate plan
+      parameters:
+        - name: ratePlanId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Rate plan confirmed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatePlanDTO'
+
+  # Flat Fee Pricing
+  /api/rateplans/{ratePlanId}/flatfee:
+    post:
+      tags:
+        - Pricing - Flat Fee
+      summary: Create flat fee pricing
+      parameters:
+        - name: ratePlanId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlatFeeCreateUpdateDTO'
+      responses:
+        '200':
+          description: Flat fee created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlatFeeDTO'
+    get:
+      tags:
+        - Pricing - Flat Fee
+      summary: Get flat fee by rate plan ID
+      parameters:
+        - name: ratePlanId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Flat fee details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlatFeeDTO'
+
+  # Tiered Pricing
+  /api/rateplans/{ratePlanId}/tiered:
+    post:
+      tags:
+        - Pricing - Tiered
+      summary: Create tiered pricing
+      parameters:
+        - name: ratePlanId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TieredPricingCreateUpdateDTO'
+      responses:
+        '200':
+          description: Tiered pricing created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TieredPricingDTO'
+    get:
+      tags:
+        - Pricing - Tiered
+      summary: Get tiered pricing by rate plan ID
+      parameters:
+        - name: ratePlanId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of tiered pricing configurations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TieredPricingDTO'
+
+  # Revenue Estimator
+  /api/estimator:
+    post:
+      tags:
+        - Revenue Estimator
+      summary: Estimate revenue
+      description: Returns a detailed line-item cost breakdown for the supplied usage and toggles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstimateRequest'
+      responses:
+        '200':
+          description: Successful estimate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstimateResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Product Schemas
+    ProductDTO:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        version:
+          type: string
+        productDescription:
+          type: string
+        status:
+          $ref: '#/components/schemas/ProductStatus'
+        productType:
+          $ref: '#/components/schemas/ProductType'
+        internalSkuCode:
+          type: string
+        icon:
+          type: string
+        createdOn:
+          type: string
+          format: date-time
+        lastUpdated:
+          type: string
+          format: date-time
+        billableMetrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillableMetricResponse'
+
+    UpdateProductRequest:
+      type: object
+      properties:
+        productName:
+          type: string
+        version:
+          type: string
+        productDescription:
+          type: string
+        internalSkuCode:
+          type: string
+
+    # Rate Plan Schemas
+    RatePlanDTO:
+      type: object
+      properties:
+        ratePlanId:
+          type: integer
+          format: int64
+        ratePlanName:
+          type: string
+        description:
+          type: string
+        billingFrequency:
+          $ref: '#/components/schemas/BillingFrequency'
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        paymentType:
+          $ref: '#/components/schemas/PaymentType'
+        billableMetricId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/RatePlanStatus'
+        createdOn:
+          type: string
+          format: date-time
+        lastUpdated:
+          type: string
+          format: date-time
+        flatFee:
+          $ref: '#/components/schemas/FlatFeeDTO'
+        volumePricings:
+          type: array
+          items:
+            $ref: '#/components/schemas/VolumePricingDTO'
+        usageBasedPricings:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsageBasedPricingDTO'
+
+    CreateRatePlanRequest:
+      type: object
+      required:
+        - ratePlanName
+        - productId
+        - billingFrequency
+      properties:
+        ratePlanName:
+          type: string
+        description:
+          type: string
+        productId:
+          type: integer
+          format: int64
+        billingFrequency:
+          $ref: '#/components/schemas/BillingFrequency'
+        paymentType:
+          $ref: '#/components/schemas/PaymentType'
+        billableMetricId:
+          type: integer
+          format: int64
+
+    UpdateRatePlanRequest:
+      type: object
+      properties:
+        ratePlanName:
+          type: string
+        description:
+          type: string
+        billingFrequency:
+          $ref: '#/components/schemas/BillingFrequency'
+        paymentType:
+          $ref: '#/components/schemas/PaymentType'
+        billableMetricId:
+          type: integer
+          format: int64
+
+    # Pricing Schemas
+    FlatFeeDTO:
+      type: object
+      properties:
+        flatFeeId:
+          type: integer
+          format: int64
+        ratePlanId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+        description:
+          type: string
+
+    FlatFeeCreateUpdateDTO:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: number
+          format: decimal
+        currency:
+          type: string
+        description:
+          type: string
+
+    TieredPricingDTO:
+      type: object
+      properties:
+        tieredPricingId:
+          type: integer
+          format: int64
+        ratePlanId:
+          type: integer
+          format: int64
+        billableMetricId:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TieredTierDTO'
+
+    TieredPricingCreateUpdateDTO:
+      type: object
+      required:
+        - billableMetricId
+        - currency
+        - tiers
+      properties:
+        billableMetricId:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TieredTierCreateUpdateDTO'
+
+    TieredTierDTO:
+      type: object
+      properties:
+        tieredTierId:
+          type: integer
+          format: int64
+        startingUnit:
+          type: integer
+          format: int64
+        endingUnit:
+          type: integer
+          format: int64
+        pricePerUnit:
+          type: number
+          format: decimal
+
+    TieredTierCreateUpdateDTO:
+      type: object
+      required:
+        - startingUnit
+        - pricePerUnit
+      properties:
+        startingUnit:
+          type: integer
+          format: int64
+        endingUnit:
+          type: integer
+          format: int64
+        pricePerUnit:
+          type: number
+          format: decimal
+
+    VolumePricingDTO:
+      type: object
+      properties:
+        volumePricingId:
+          type: integer
+          format: int64
+        ratePlanId:
+          type: integer
+          format: int64
+        billableMetricId:
+          type: integer
+          format: int64
+        currency:
+          type: string
+
+    UsageBasedPricingDTO:
+      type: object
+      properties:
+        usageBasedPricingId:
+          type: integer
+          format: int64
+        ratePlanId:
+          type: integer
+          format: int64
+        billableMetricId:
+          type: integer
+          format: int64
+        pricePerUnit:
+          type: number
+          format: decimal
+        currency:
+          type: string
+
+    # Estimator Schemas
+    EstimateRequest:
+      type: object
+      required:
+        - ratePlanId
+        - usageData
+      properties:
+        ratePlanId:
+          type: integer
+          format: int64
+        usageData:
+          type: object
+          additionalProperties:
+            type: number
+
+    EstimateResponse:
+      type: object
+      properties:
+        totalCost:
+          type: number
+          format: decimal
+        currency:
+          type: string
+        breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              component:
+                type: string
+              cost:
+                type: number
+                format: decimal
+
+    # Enum Schemas
+    ProductStatus:
+      type: string
+      enum:
+        - DRAFT
+        - ACTIVE
+        - INACTIVE
+        - DEPRECATED
+
+    ProductType:
+      type: string
+      enum:
+        - API
+        - FLAT_FILE
+        - LLM_TOKEN
+        - SQL_RESULT
+        - STORAGE
+
+    RatePlanStatus:
+      type: string
+      enum:
+        - DRAFT
+        - ACTIVE
+        - INACTIVE
+
+    BillingFrequency:
+      type: string
+      enum:
+        - MONTHLY
+        - QUARTERLY
+        - ANNUALLY
+        - ONE_TIME
+
+    PaymentType:
+      type: string
+      enum:
+        - PREPAID
+        - POSTPAID
+
+    BillableMetricResponse:
+      type: object
+      properties:
+        metricId:
+          type: integer
+          format: int64
+        metricName:
+          type: string
+        description:
+          type: string
+        unit:
+          type: string
+
+    # Error Response Schema
+    ApiErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        code:
+          type: string
+        message:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiFieldError'
+
+    ApiFieldError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        property:
+          type: string
+        rejectedValue:
+          type: object
+        path:
+          type: string

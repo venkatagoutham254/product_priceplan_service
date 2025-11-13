@@ -11,7 +11,7 @@ public class WebClientConfig {
     @Bean(name = "customerWebClient")
     public WebClient customerWebClient(WebClient.Builder builder) {
        return builder
-                .baseUrl("http://44.203.171.98:8082")  // Customer service
+                .baseUrl("http://44.201.19.187:8081")  // Customer service
                 .build();
     }
 
@@ -27,7 +27,7 @@ public class WebClientConfig {
 public WebClient ratePlanServiceWebClient() {
     // Update this line - change /rate-plans to /rateplans
     return WebClient.builder()
-            .baseUrl("http://54.238.204.246:8080/api/rateplans")  // Fixed path
+            .baseUrl("http://3.208.93.68:8080/api/rateplans")  // Fixed path
             .build();
 }
 }

@@ -24,7 +24,8 @@ public class WebConfig implements WebMvcConfigurer {
                     "http://localhost:3003",
                     "http://localhost:3004",
                     "http://localhost:3005",
-                    "http://13.115.248.133"
+                    "http://13.115.248.133",
+                    "http://54.221.164.5"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH")
                 .allowedHeaders("*")
