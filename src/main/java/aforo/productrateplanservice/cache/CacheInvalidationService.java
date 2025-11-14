@@ -60,6 +60,7 @@ public class CacheInvalidationService {
         
         // Invalidate tenant-wide rate plan lists
         evictFromCache("ratePlans", "all_" + tenantKey);
+        evictFromCache("ratePlans", "all_detailed_" + tenantKey);
         evictFromCache("ratePlans", "list_" + tenantKey);
         
         log.info("✅ Rate plan caches invalidated for ratePlanId: {}", ratePlanId);
