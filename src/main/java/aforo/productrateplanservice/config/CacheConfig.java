@@ -2,7 +2,6 @@ package aforo.productrateplanservice.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -17,8 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@EnableCaching
-@ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)
+@ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = false)
 public class CacheConfig {
 
     @Bean

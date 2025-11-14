@@ -3,6 +3,10 @@ spring:
     active: postgres # Set the active profile here: 'mysql' or 'postgres'
   main:
     web-application-type: servlet
+  
+  # Cache configuration - disable Redis, use simple in-memory cache
+  cache:
+    type: simple
 
   # Common configurations
   datasource:
@@ -53,7 +57,7 @@ spring:
     activate:
       on-profile: postgres
   datasource:
-    url: jdbc:postgresql://productrateplanservice.cx2owwes8uyb.us-east-1.rds.amazonaws.com:5432/productrateplanservice
+    url: jdbc:postgresql://localhost:5433/productrateplanservice
     hikari:
       driver-class-name: org.postgresql.Driver
     username: root
@@ -62,12 +66,16 @@ spring:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
   liquibase:
-    enabled: true
+    enabled: false
     change-log: classpath:/domain/changelog-master.yml
   jackson:
     date-format: dd MMM, yyyy HH:mm z
-    time-zone: Asia/Kolkata
+    time-zone: UTC
 
 springdoc:
   swagger-ui:
@@ -98,21 +106,42 @@ aforo:
 
 
 ---
+# H2 Database configuration for testing
+spring:
+  config:
+    activate:
+      on-profile: h2
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: password
+  h2:
+    console:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  liquibase:
+    enabled: false
+
+---
 # MySQL-specific configurations
-#spring:
-#  config:
-#    activate:
-#      on-profile: mysql
-#  datasource:
-#    url: jdbc:mysql://localhost:3312/productrateplanservice
-#    hikari:
-#      driver-class-name: com.mysql.cj.jdbc.Driver
-#    username: root
-#    password: P4ssword!
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#    database-platform: org.hibernate.dialect.MySQLDialect
-#  liquibase:
-#    enabled: true
-#    change-log: classpath:/domain/changelog-master.yml
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: jdbc:mysql://localhost:3312/productrateplanservice
+    hikari:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: P4ssword!
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.MySQLDialect
+  liquibase:
+    enabled: false
+    change-log: classpath:/domain/changelog-master.yml
