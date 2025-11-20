@@ -22,7 +22,7 @@ jobs:
         run: |
           mvn -B clean package -DskipTests
           # Copy the built JAR to app.jar for Docker compatibility
-          cp target/productrateplanservie-0.0.1-SNAPSHOT.jar app.jar
+          cp target/app.jar app.jar
 
       - name: Decode EC2 SSH key
         run: |
