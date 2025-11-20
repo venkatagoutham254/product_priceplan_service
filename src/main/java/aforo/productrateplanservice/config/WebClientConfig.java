@@ -9,10 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 public class WebClientConfig {
 
     @Bean(name = "customerWebClient")
-    public WebClient customerWebClient(WebClient.Builder builder) {
-       return builder
-                .baseUrl("http://44.201.19.187:8081")  // Customer service
-                .build();
+    public WebClient customerWebClient(
+            WebClient.Builder builder,
+            @Value("${customer.service.url}") String url) {
+        return builder.baseUrl(url).build();
     }
 
     @Bean(name = "billableMetricWebClient")

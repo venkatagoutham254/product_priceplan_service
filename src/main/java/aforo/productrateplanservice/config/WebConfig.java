@@ -17,19 +17,12 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(@NonNull CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins(
-                    "http://productscreens.s3-website-ap-northeast-1.amazonaws.com",
-                    "http://localhost:3000",
-                    "http://localhost:3001",
-                    "http://localhost:3002",
-                    "http://localhost:3003",
-                    "http://localhost:3004",
-                    "http://localhost:3005",
                     "http://13.115.248.133",
                     "http://54.221.164.5"
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH")
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(true)
+                .allowedCredentials(true)
                 .maxAge(3600);
     }
 

@@ -8,17 +8,6 @@ spring:
   cache:
     type: simple
 
-  # Common configurations
-  datasource:
-    url: jdbc:mysql://localhost:3312/productrateplanservice
-    username: root
-    password: P4ssword!
-    hikari:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    database-platform: org.hibernate.dialect.MySQLDialect
   liquibase:
     enabled: true
     change-log: classpath:/domain/changelog-master.yml
@@ -36,9 +25,13 @@ server:
   port: 8080
 
 aforo:
+  jwt:
+    issuer: aforo-productrateplans
+    secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}  # env var or fallback
+    expiryMinutes: 120
   cors:
-    allowed-origins: "http://productscreens.s3-website-ap-northeast-1.amazonaws.com,http://localhost:3000,http://13.115.248.133"
-    allowed-methods: "GET,POST,PUT,DELETE,OPTIONS,HEAD,PATCH"
+    allowed-origins: "http://13.115.248.133,http://54.221.164.5"
+    allowed-methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
     allowed-headers: "Authorization,Content-Type,X-Organization-Id"
     allow-credentials: true
 
@@ -88,22 +81,6 @@ springdoc:
     tags-sorter: alpha
     display-operation-path: true
     custom-css-url: /swagger-ui/swagger-custom.css
-
-
-
-aforo:
-  jwt:
-    issuer: aforo-productrateplans
-    secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}  # env var or fallback
-    expiryMinutes: 120
-  cors:
-    # Comma-separated list; used by SecurityConfig.corsConfigurationSource()
-    # Include your frontend origin(s). Add https variants if applicable.
-    allowed-origins: "http://13.115.248.133,http://localhost:3000,http://54.221.164.5"
-    allowed-methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-    allowed-headers: "Authorization,Content-Type,X-Organization-Id"
-    allow-credentials: true
-
 
 ---
 # H2 Database configuration for testing

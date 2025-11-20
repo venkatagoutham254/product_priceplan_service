@@ -1,0 +1,49 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-11-08-add-source-column
+      author: aforo
+      changes:
+        - addColumn:
+            tableName: aforo_product
+            columns:
+              - column:
+                  name: source
+                  type: VARCHAR(50)
+                  defaultValue: MANUAL
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 2025-11-08-add-external-id-column
+      author: aforo
+      changes:
+        - addColumn:
+            tableName: aforo_product
+            columns:
+              - column:
+                  name: external_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 2025-11-08-add-external-id-index
+      author: aforo
+      changes:
+        - createIndex:
+            tableName: aforo_product
+            indexName: idx_product_external_id_source_org
+            columns:
+              - column:
+                  name: external_id
+              - column:
+                  name: source
+              - column:
+                  name: organization_id
+
+  - changeSet:
+      id: 2025-11-08-update-existing-products-source
+      author: aforo
+      changes:
+        - sql:
+            sql: UPDATE aforo_product SET source = 'MANUAL' WHERE source IS NULL

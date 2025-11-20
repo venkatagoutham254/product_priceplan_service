@@ -57,6 +57,14 @@ public class SecurityConfig {
                         "/api/health").permitAll()
                 // Allow preflight requests
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // Product GET endpoints - allow public read access
+                .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/{id}", "/api/products/{id}/icon").permitAll()
+                // ALL Product endpoints require JWT authentication (including import from Apigee service)
+                .requestMatchers(HttpMethod.GET, "/api/products/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/products/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/products/**").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/api/products/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/products/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/product-rate-plans/**").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/product-rate-plans/**").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/api/product-rate-plans/**").authenticated()
@@ -92,10 +100,10 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(corsAllowCredentials);
 
-        // Origins: support patterns for AWS/frontends. If not set, default to localhost:3000
+        // Origins: support patterns for AWS/frontends from configuration
         List<String> originPatterns;
         if (corsAllowedOrigins == null || corsAllowedOrigins.isBlank()) {
-            originPatterns = List.of("http://localhost:3000");
+            originPatterns = List.of("http://13.115.248.133", "http://54.221.164.5");
         } else {
             originPatterns = Arrays.stream(corsAllowedOrigins.split(","))
                     .map(String::trim)

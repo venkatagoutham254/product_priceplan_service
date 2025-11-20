@@ -203,6 +203,10 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>aforo.productrateplanservice.ProductRatePlanServiceApplication</mainClass>
+                    <finalName>app</finalName>
+                    <profiles>
+                        <profile>postgres</profile>
+                    </profiles>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

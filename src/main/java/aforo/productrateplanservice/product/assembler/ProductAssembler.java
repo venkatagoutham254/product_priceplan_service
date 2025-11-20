@@ -30,6 +30,8 @@ public class ProductAssembler {
                 .productType(determinedType)
                 .internalSkuCode(product.getInternalSkuCode())
                 .icon(product.getIcon())
+                .source(product.getSource())
+                .externalId(product.getExternalId())
                 .createdOn(product.getCreatedOn())
                 .lastUpdated(product.getLastUpdated())
                 .billableMetrics(null) // Set to null to avoid null pointer exception
