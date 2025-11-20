@@ -19,11 +19,13 @@ import aforo.productrateplanservice.product.repository.ProductSQLResultRepositor
 import aforo.productrateplanservice.product.repository.ProductStorageRepository;
 import aforo.productrateplanservice.product.request.CreateProductRequest;
 import aforo.productrateplanservice.product.request.UpdateProductRequest;
+import aforo.productrateplanservice.product.response.ProductImportResponse;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import aforo.productrateplanservice.client.BillableMetricClient;
 import aforo.productrateplanservice.storage.IconStorageService;
 import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
@@ -367,6 +370,90 @@ public class ProductServiceImpl implements ProductService {
         // Clear the cached product type in the Product entity
         product.setProductType(null);
         productRepository.save(product);
+    }
+
+    @Override
+    @Transactional
+    public ProductImportResponse importExternalProduct(CreateProductRequest request) {
+        Long orgId = TenantContext.require();
+        
+        // Validate required fields for import
+        if (request.getExternalId() == null || request.getExternalId().trim().isEmpty()) {
+            throw new IllegalArgumentException("External ID is required for product import");
+        }
+        if (request.getSource() == null || request.getSource().trim().isEmpty()) {
+            throw new IllegalArgumentException("Source is required for product import");
+        }
+        if (request.getProductName() == null || request.getProductName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Product name is required for product import");
+        }
+        
+        String externalId = request.getExternalId().trim();
+        String source = request.getSource().trim().toUpperCase();
+        String productName = request.getProductName().trim();
+        
+        // Validate source - must be KONG or APIGEE
+        if (!"KONG".equals(source) && !"APIGEE".equals(source)) {
+            throw new IllegalArgumentException("Invalid source. Must be 'KONG' or 'APIGEE'");
+        }
+        
+        log.info("Importing product [{}] from source [{}] with externalId [{}]", productName, source, externalId);
+        
+        // Check if a product with the same externalId and source already exists
+        Optional<Product> existingProduct = productRepository.findByExternalIdAndSourceAndOrganizationId(
+            externalId, source, orgId
+        );
+        
+        Product product;
+        String status;
+        
+        if (existingProduct.isPresent()) {
+            // Update existing product
+            product = existingProduct.get();
+            product.setProductName(productName);
+            product.setProductDescription(request.getProductDescription());
+            product.setVersion(request.getVersion());
+            // Keep source, externalId, and productType as is
+            status = "UPDATED";
+            log.info("Updated existing product with ID [{}] from source [{}]", product.getProductId(), source);
+        } else {
+            // Create new product
+            product = productMapper.toEntity(request);
+            product.setOrganizationId(orgId);
+            product.setSource(source);
+            product.setExternalId(externalId);
+            product.setProductName(productName);
+            
+            // Auto-set ProductType to API for all imported products
+            product.setProductType(aforo.productrateplanservice.product.enums.ProductType.API);
+            
+            // Generate SKU if not provided
+            if (request.getInternalSkuCode() == null || request.getInternalSkuCode().trim().isEmpty()) {
+                // Format: KONG-{externalId} or APIGEE-{externalId}
+                product.setInternalSkuCode(source + "-" + externalId);
+            } else {
+                product.setInternalSkuCode(request.getInternalSkuCode().trim());
+            }
+            
+            // Set default status to DRAFT (can be finalized later)
+            product.setStatus(aforo.productrateplanservice.product.enums.ProductStatus.DRAFT);
+            
+            status = "CREATED";
+            log.info("Created new product from source [{}] with externalId [{}], ProductType set to API", source, externalId);
+        }
+        
+        Product savedProduct = productRepository.save(product);
+        log.info("Imported product [{}] from source [{}] with ProductType: {}", 
+                savedProduct.getProductName(), savedProduct.getSource(), savedProduct.getProductType());
+        
+        return ProductImportResponse.builder()
+            .message("Product imported successfully from " + source)
+            .status(status)
+            .productId(savedProduct.getProductId())
+            .productName(savedProduct.getProductName())
+            .source(savedProduct.getSource())
+            .externalId(savedProduct.getExternalId())
+            .build();
     }
 
 }

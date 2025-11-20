@@ -20,6 +20,8 @@ public class ProductDTO {
     private ProductType productType;
     private String internalSkuCode;
     private String icon;
+    private String source;
+    private String externalId;
     private LocalDateTime createdOn;
     private LocalDateTime lastUpdated;
 

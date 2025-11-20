@@ -29,4 +29,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findAllByOrganizationId(Long organizationId);
     Optional<Product> findByProductIdAndOrganizationId(Long productId, Long organizationId);
     void deleteByProductIdAndOrganizationId(Long productId, Long organizationId);
+    
+    Optional<Product> findByExternalIdAndSourceAndOrganizationId(String externalId, String source, Long organizationId);
+    Optional<Product> findByExternalIdAndOrganizationId(String externalId, Long organizationId);
 }

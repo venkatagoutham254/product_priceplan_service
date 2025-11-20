@@ -130,4 +130,13 @@ public class ProductResource {
         productService.clearProductTypeConfiguration(id);
         return ResponseEntity.noContent().build();
     }
+    
+    @PostMapping(value = "/import", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Import external product", 
+               description = "Import a product from an external integration source like Apigee, Kong, or Stripe")
+    public ResponseEntity<aforo.productrateplanservice.product.response.ProductImportResponse> importProduct(
+            @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid CreateProductRequest request) {
+        aforo.productrateplanservice.product.response.ProductImportResponse response = productService.importExternalProduct(request);
+        return ResponseEntity.ok(response);
+    }
 }

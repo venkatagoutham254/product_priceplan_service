@@ -60,6 +60,13 @@ public class Product {
     @Column(name = "icon", nullable = true, length = 1024)
     private String icon;
 
+    @Column(name = "source", nullable = false)
+    @Builder.Default
+    private String source = "MANUAL";
+
+    @Column(name = "external_id", nullable = true)
+    private String externalId;
+
     @CreationTimestamp
     @Column(updatable = false, nullable = false)
     private LocalDateTime createdOn;

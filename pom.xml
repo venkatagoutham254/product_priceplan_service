@@ -168,7 +168,7 @@
                 <configuration>
                     <finalName>app</finalName>
                     <profiles>
-                        <profile>local</profile>
+                        <profile>postgres</profile>
                     </profiles>
                     <excludes>
                         <exclude>
