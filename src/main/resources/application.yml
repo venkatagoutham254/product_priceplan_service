@@ -24,6 +24,17 @@ uploads:
 server:
   port: 8080
 
+# Actuator configuration for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+
 aforo:
   jwt:
     issuer: aforo-productrateplans
