@@ -72,10 +72,24 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = productMapper.toEntity(request);
         product.setProductName(name);
+
+        // Source handling: default to MANUAL for manual creation when not provided
+        String src = request.getSource();
+        if (src == null || src.trim().isEmpty()) {
+            src = "MANUAL";
+        }
+        product.setSource(src.trim().toUpperCase());
+
+        // ExternalId is only meaningful for imported products; ignore if blank
+        if (request.getExternalId() != null && !request.getExternalId().trim().isEmpty()) {
+            product.setExternalId(request.getExternalId().trim());
+        }
+
         // set only when provided (draft creation may omit it)
         if (sku != null) {
             product.setInternalSkuCode(sku);
         }
+
         product.setOrganizationId(orgId);
 
         Product saved = productRepository.save(product);
