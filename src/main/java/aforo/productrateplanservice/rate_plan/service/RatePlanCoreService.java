@@ -3,10 +3,17 @@ package aforo.productrateplanservice.rate_plan.service;
 import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.client.BillableMetricClient;
 import aforo.productrateplanservice.exception.NotFoundException;
+import aforo.productrateplanservice.exception.ValidationException;
+import aforo.productrateplanservice.flatfee.FlatFeeRepository;
 import aforo.productrateplanservice.product.entity.Product;
+import aforo.productrateplanservice.product.enums.RatePlanStatus;
 import aforo.productrateplanservice.product.repository.ProductRepository;
 import aforo.productrateplanservice.rate_plan.*;
+import aforo.productrateplanservice.stairsteppricing.StairStepPricingRepository;
 import aforo.productrateplanservice.tenant.TenantContext;
+import aforo.productrateplanservice.tieredpricing.TieredPricingRepository;
+import aforo.productrateplanservice.usagebasedpricing.UsageBasedPricingRepository;
+import aforo.productrateplanservice.volumepricing.VolumePricingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -31,6 +38,13 @@ public class RatePlanCoreService {
     private final RatePlanAssembler ratePlanAssembler;
     private final BillableMetricClient billableMetricClient;
     private final CacheInvalidationService cacheInvalidationService;
+    
+    // Pricing repositories for validation
+    private final FlatFeeRepository flatFeeRepository;
+    private final TieredPricingRepository tieredPricingRepository;
+    private final VolumePricingRepository volumePricingRepository;
+    private final UsageBasedPricingRepository usageBasedPricingRepository;
+    private final StairStepPricingRepository stairStepPricingRepository;
 
     /**
      * Create a new rate plan (without pricing configurations)
@@ -199,7 +213,7 @@ public class RatePlanCoreService {
     }
 
     /**
-     * Confirm rate plan (change status)
+     * Confirm rate plan (change status from DRAFT to ACTIVE)
      * 🔐 Requires RATE_PLAN_UPDATE permission
      */
     @Transactional
@@ -210,11 +224,62 @@ public class RatePlanCoreService {
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
         
-        // Business logic for confirmation would go here
-        // For now, just return the current state
+        // Validate that the rate plan is in DRAFT status
+        if (ratePlan.getStatus() != RatePlanStatus.DRAFT) {
+            throw new ValidationException("Rate plan can only be confirmed when in DRAFT status. Current status: " + ratePlan.getStatus());
+        }
         
-        log.info("✅ Rate plan confirmed: {} (ID: {})", ratePlan.getRatePlanName(), ratePlan.getRatePlanId());
-        return ratePlanMapper.toDTO(ratePlan);
+        // Validate that all required fields are filled
+        validateRatePlanFields(ratePlan);
+        
+        // Validate that at least one pricing configuration exists
+        validatePricingConfiguration(ratePlanId);
+        
+        // Change status from DRAFT to ACTIVE
+        ratePlan.setStatus(RatePlanStatus.ACTIVE);
+        RatePlan savedRatePlan = ratePlanRepository.save(ratePlan);
+        
+        // Invalidate cache
+        cacheInvalidationService.invalidateAllTenantCaches(orgId);
+        
+        log.info("✅ Rate plan confirmed and activated: {} (ID: {})", ratePlan.getRatePlanName(), ratePlan.getRatePlanId());
+        return ratePlanMapper.toDTO(savedRatePlan);
+    }
+    
+    /**
+     * Validate that all required fields are filled in the rate plan
+     */
+    private void validateRatePlanFields(RatePlan ratePlan) {
+        if (ratePlan.getRatePlanName() == null || ratePlan.getRatePlanName().trim().isEmpty()) {
+            throw new ValidationException("Rate plan name is required");
+        }
+        
+        if (ratePlan.getBillingFrequency() == null) {
+            throw new ValidationException("Billing frequency is required");
+        }
+        
+        if (ratePlan.getPaymentType() == null) {
+            throw new ValidationException("Payment type is required");
+        }
+        
+        if (ratePlan.getProduct() == null) {
+            throw new ValidationException("Product is required");
+        }
+    }
+    
+    /**
+     * Validate that at least one pricing configuration exists for the rate plan
+     */
+    private void validatePricingConfiguration(Long ratePlanId) {
+        boolean hasFlatFee = flatFeeRepository.existsByRatePlanId(ratePlanId);
+        boolean hasTieredPricing = !tieredPricingRepository.findByRatePlan_RatePlanId(ratePlanId).isEmpty();
+        boolean hasVolumePricing = !volumePricingRepository.findByRatePlanRatePlanId(ratePlanId).isEmpty();
+        boolean hasUsageBasedPricing = !usageBasedPricingRepository.findByRatePlanRatePlanId(ratePlanId).isEmpty();
+        boolean hasStairStepPricing = !stairStepPricingRepository.findByRatePlanRatePlanId(ratePlanId).isEmpty();
+        
+        if (!hasFlatFee && !hasTieredPricing && !hasVolumePricing && !hasUsageBasedPricing && !hasStairStepPricing) {
+            throw new ValidationException("Rate plan must have at least one pricing configuration (Flat Fee, Tiered, Volume, Usage-Based, or Stair Step) before it can be confirmed");
+        }
     }
 
     /**
