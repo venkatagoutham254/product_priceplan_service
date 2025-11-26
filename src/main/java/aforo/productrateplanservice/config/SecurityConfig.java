@@ -54,7 +54,7 @@ public class SecurityConfig {
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
-                        "/api/health").permitAll()
+                        "/actuator/health").permitAll()
                 // Allow preflight requests
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Product GET endpoints - allow public read access
