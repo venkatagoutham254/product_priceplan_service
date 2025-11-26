@@ -14,6 +14,8 @@ public interface RatePlanRepository extends JpaRepository<RatePlan, Long> {
     List<RatePlan> findByProduct_ProductId(Long productId);
     List<RatePlan> findByProduct_ProductIdAndOrganizationId(Long productId, Long organizationId);
 
+    long countByProduct_ProductIdAndOrganizationId(Long productId, Long organizationId);
+
     void deleteByProduct_ProductId(Long productId);
     void deleteByProduct_ProductIdAndOrganizationId(Long productId, Long organizationId);
 

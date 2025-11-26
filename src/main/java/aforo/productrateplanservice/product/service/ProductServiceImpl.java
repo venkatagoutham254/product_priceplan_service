@@ -201,16 +201,68 @@ public class ProductServiceImpl implements ProductService {
     public void deleteProduct(Long productId) {
         Long orgId = TenantContext.require();
         // validate existence
-        productRepository.findByProductIdAndOrganizationId(productId, orgId)
+        Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + productId));
 
-        // delete child rate plans first
-        ratePlanRepository.deleteByProduct_ProductIdAndOrganizationId(productId, orgId);
+        // Check if rate plans exist - block deletion if they do
+        long ratePlanCount = ratePlanRepository.countByProduct_ProductIdAndOrganizationId(productId, orgId);
+        if (ratePlanCount > 0) {
+            throw new IllegalStateException("Cannot delete product. Please delete all associated rate plans first. Found " + ratePlanCount + " rate plan(s).");
+        }
 
-        // delete billable metrics linked to this product in external service
-        billableMetricClient.deleteMetricsByProductId(productId);
+        // Check if billable metrics exist - block deletion if they do
+        try {
+            long metricCount = billableMetricClient.countMetricsByProductId(productId);
+            if (metricCount > 0) {
+                throw new IllegalStateException("Cannot delete product. Please delete all associated billable metrics first. Found " + metricCount + " metric(s).");
+            }
+        } catch (Exception e) {
+            log.warn("Could not validate billable metrics for product {}: {}", productId, e.getMessage());
+            // Continue with deletion if billable metric service is unavailable
+        }
 
+        // Delete product type configurations (cascade delete)
+        deleteProductTypeConfigurations(productId);
+
+        // Delete the product
         productRepository.deleteByProductIdAndOrganizationId(productId, orgId);
+        
+        log.info("✅ Product deleted successfully: {} (ID: {})", product.getProductName(), productId);
+    }
+
+    /**
+     * Delete all product type configurations for a product
+     */
+    private void deleteProductTypeConfigurations(Long productId) {
+        // Delete API type if exists
+        productAPIRepository.findByProduct_ProductId(productId).ifPresent(api -> {
+            productAPIRepository.delete(api);
+            log.debug("Deleted API configuration for product {}", productId);
+        });
+
+        // Delete FlatFile type if exists
+        productFlatFileRepository.findByProduct_ProductId(productId).ifPresent(flatFile -> {
+            productFlatFileRepository.delete(flatFile);
+            log.debug("Deleted FlatFile configuration for product {}", productId);
+        });
+
+        // Delete LLMToken type if exists
+        productLLMTokenRepository.findByProduct_ProductId(productId).ifPresent(llmToken -> {
+            productLLMTokenRepository.delete(llmToken);
+            log.debug("Deleted LLMToken configuration for product {}", productId);
+        });
+
+        // Delete SQLResult type if exists
+        productSQLResultRepository.findByProduct_ProductId(productId).ifPresent(sqlResult -> {
+            productSQLResultRepository.delete(sqlResult);
+            log.debug("Deleted SQLResult configuration for product {}", productId);
+        });
+
+        // Delete Storage type if exists
+        productStorageRepository.findByProduct_ProductId(productId).ifPresent(storage -> {
+            productStorageRepository.delete(storage);
+            log.debug("Deleted Storage configuration for product {}", productId);
+        });
     }
 
     private static String trim(String s) {

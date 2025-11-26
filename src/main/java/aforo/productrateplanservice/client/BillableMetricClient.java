@@ -92,6 +92,14 @@ public class BillableMetricClient {
             return List.of();
         }
     }
+
+    /**
+     * Count active billable metrics for a given product
+     */
+    public long countMetricsByProductId(Long productId) {
+        List<BillableMetricResponse> metrics = getMetricsByProductId(productId);
+        return metrics != null ? metrics.size() : 0;
+    }
     
     /**
      * Fetch a single billable metric by id.
