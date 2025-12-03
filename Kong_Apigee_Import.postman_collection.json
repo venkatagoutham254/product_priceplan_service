@@ -1,0 +1,320 @@
+{
+  "info": {
+    "name": "Kong & Apigee Product Import",
+    "description": "Test collection for importing products from Kong and Apigee",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081",
+      "type": "string"
+    },
+    {
+      "key": "organizationId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "jwtToken",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Import Kong Product (New)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Kong Payment API\",\n  \"productDescription\": \"Payment processing API from Kong Gateway\",\n  \"source\": \"kong\",\n  \"externalId\": \"kong-payment-001\",\n  \"version\": \"1.0\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products/import",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "import"]
+        },
+        "description": "Import a new product from Kong. ProductType will be auto-set to API, and SKU will be auto-generated as KONG-kong-payment-001"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Import Apigee Product (New)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Apigee Analytics API\",\n  \"productDescription\": \"Analytics and reporting API from Apigee\",\n  \"source\": \"apigee\",\n  \"externalId\": \"analytics-api-product\",\n  \"version\": \"2.0\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products/import",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "import"]
+        },
+        "description": "Import a new product from Apigee. ProductType will be auto-set to API, and SKU will be auto-generated as APIGEE-analytics-api-product"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Update Existing Kong Product",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Kong Payment API v2\",\n  \"productDescription\": \"Updated payment processing API with new features\",\n  \"source\": \"kong\",\n  \"externalId\": \"kong-payment-001\",\n  \"version\": \"2.0\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products/import",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "import"]
+        },
+        "description": "Update an existing Kong product. Same externalId and source will trigger an update instead of create."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Import with Custom SKU",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Kong User Management API\",\n  \"productDescription\": \"User authentication and management API\",\n  \"source\": \"kong\",\n  \"externalId\": \"kong-user-001\",\n  \"internalSkuCode\": \"CUSTOM-USER-API-001\",\n  \"version\": \"1.0\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products/import",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "import"]
+        },
+        "description": "Import with a custom SKU code instead of auto-generated one"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Import Multiple Apigee Products",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Apigee Notification API\",\n  \"productDescription\": \"Real-time notification service\",\n  \"source\": \"apigee\",\n  \"externalId\": \"notification-api\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products/import",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "import"]
+        },
+        "description": "Import another Apigee product"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Get All Products",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products"]
+        },
+        "description": "Retrieve all products including imported ones. Verify ProductType is API for imported products."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Get Product by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/products/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "1"]
+        },
+        "description": "Get details of a specific product. Replace '1' with actual product ID."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Invalid Source (Error Test)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Invalid Product\",\n  \"source\": \"INVALID_SOURCE\",\n  \"externalId\": \"test-001\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products/import",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "import"]
+        },
+        "description": "Test with invalid source. Should return error: 'Invalid source. Must be KONG or APIGEE'"
+      },
+      "response": []
+    },
+    {
+      "name": "9. Missing External ID (Error Test)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Missing External ID\",\n  \"source\": \"kong\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products/import",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "import"]
+        },
+        "description": "Test without external ID. Should return error: 'External ID is required for product import'"
+      },
+      "response": []
+    },
+    {
+      "name": "10. Missing Product Name (Error Test)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Organization-Id",
+            "value": "{{organizationId}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"source\": \"kong\",\n  \"externalId\": \"test-001\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products/import",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "import"]
+        },
+        "description": "Test without product name. Should return error: 'Product name is required for product import'"
+      },
+      "response": []
+    }
+  ]
+}

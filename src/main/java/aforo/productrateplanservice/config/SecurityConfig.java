@@ -36,7 +36,7 @@ public class SecurityConfig {
     @Value("${aforo.cors.allowed-methods:GET,POST,PUT,PATCH,DELETE,OPTIONS}")
     private String corsAllowedMethods;
 
-    @Value("${aforo.cors.allowed-headers:Authorization,Content-Type,X-Organization-Id}")
+    @Value("${aforo.cors.allowed-headers:*}")
     private String corsAllowedHeaders;
 
     @Value("${aforo.cors.allow-credentials:true}")
@@ -119,12 +119,8 @@ public class SecurityConfig {
                 .collect(Collectors.toList());
         config.setAllowedMethods(methods);
 
-        // Headers
-        List<String> headers = Arrays.stream(corsAllowedHeaders.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
-        config.setAllowedHeaders(headers);
+        // Headers - allow all headers for CORS preflight to work
+        config.setAllowedHeaders(List.of("*"));
 
         // Expose headers that the frontend might need
         config.setExposedHeaders(List.of("Location", "Content-Type", "Authorization"));

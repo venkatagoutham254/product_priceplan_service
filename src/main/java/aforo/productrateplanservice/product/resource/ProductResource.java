@@ -24,7 +24,6 @@ import org.springframework.http.HttpStatus;
 import java.net.URI;
 
 @RestController
-@CrossOrigin(origins = {"http://13.115.248.133", "http://13.115.248.133:3001", "https://13.115.248.133", "https://13.115.248.133:3001"}, allowCredentials = "true")
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
 @Tag(name = "Products", description = "Create, read, update, finalize and manage product icons")
