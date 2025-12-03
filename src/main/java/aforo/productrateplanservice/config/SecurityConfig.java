@@ -126,7 +126,11 @@ public class SecurityConfig {
                 .collect(Collectors.toList());
         config.setAllowedHeaders(headers);
 
-        config.setExposedHeaders(List.of("Location"));
+        // Expose headers that the frontend might need
+        config.setExposedHeaders(List.of("Location", "Content-Type", "Authorization"));
+        
+        // Set max age for preflight cache (in seconds)
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
