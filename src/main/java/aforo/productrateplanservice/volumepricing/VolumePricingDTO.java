@@ -19,6 +19,7 @@ public class VolumePricingDTO {
 
     private List<VolumeTierDTO> tiers;
 
+    private final RatePlanType ratePlanType = RatePlanType.VOLUME_BASED;
 
     private BigDecimal overageUnitRate;
     private Integer graceBuffer;

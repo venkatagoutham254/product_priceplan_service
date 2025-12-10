@@ -14,6 +14,10 @@ import aforo.productrateplanservice.tenant.TenantContext;
 import aforo.productrateplanservice.tieredpricing.TieredPricingRepository;
 import aforo.productrateplanservice.usagebasedpricing.UsageBasedPricingRepository;
 import aforo.productrateplanservice.volumepricing.VolumePricingRepository;
+import aforo.productrateplanservice.discount.DiscountRepository;
+import aforo.productrateplanservice.freemium.FreemiumRepository;
+import aforo.productrateplanservice.minimumcommitment.MinimumCommitmentRepository;
+import aforo.productrateplanservice.setupfee.SetupFeeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -45,6 +49,10 @@ public class RatePlanCoreService {
     private final VolumePricingRepository volumePricingRepository;
     private final UsageBasedPricingRepository usageBasedPricingRepository;
     private final StairStepPricingRepository stairStepPricingRepository;
+    private final DiscountRepository discountRepository;
+    private final FreemiumRepository freemiumRepository;
+    private final MinimumCommitmentRepository minimumCommitmentRepository;
+    private final SetupFeeRepository setupFeeRepository;
 
     /**
      * Create a new rate plan (without pricing configurations)
@@ -204,6 +212,33 @@ public class RatePlanCoreService {
         RatePlan ratePlan = ratePlanRepository.findByRatePlanIdAndOrganizationId(ratePlanId, orgId)
                 .orElseThrow(() -> new NotFoundException("Rate plan not found with ID: " + ratePlanId));
         
+        // Delete all pricing/configuration entities that reference this rate plan
+        flatFeeRepository.findByRatePlanId(ratePlanId).ifPresent(flatFeeRepository::delete);
+
+        tieredPricingRepository.findByRatePlan_RatePlanId(ratePlanId)
+                .forEach(tieredPricingRepository::delete);
+
+        volumePricingRepository.findByRatePlanRatePlanId(ratePlanId)
+                .forEach(volumePricingRepository::delete);
+
+        usageBasedPricingRepository.findByRatePlanRatePlanId(ratePlanId)
+                .forEach(usageBasedPricingRepository::delete);
+
+        stairStepPricingRepository.findByRatePlanRatePlanId(ratePlanId)
+                .forEach(stairStepPricingRepository::delete);
+
+        discountRepository.findByRatePlan_RatePlanId(ratePlanId)
+                .forEach(discountRepository::delete);
+
+        freemiumRepository.findByRatePlan_RatePlanId(ratePlanId)
+                .forEach(freemiumRepository::delete);
+
+        minimumCommitmentRepository.findByRatePlan_RatePlanId(ratePlanId)
+                .forEach(minimumCommitmentRepository::delete);
+
+        setupFeeRepository.findByRatePlan_RatePlanId(ratePlanId)
+                .forEach(setupFeeRepository::delete);
+
         // ⚡ Invalidate related caches before deletion
         cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
         

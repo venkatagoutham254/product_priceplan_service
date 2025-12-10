@@ -20,7 +20,9 @@ import aforo.productrateplanservice.product.repository.ProductStorageRepository;
 import aforo.productrateplanservice.product.request.CreateProductRequest;
 import aforo.productrateplanservice.product.request.UpdateProductRequest;
 import aforo.productrateplanservice.product.response.ProductImportResponse;
+import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
+import aforo.productrateplanservice.rate_plan.service.RatePlanCoreService;
 import aforo.productrateplanservice.client.BillableMetricClient;
 import aforo.productrateplanservice.storage.IconStorageService;
 import aforo.productrateplanservice.tenant.TenantContext;
@@ -43,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final ProductAssembler productAssembler;
     private final RatePlanRepository ratePlanRepository;
+    private final RatePlanCoreService ratePlanCoreService;
     private final BillableMetricClient billableMetricClient;
     private final ProductAPIRepository productAPIRepository;
     private final ProductFlatFileRepository productFlatFileRepository;
@@ -203,22 +206,18 @@ public class ProductServiceImpl implements ProductService {
         // validate existence
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found with ID: " + productId));
-
-        // Check if rate plans exist - block deletion if they do
-        long ratePlanCount = ratePlanRepository.countByProduct_ProductIdAndOrganizationId(productId, orgId);
-        if (ratePlanCount > 0) {
-            throw new IllegalStateException("Cannot delete product. Please delete all associated rate plans first. Found " + ratePlanCount + " rate plan(s).");
+        // Cascade delete all rate plans (and their pricing/configurations) for this product
+        List<RatePlan> ratePlans = ratePlanRepository.findByProduct_ProductIdAndOrganizationId(productId, orgId);
+        for (RatePlan ratePlan : ratePlans) {
+            ratePlanCoreService.deleteRatePlan(ratePlan.getRatePlanId());
         }
 
-        // Check if billable metrics exist - block deletion if they do
+        // Cascade delete all billable metrics for this product via Billable Metrics service
         try {
-            long metricCount = billableMetricClient.countMetricsByProductId(productId);
-            if (metricCount > 0) {
-                throw new IllegalStateException("Cannot delete product. Please delete all associated billable metrics first. Found " + metricCount + " metric(s).");
-            }
+            billableMetricClient.deleteMetricsByProductId(productId);
         } catch (Exception e) {
-            log.warn("Could not validate billable metrics for product {}: {}", productId, e.getMessage());
-            // Continue with deletion if billable metric service is unavailable
+            log.warn("Could not delete billable metrics for product {}: {}", productId, e.getMessage());
+            // Do not block product deletion if billable metrics service is unavailable
         }
 
         // Delete product type configurations (cascade delete)
