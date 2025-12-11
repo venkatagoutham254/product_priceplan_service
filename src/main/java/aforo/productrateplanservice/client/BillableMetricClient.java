@@ -32,7 +32,7 @@ public class BillableMetricClient {
             String token = TenantContext.getJwt();
 
             webClient.delete()
-                    .uri("/internal/products/{productId}", productId)
+                    .uri("/api/billable-metrics/internal/products/{productId}", productId)
                     .header("X-Organization-Id", String.valueOf(orgId))
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
