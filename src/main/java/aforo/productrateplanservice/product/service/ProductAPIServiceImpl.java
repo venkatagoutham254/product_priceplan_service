@@ -32,6 +32,7 @@ public class ProductAPIServiceImpl implements ProductAPIService {
     private final ProductSQLResultRepository productSQLResultRepository;
     private final ProductLLMTokenRepository productLLMTokenRepository;
     private final ProductStorageRepository productStorageRepository;
+    private final SkuGenerationService skuGenerationService;
 
     @Override
     @Transactional
@@ -64,6 +65,9 @@ public class ProductAPIServiceImpl implements ProductAPIService {
             hasOtherConfig = true;
         }
         
+        // Store old type for SKU regeneration
+        aforo.productrateplanservice.product.enums.ProductType oldType = product.getProductType();
+        
         // Log if we cleared any existing configuration
         if (hasOtherConfig) {
             // Configuration was automatically cleared to allow type switch
@@ -78,6 +82,13 @@ public class ProductAPIServiceImpl implements ProductAPIService {
 
         // Update the product type in the Product entity
         product.setProductType(aforo.productrateplanservice.product.enums.ProductType.API);
+        
+        // Auto-regenerate SKU if product type changed
+        if (skuGenerationService.shouldRegenerateSku(product, product.getProductName(), oldType)) {
+            String newSku = skuGenerationService.updateSkuCode(product);
+            product.setInternalSkuCode(newSku);
+        }
+        
         productRepository.save(product);
 
         return productAPIMapper.toDTO(productAPIRepository.save(productAPI));

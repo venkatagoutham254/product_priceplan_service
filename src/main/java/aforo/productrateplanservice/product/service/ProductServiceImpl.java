@@ -53,6 +53,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductLLMTokenRepository productLLMTokenRepository;
     private final ProductStorageRepository productStorageRepository;
     private final IconStorageService iconStorageService;
+    private final SkuGenerationService skuGenerationService;
 
     @Override
     @Transactional
@@ -60,17 +61,12 @@ public class ProductServiceImpl implements ProductService {
         Long orgId = TenantContext.require();
         // normalize inputs
         String name = trim(request.getProductName());
-        String sku  = trim(request.getInternalSkuCode());
 
         // For drafts, productName may be omitted
 
         // uniqueness
         if (name != null && productRepository.findByProductNameIgnoreCaseAndOrganizationId(name, orgId).isPresent()) {
             throw new IllegalArgumentException("productName already exists");
-        }
-        // internalSkuCode is optional for drafts; only validate when provided
-        if (sku != null && productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
-            throw new IllegalArgumentException("internalSkuCode already exists");
         }
 
         Product product = productMapper.toEntity(request);
@@ -88,12 +84,11 @@ public class ProductServiceImpl implements ProductService {
             product.setExternalId(request.getExternalId().trim());
         }
 
-        // set only when provided (draft creation may omit it)
-        if (sku != null) {
-            product.setInternalSkuCode(sku);
-        }
-
         product.setOrganizationId(orgId);
+
+        // Auto-generate SKU code
+        String generatedSku = skuGenerationService.generateSkuCode(product);
+        product.setInternalSkuCode(generatedSku);
 
         Product saved = productRepository.save(product);
         return productAssembler.toDTO(saved);
@@ -145,26 +140,28 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
-        // PUT requires productName & internalSkuCode
+        // Store old values for SKU regeneration check
+        String oldName = product.getProductName();
+        aforo.productrateplanservice.product.enums.ProductType oldType = product.getProductType();
+
+        // PUT requires productName
         String name = trim(request.getProductName());
-        String sku  = trim(request.getInternalSkuCode());
         if (name == null) throw new IllegalArgumentException("productName is required for PUT");
-        if (sku  == null) throw new IllegalArgumentException("internalSkuCode is required for PUT");
 
         // name uniqueness (ignore-case, trim) excluding self
         if (productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(name, id, orgId)) {
             throw new IllegalArgumentException("productName already exists");
         }
-        // sku uniqueness excluding self
-        if (!sku.equals(product.getInternalSkuCode()) &&
-            productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
-            throw new IllegalArgumentException("internalSkuCode already exists");
-        }
 
         product.setProductName(name);
         product.setVersion(request.getVersion());
         product.setProductDescription(request.getProductDescription());
-        product.setInternalSkuCode(sku);
+
+        // Auto-regenerate SKU if name changed
+        if (skuGenerationService.shouldRegenerateSku(product, oldName, oldType)) {
+            String newSku = skuGenerationService.updateSkuCode(product);
+            product.setInternalSkuCode(newSku);
+        }
 
         return productAssembler.toDTO(productRepository.save(product));
     }
@@ -176,6 +173,11 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByProductIdAndOrganizationId(id, orgId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
+        // Store old values for SKU regeneration check
+        String oldName = product.getProductName();
+        aforo.productrateplanservice.product.enums.ProductType oldType = product.getProductType();
+        boolean nameChanged = false;
+
         if (request.getProductName() != null) {
             String name = trim(request.getProductName());
             if (name == null) throw new IllegalArgumentException("productName cannot be blank");
@@ -183,17 +185,15 @@ public class ProductServiceImpl implements ProductService {
                 throw new IllegalArgumentException("productName already exists");
             }
             product.setProductName(name);
+            nameChanged = true;
         }
         if (request.getVersion() != null) product.setVersion(request.getVersion());
         if (request.getProductDescription() != null) product.setProductDescription(request.getProductDescription());
-        if (request.getInternalSkuCode() != null) {
-            String sku = trim(request.getInternalSkuCode());
-            if (sku == null) throw new IllegalArgumentException("internalSkuCode cannot be blank");
-            if (!sku.equals(product.getInternalSkuCode()) &&
-                productRepository.existsByInternalSkuCodeAndOrganizationId(sku, orgId)) {
-                throw new IllegalArgumentException("internalSkuCode already exists");
-            }
-            product.setInternalSkuCode(sku);
+
+        // Auto-regenerate SKU if name changed
+        if (nameChanged && skuGenerationService.shouldRegenerateSku(product, oldName, oldType)) {
+            String newSku = skuGenerationService.updateSkuCode(product);
+            product.setInternalSkuCode(newSku);
         }
 
         return productAssembler.toDTO(productRepository.save(product));
@@ -492,13 +492,9 @@ public class ProductServiceImpl implements ProductService {
             // Auto-set ProductType to API for all imported products
             product.setProductType(aforo.productrateplanservice.product.enums.ProductType.API);
             
-            // Generate SKU if not provided
-            if (request.getInternalSkuCode() == null || request.getInternalSkuCode().trim().isEmpty()) {
-                // Format: KONG-{externalId} or APIGEE-{externalId}
-                product.setInternalSkuCode(source + "-" + externalId);
-            } else {
-                product.setInternalSkuCode(request.getInternalSkuCode().trim());
-            }
+            // Auto-generate SKU code
+            String generatedSku = skuGenerationService.generateSkuCode(product);
+            product.setInternalSkuCode(generatedSku);
             
             // Set default status to DRAFT (can be finalized later)
             product.setStatus(aforo.productrateplanservice.product.enums.ProductStatus.DRAFT);
