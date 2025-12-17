@@ -26,6 +26,7 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
     private final ProductSQLResultRepository productSQLResultRepository;
     private final ProductStorageRepository productStorageRepository;
     private final ProductLLMTokenMapper mapper;
+    private final SkuGenerationService skuGenerationService;
 
     @Override
     public ProductLLMTokenDTO create(Long productId, CreateProductLLMTokenRequest request) {
@@ -57,6 +58,9 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
             hasOtherConfig = true;
         }
         
+        // Store old type for SKU regeneration
+        aforo.productrateplanservice.product.enums.ProductType oldType = product.getProductType();
+        
         // Log if we cleared any existing configuration
         if (hasOtherConfig) {
             // Configuration was automatically cleared to allow type switch
@@ -72,6 +76,13 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
 
         // Update the product type in the Product entity
         product.setProductType(aforo.productrateplanservice.product.enums.ProductType.LLMToken);
+        
+        // Auto-regenerate SKU if product type changed
+        if (skuGenerationService.shouldRegenerateSku(product, product.getProductName(), oldType)) {
+            String newSku = skuGenerationService.updateSkuCode(product);
+            product.setInternalSkuCode(newSku);
+        }
+        
         productRepository.save(product);
 
         return mapper.toDTO(llmTokenRepository.save(entity));

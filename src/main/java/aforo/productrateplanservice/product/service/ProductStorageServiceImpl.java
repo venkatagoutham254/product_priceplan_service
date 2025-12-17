@@ -26,6 +26,7 @@ public class ProductStorageServiceImpl implements ProductStorageService {
     private final ProductSQLResultRepository productSQLResultRepository;
     private final ProductLLMTokenRepository productLLMTokenRepository;
     private final ProductStorageMapper mapper;
+    private final SkuGenerationService skuGenerationService;
 
     @Override
     @Transactional
@@ -58,6 +59,9 @@ public class ProductStorageServiceImpl implements ProductStorageService {
             hasOtherConfig = true;
         }
         
+        // Store old type for SKU regeneration
+        aforo.productrateplanservice.product.enums.ProductType oldType = product.getProductType();
+        
         // Log if we cleared any existing configuration
         if (hasOtherConfig) {
             // Configuration was automatically cleared to allow type switch
@@ -72,6 +76,13 @@ public class ProductStorageServiceImpl implements ProductStorageService {
 
         // Update the product type in the Product entity
         product.setProductType(aforo.productrateplanservice.product.enums.ProductType.Storage);
+        
+        // Auto-regenerate SKU if product type changed
+        if (skuGenerationService.shouldRegenerateSku(product, product.getProductName(), oldType)) {
+            String newSku = skuGenerationService.updateSkuCode(product);
+            product.setInternalSkuCode(newSku);
+        }
+        
         productRepository.save(product);
 
         return mapper.toDTO(storageRepository.save(entity));

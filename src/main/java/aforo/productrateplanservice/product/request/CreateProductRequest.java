@@ -18,11 +18,6 @@ public class CreateProductRequest {
     
     private String version;
     
-    // For manual creation: internalSkuCode is required
-    // For import: internalSkuCode is optional (auto-generated if not provided)
-    @Size(max = 100, message = "SKU code must be less than 100 characters")
-    private String internalSkuCode;
-    
     @Size(max = 1000, message = "Description must be less than 1000 characters")
     private String productDescription;
     

@@ -10,6 +10,5 @@ import lombok.*;
 public class UpdateProductRequest {
     private String productName;
     private String version;
-    private String internalSkuCode;
     private String productDescription;
 }
