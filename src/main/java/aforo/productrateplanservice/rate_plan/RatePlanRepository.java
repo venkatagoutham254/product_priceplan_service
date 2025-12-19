@@ -25,4 +25,7 @@ public interface RatePlanRepository extends JpaRepository<RatePlan, Long> {
     // Delete by billable metric id for a given tenant
     void deleteByBillableMetricIdAndOrganizationId(Long billableMetricId, Long organizationId);
 
+    // Check if rate plan code exists for organization
+    boolean existsByRatePlanCodeAndOrganizationId(String ratePlanCode, Long organizationId);
+
 }

@@ -28,6 +28,7 @@ import aforo.productrateplanservice.minimumcommitment.MinimumCommitmentDTO;
 public class RatePlanDTO {
 
     private Long ratePlanId;
+    private String ratePlanCode;
     private String ratePlanName;
     private String description;
     private BillingFrequency billingFrequency;

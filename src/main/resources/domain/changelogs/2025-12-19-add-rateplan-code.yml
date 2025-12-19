@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-12-19-add-rateplan-code
+      author: system
+      changes:
+        - addColumn:
+            tableName: aforo_rate_plan
+            columns:
+              - column:
+                  name: rate_plan_code
+                  type: varchar(100)
+                  constraints:
+                    nullable: true
+        
+        - sql:
+            sql: UPDATE aforo_rate_plan SET rate_plan_code = 'TEMP-' || rate_plan_id WHERE rate_plan_code IS NULL
+        
+        - addNotNullConstraint:
+            tableName: aforo_rate_plan
+            columnName: rate_plan_code
+            columnDataType: varchar(100)
+        
+        - addUniqueConstraint:
+            tableName: aforo_rate_plan
+            columnNames: rate_plan_code, organization_id
+            constraintName: uq_rateplan_code_org
