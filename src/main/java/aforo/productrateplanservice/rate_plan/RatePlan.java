@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "aforo_rate_plan", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"rate_plan_name", "product_id", "organization_id"})
+    @UniqueConstraint(columnNames = {"rate_plan_name", "product_id", "organization_id"}),
+    @UniqueConstraint(columnNames = {"rate_plan_code", "organization_id"})
 })
 @Getter
 @Setter
@@ -27,6 +28,9 @@ public class RatePlan {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long ratePlanId;
+
+    @Column(name = "rate_plan_code", nullable = false, unique = true)
+    private String ratePlanCode;
 
     @Column(name = "rate_plan_name")
     private String ratePlanName;

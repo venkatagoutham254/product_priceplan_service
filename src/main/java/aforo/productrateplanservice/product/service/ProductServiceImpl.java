@@ -144,15 +144,15 @@ public class ProductServiceImpl implements ProductService {
         String oldName = product.getProductName();
         aforo.productrateplanservice.product.enums.ProductType oldType = product.getProductType();
 
-        // PUT requires productName
+        // PUT replaces all fields - always set productName (can be null/empty to clear it)
         String name = trim(request.getProductName());
-        if (name == null) throw new IllegalArgumentException("productName is required for PUT");
-
-        // name uniqueness (ignore-case, trim) excluding self
-        if (productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(name, id, orgId)) {
+        
+        // If name is provided and not empty, check uniqueness
+        if (name != null && productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(name, id, orgId)) {
             throw new IllegalArgumentException("productName already exists");
         }
 
+        // Always set the name (even if null) - PUT replaces everything
         product.setProductName(name);
         product.setVersion(request.getVersion());
         product.setProductDescription(request.getProductDescription());
@@ -180,8 +180,8 @@ public class ProductServiceImpl implements ProductService {
 
         if (request.getProductName() != null) {
             String name = trim(request.getProductName());
-            if (name == null) throw new IllegalArgumentException("productName cannot be blank");
-            if (productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(name, id, orgId)) {
+            // Allow null/empty to clear the name
+            if (name != null && productRepository.existsByProductNameTrimmedIgnoreCaseAndOrganizationId(name, id, orgId)) {
                 throw new IllegalArgumentException("productName already exists");
             }
             product.setProductName(name);

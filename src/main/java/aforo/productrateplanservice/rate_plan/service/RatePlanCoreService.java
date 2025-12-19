@@ -6,6 +6,7 @@ import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.exception.ValidationException;
 import aforo.productrateplanservice.flatfee.FlatFeeRepository;
 import aforo.productrateplanservice.product.entity.Product;
+import aforo.productrateplanservice.product.enums.ProductStatus;
 import aforo.productrateplanservice.product.enums.RatePlanStatus;
 import aforo.productrateplanservice.product.repository.ProductRepository;
 import aforo.productrateplanservice.rate_plan.*;
@@ -42,6 +43,7 @@ public class RatePlanCoreService {
     private final RatePlanAssembler ratePlanAssembler;
     private final BillableMetricClient billableMetricClient;
     private final CacheInvalidationService cacheInvalidationService;
+    private final RatePlanCodeGenerationService ratePlanCodeGenerationService;
     
     // Pricing repositories for validation
     private final FlatFeeRepository flatFeeRepository;
@@ -72,6 +74,11 @@ public class RatePlanCoreService {
             product = productRepository
                     .findByProductIdAndOrganizationId(requestedProductId, orgId)
                     .orElseThrow(() -> new NotFoundException("Product not found with ID: " + requestedProductId));
+            
+            // Validate product is ACTIVE
+            if (product.getStatus() != ProductStatus.ACTIVE) {
+                throw new ValidationException("Product must be ACTIVE to be used in a rate plan. Current status: " + product.getStatus());
+            }
         }
         
         // Validate billable metric if provided
@@ -90,6 +97,12 @@ public class RatePlanCoreService {
                 
         RatePlan ratePlan = ratePlanAssembler.toEntity(dto, product);
         ratePlan.setOrganizationId(orgId);
+        
+        // Auto-generate ratePlanCode
+        String ratePlanCode = ratePlanCodeGenerationService.generateRatePlanCode(ratePlan);
+        ratePlan.setRatePlanCode(ratePlanCode);
+        log.info("Generated ratePlanCode: {} for rate plan: {}", ratePlanCode, request.getRatePlanName());
+        
         ratePlan = ratePlanRepository.save(ratePlan);
         
         // ⚡ Invalidate related caches after creation
@@ -167,6 +180,12 @@ public class RatePlanCoreService {
             Product product = productRepository
                     .findByProductIdAndOrganizationId(requestedProductId, orgId)
                     .orElseThrow(() -> new NotFoundException("Product not found with ID: " + requestedProductId));
+            
+            // Validate product is ACTIVE
+            if (product.getStatus() != ProductStatus.ACTIVE) {
+                throw new ValidationException("Product must be ACTIVE to be used in a rate plan. Current status: " + product.getStatus());
+            }
+            
             ratePlan.setProduct(product);
         }
 
@@ -299,6 +318,10 @@ public class RatePlanCoreService {
         
         if (ratePlan.getProduct() == null) {
             throw new ValidationException("Product is required");
+        }
+        
+        if (ratePlan.getBillableMetricId() == null) {
+            throw new ValidationException("Billable metric is required");
         }
     }
     

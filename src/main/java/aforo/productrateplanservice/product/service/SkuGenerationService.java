@@ -120,30 +120,42 @@ public class SkuGenerationService {
     }
 
     /**
-     * Sanitize product name for SKU usage
-     * - Remove special characters
-     * - Replace spaces with empty string or keep as is
-     * - Limit length if needed
+     * Generate short product code from product name for SKU usage
+     * - Convert to uppercase
+     * - Remove spaces & special characters
+     * - Keep ONLY first 4-6 characters
+     * - If name is missing → use "GEN"
+     * 
+     * Examples:
+     * - "GPT-4o Input Tokens" → "GPT4O"
+     * - "SQL Result Dataset" → "SQLR"
+     * - "Flat File Upload" → "FLAT"
+     * - "Very Very Long Product Name" → "VERY"
+     * - (empty/null) → "GEN"
+     * 
      * @param name Product name
-     * @return Sanitized name
+     * @return Short product code (4-6 characters)
      */
     private String sanitizeName(String name) {
         if (name == null || name.trim().isEmpty()) {
-            return "PRODUCT";
+            return "GEN";
         }
         
-        // Remove special characters, keep only alphanumeric and spaces
-        String sanitized = name.replaceAll("[^a-zA-Z0-9\\s]", "");
+        // Convert to uppercase and remove spaces & special characters
+        String sanitized = name.toUpperCase()
+                              .replaceAll("[^A-Z0-9]", "");
         
-        // Remove spaces
-        sanitized = sanitized.replaceAll("\\s+", "");
-        
-        // Limit to 30 characters for SKU readability
-        if (sanitized.length() > 30) {
-            sanitized = sanitized.substring(0, 30);
+        // If nothing left after sanitization, use default
+        if (sanitized.isEmpty()) {
+            return "GEN";
         }
         
-        return sanitized.isEmpty() ? "PRODUCT" : sanitized;
+        // Keep only first 4-6 characters (prefer 6 if available, minimum 4)
+        int maxLength = Math.min(6, sanitized.length());
+        int minLength = Math.min(4, sanitized.length());
+        
+        // Use 6 chars if available, otherwise use what we have (min 4, max 6)
+        return sanitized.substring(0, maxLength);
     }
 
     /**

@@ -41,6 +41,7 @@ public class RatePlanServiceImpl implements RatePlanService {
     private final RatePlanMapper ratePlanMapper;
     private final RatePlanAssembler ratePlanAssembler;
     private final BillableMetricClient billableMetricClient;
+    private final aforo.productrateplanservice.rate_plan.service.RatePlanCodeGenerationService ratePlanCodeGenerationService;
     // Pricing repos + mappers
     private final FlatFeeRepository flatFeeRepository;
     private final FlatFeeMapper flatFeeMapper;
@@ -167,7 +168,15 @@ public class RatePlanServiceImpl implements RatePlanService {
                 .build();
         RatePlan ratePlan = ratePlanAssembler.toEntity(dto, product);
         ratePlan.setOrganizationId(orgId);
+        
+        // Auto-generate ratePlanCode
+        String ratePlanCode = ratePlanCodeGenerationService.generateRatePlanCode(ratePlan);
+        System.out.println("Generated ratePlanCode: " + ratePlanCode);
+        ratePlan.setRatePlanCode(ratePlanCode);
+        System.out.println("RatePlan code after setting: " + ratePlan.getRatePlanCode());
+        
         ratePlan = ratePlanRepository.save(ratePlan);
+        System.out.println("RatePlan code after save: " + ratePlan.getRatePlanCode());
         return ratePlanMapper.toDTO(ratePlan);
     }
 
