@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.usagebasedpricing;
 
+import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.exception.ResourceNotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
@@ -24,6 +25,7 @@ public class UsageBasedPricingServiceImpl implements UsageBasedPricingService {
     private final TieredPricingRepository tieredPricingRepository;
     private final VolumePricingRepository volumePricingRepository;
     private final StairStepPricingRepository stairStepPricingRepository;
+    private final CacheInvalidationService cacheInvalidationService;
 
     @Override
     @Transactional
@@ -49,7 +51,9 @@ public class UsageBasedPricingServiceImpl implements UsageBasedPricingService {
                 .forEach(stairStepPricingRepository::delete);
 
         UsageBasedPricing entity = mapper.toEntity(dto, ratePlan);
-        return mapper.toDTO(repository.save(entity));
+        UsageBasedPricing saved = repository.save(entity);
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        return mapper.toDTO(saved);
     }
 
     @Override
@@ -63,7 +67,9 @@ public class UsageBasedPricingServiceImpl implements UsageBasedPricingService {
 
         existing.setRatePlan(ratePlan);
         mapper.updateEntity(existing, dto);
-        return mapper.toDTO(repository.save(existing));
+        UsageBasedPricing saved = repository.save(existing);
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        return mapper.toDTO(saved);
     }
 
     @Override

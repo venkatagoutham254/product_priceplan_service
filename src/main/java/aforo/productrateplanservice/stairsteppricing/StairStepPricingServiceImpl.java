@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.stairsteppricing;
 
+import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.exception.ResourceNotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
@@ -23,6 +24,7 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
     private final TieredPricingRepository tieredPricingRepository;
     private final VolumePricingRepository volumePricingRepository;
     private final UsageBasedPricingRepository usageBasedPricingRepository;
+    private final CacheInvalidationService cacheInvalidationService;
 
     @Override
     public StairStepPricingDTO create(Long ratePlanId, StairStepPricingCreateUpdateDTO dto) {
@@ -52,7 +54,7 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
 
         // ✅ Save parent with cascade (tiers saved automatically)
         StairStepPricing saved = repository.save(entity);
-
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
         return mapper.toDTO(saved);
     }
 
@@ -74,7 +76,7 @@ public class StairStepPricingServiceImpl implements StairStepPricingService {
 
         // ✅ Save updated entity
         StairStepPricing updated = repository.save(existing);
-
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
         return mapper.toDTO(updated);
     }
 

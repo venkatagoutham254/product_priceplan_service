@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.flatfee;
 
+import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import aforo.productrateplanservice.tieredpricing.TieredPricingRepository;
@@ -23,7 +24,8 @@ public class FlatFeeServiceImpl implements FlatFeeService {
     private final TieredPricingRepository tieredPricingRepository;
     private final VolumePricingRepository volumePricingRepository;
     private final UsageBasedPricingRepository usageBasedPricingRepository;
-    private final StairStepPricingRepository stairStepPricingRepository; 
+    private final StairStepPricingRepository stairStepPricingRepository;
+    private final CacheInvalidationService cacheInvalidationService; 
 
     @Override
     public FlatFeeDTO createFlatFee(Long ratePlanId, FlatFeeCreateUpdateDTO dto) {
@@ -55,6 +57,10 @@ public class FlatFeeServiceImpl implements FlatFeeService {
 
         FlatFee entity = flatFeeMapper.toEntity(ratePlanId, dto);
         FlatFee saved = flatFeeRepository.save(entity);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
         return flatFeeMapper.toDTO(saved);
     }
 
@@ -75,6 +81,10 @@ public class FlatFeeServiceImpl implements FlatFeeService {
         flatFeeMapper.updateEntity(existing, dto);
 
         FlatFee updated = flatFeeRepository.save(existing);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
         return flatFeeMapper.toDTO(updated);
     }
 
@@ -99,6 +109,9 @@ public class FlatFeeServiceImpl implements FlatFeeService {
                 .orElseThrow(() -> new EntityNotFoundException("FlatFee config not found for ratePlanId: " + ratePlanId));
 
         flatFeeRepository.delete(entity);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
     }
 
     @Override
@@ -106,6 +119,15 @@ public class FlatFeeServiceImpl implements FlatFeeService {
         if (!flatFeeRepository.existsById(flatFeeId)) {
             throw new EntityNotFoundException("FlatFee not found with ID: " + flatFeeId);
         }
+        
+        // Get rate plan ID before deletion for cache invalidation
+        FlatFee entity = flatFeeRepository.findById(flatFeeId)
+                .orElseThrow(() -> new EntityNotFoundException("FlatFee not found with ID: " + flatFeeId));
+        Long ratePlanId = entity.getRatePlanId();
+        
         flatFeeRepository.deleteById(flatFeeId);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
     }
 }

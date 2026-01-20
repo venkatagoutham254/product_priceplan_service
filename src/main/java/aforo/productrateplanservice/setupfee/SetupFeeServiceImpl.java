@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.setupfee;
 
+import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
@@ -19,6 +20,7 @@ public class SetupFeeServiceImpl implements SetupFeeService {
     private final SetupFeeRepository setupFeeRepository;
     private final RatePlanRepository ratePlanRepository;
     private final SetupFeeMapper setupFeeMapper;
+    private final CacheInvalidationService cacheInvalidationService;
 
     @Override
     public SetupFeeDTO create(Long ratePlanId, SetupFeeCreateUpdateDTO dto) {
@@ -33,6 +35,10 @@ public class SetupFeeServiceImpl implements SetupFeeService {
     
         SetupFee entity = setupFeeMapper.toEntity(dto, ratePlan);
         SetupFee saved = setupFeeRepository.save(entity);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
         return setupFeeMapper.toDTO(saved);
     }
     
@@ -48,6 +54,10 @@ public class SetupFeeServiceImpl implements SetupFeeService {
 
         setupFeeMapper.updateEntity(existing, dto);
         setupFeeRepository.save(existing);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
         return setupFeeMapper.toDTO(existing);
     }
 
@@ -61,6 +71,9 @@ public void delete(Long ratePlanId, Long id) {
     }
 
     setupFeeRepository.delete(entity);
+    
+    // Invalidate rate plan caches
+    cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
 }
 
    @Override
@@ -102,6 +115,10 @@ public SetupFeeDTO getById(Long ratePlanId, Long id) {
                 
         setupFeeMapper.partialUpdate(existing, dto);
         setupFeeRepository.save(existing);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
         return setupFeeMapper.toDTO(existing);
     }
 }
