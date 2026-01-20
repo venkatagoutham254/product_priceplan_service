@@ -1,8 +1,7 @@
-version: '3.8'
 services:
   postgres:
     image: postgres:15
-    container_name: postgres
+    container_name: product-priceplan-postgres
     environment:
       POSTGRES_DB: productrateplanservice
       POSTGRES_USER: root
@@ -17,11 +16,11 @@ services:
 
   app:
     build: .
-    container_name: productrateplanservice
+    container_name: product-priceplan-app
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/productrateplanservice
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://product-priceplan-postgres:5432/productrateplanservice
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=P4ssword!
       - SPRING_CACHE_TYPE=simple

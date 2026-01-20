@@ -13,6 +13,7 @@ import aforo.productrateplanservice.product.repository.ProductLLMTokenRepository
 import aforo.productrateplanservice.product.repository.ProductStorageRepository;
 import aforo.productrateplanservice.product.request.CreateProductAPIRequest;
 import aforo.productrateplanservice.product.request.UpdateProductAPIRequest;
+import aforo.productrateplanservice.product.util.ProductTypeValidator;
 import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,9 @@ public class ProductAPIServiceImpl implements ProductAPIService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
+        // Validate endpoint URL format
+        ProductTypeValidator.validateApiEndpointUrl(request.getEndpointUrl());
+        
         // Check if API config already exists
         if (productAPIRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has API configuration. Please delete it first to change.");
@@ -126,6 +130,9 @@ public class ProductAPIServiceImpl implements ProductAPIService {
         if (request.getEndpointUrl() == null || request.getAuthType() == null) {
             throw new IllegalArgumentException("endpointUrl and authType are required for full update.");
         }
+        
+        // Validate endpoint URL format
+        ProductTypeValidator.validateApiEndpointUrl(request.getEndpointUrl());
 
         existing.setEndpointUrl(request.getEndpointUrl());
         existing.setAuthType(request.getAuthType());
@@ -142,6 +149,8 @@ public class ProductAPIServiceImpl implements ProductAPIService {
                 .orElseThrow(() -> new NotFoundException("API configuration not found for product " + productId));
 
         if (request.getEndpointUrl() != null) {
+            // Validate endpoint URL format
+            ProductTypeValidator.validateApiEndpointUrl(request.getEndpointUrl());
             existing.setEndpointUrl(request.getEndpointUrl());
         }
         if (request.getAuthType() != null) {

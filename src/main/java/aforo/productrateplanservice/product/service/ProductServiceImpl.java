@@ -89,6 +89,9 @@ public class ProductServiceImpl implements ProductService {
         // Auto-generate SKU code
         String generatedSku = skuGenerationService.generateSkuCode(product);
         product.setInternalSkuCode(generatedSku);
+        
+        // Set createdOn timestamp for new products
+        product.setCreatedOn(java.time.LocalDateTime.now());
 
         Product saved = productRepository.save(product);
         return productAssembler.toDTO(saved);
@@ -355,6 +358,10 @@ public class ProductServiceImpl implements ProductService {
 
         // All good → activate
         product.setStatus(ProductStatus.ACTIVE);
+        
+        // Update createdOn to reflect the activation time (when product becomes ACTIVE)
+        product.setCreatedOn(java.time.LocalDateTime.now());
+        
         Product saved = productRepository.save(product);
         return productAssembler.toDTO(saved);
     }
@@ -498,6 +505,9 @@ public class ProductServiceImpl implements ProductService {
             
             // Set default status to DRAFT (can be finalized later)
             product.setStatus(aforo.productrateplanservice.product.enums.ProductStatus.DRAFT);
+            
+            // Set createdOn timestamp for new products
+            product.setCreatedOn(java.time.LocalDateTime.now());
             
             status = "CREATED";
             log.info("Created new product from source [{}] with externalId [{}], ProductType set to API", source, externalId);

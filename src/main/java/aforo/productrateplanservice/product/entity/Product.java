@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import aforo.productrateplanservice.product.enums.ProductCategory;
@@ -67,8 +66,7 @@ public class Product {
     @Column(name = "external_id", nullable = true)
     private String externalId;
 
-    @CreationTimestamp
-    @Column(updatable = false, nullable = false)
+    @Column(nullable = false)
     private LocalDateTime createdOn;
     
     @UpdateTimestamp

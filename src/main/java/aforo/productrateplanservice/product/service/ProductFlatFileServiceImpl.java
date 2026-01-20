@@ -8,6 +8,7 @@ import aforo.productrateplanservice.product.mapper.ProductFlatFileMapper;
 import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductFlatFileRequest;
 import aforo.productrateplanservice.product.request.UpdateProductFlatFileRequest;
+import aforo.productrateplanservice.product.util.ProductTypeValidator;
 import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,9 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
+        // Validate file location format based on file format
+        ProductTypeValidator.validateFileLocation(request.getFileLocation(), request.getFormat());
+        
         // Check if FlatFile config already exists
         if (flatFileRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has FlatFile configuration. Please delete it first to change.");
@@ -120,6 +124,9 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
         if (request.getFileLocation() == null || request.getFormat() == null) {
             throw new IllegalArgumentException("fileLocation and format are required for full update.");
         }
+        
+        // Validate file location format
+        ProductTypeValidator.validateFileLocation(request.getFileLocation(), request.getFormat());
 
         existing.setFileLocation(request.getFileLocation());
         existing.setFormat(request.getFormat());
@@ -135,8 +142,19 @@ public class ProductFlatFileServiceImpl implements ProductFlatFileService {
                 .findByProduct_ProductIdAndProduct_OrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("FlatFile configuration not found for product " + productId));
 
-        if (request.getFileLocation() != null) existing.setFileLocation(request.getFileLocation());
-        if (request.getFormat() != null) existing.setFormat(request.getFormat());
+        if (request.getFileLocation() != null || request.getFormat() != null) {
+            // Get the effective format (new or existing)
+            aforo.productrateplanservice.product.enums.FileFormat effectiveFormat = 
+                request.getFormat() != null ? request.getFormat() : existing.getFormat();
+            String effectiveLocation = 
+                request.getFileLocation() != null ? request.getFileLocation() : existing.getFileLocation();
+            
+            // Validate the combination
+            ProductTypeValidator.validateFileLocation(effectiveLocation, effectiveFormat);
+            
+            if (request.getFileLocation() != null) existing.setFileLocation(request.getFileLocation());
+            if (request.getFormat() != null) existing.setFormat(request.getFormat());
+        }
 
         return mapper.toDTO(flatFileRepository.save(existing));
     }

@@ -8,6 +8,7 @@ import aforo.productrateplanservice.product.mapper.ProductLLMTokenMapper;
 import aforo.productrateplanservice.product.repository.*;
 import aforo.productrateplanservice.product.request.CreateProductLLMTokenRequest;
 import aforo.productrateplanservice.product.request.UpdateProductLLMTokenRequest;
+import aforo.productrateplanservice.product.util.ProductTypeValidator;
 import aforo.productrateplanservice.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,9 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
         Product product = productRepository.findByProductIdAndOrganizationId(productId, orgId)
                 .orElseThrow(() -> new NotFoundException("Product " + productId + " not found"));
 
+        // Validate endpoint URL format
+        ProductTypeValidator.validateLlmEndpointUrl(request.getEndpointUrl());
+        
         // Check if LLMToken config already exists
         if (llmTokenRepository.existsByProduct_ProductId(productId)) {
             throw new IllegalStateException("Product " + productId + " already has LLMToken configuration. Please delete it first to change.");
@@ -119,6 +123,9 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
         if (request.getModelName() == null || request.getEndpointUrl() == null || request.getAuthType() == null) {
             throw new IllegalArgumentException("modelName, endpointUrl and authType are required for full update.");
         }
+        
+        // Validate endpoint URL format
+        ProductTypeValidator.validateLlmEndpointUrl(request.getEndpointUrl());
 
         existing.setModelName(request.getModelName());
         existing.setEndpointUrl(request.getEndpointUrl());
@@ -139,6 +146,8 @@ public class ProductLLMTokenServiceImpl implements ProductLLMTokenService {
             existing.setModelName(request.getModelName());
         }
         if (request.getEndpointUrl() != null) {
+            // Validate endpoint URL format
+            ProductTypeValidator.validateLlmEndpointUrl(request.getEndpointUrl());
             existing.setEndpointUrl(request.getEndpointUrl());
         }
         if (request.getAuthType() != null) {
