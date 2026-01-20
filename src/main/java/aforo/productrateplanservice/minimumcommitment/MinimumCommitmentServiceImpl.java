@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.minimumcommitment;
 
+import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
@@ -16,6 +17,7 @@ public class MinimumCommitmentServiceImpl implements MinimumCommitmentService {
     private final MinimumCommitmentRepository repository;
     private final MinimumCommitmentMapper mapper;
     private final RatePlanRepository ratePlanRepository;
+    private final CacheInvalidationService cacheInvalidationService;
 
     @Override
     public MinimumCommitmentDTO create(Long ratePlanId, MinimumCommitmentCreateUpdateDTO dto) {
@@ -29,7 +31,12 @@ public class MinimumCommitmentServiceImpl implements MinimumCommitmentService {
         }
     
         MinimumCommitment entity = mapper.toEntity(dto, ratePlan);
-        return mapper.toDTO(repository.save(entity));
+        MinimumCommitment saved = repository.save(entity);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
+        return mapper.toDTO(saved);
     }
     
     @Override
@@ -63,7 +70,12 @@ public class MinimumCommitmentServiceImpl implements MinimumCommitmentService {
         MinimumCommitment existing = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Minimum Commitment not found"));
         mapper.updateEntity(existing, dto);
-        return mapper.toDTO(repository.save(existing));
+        MinimumCommitment saved = repository.save(existing);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
+        return mapper.toDTO(saved);
     }
 
     @Override
@@ -71,7 +83,12 @@ public class MinimumCommitmentServiceImpl implements MinimumCommitmentService {
         MinimumCommitment existing = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Minimum Commitment not found"));
         mapper.partialUpdate(existing, dto);
-        return mapper.toDTO(repository.save(existing));
+        MinimumCommitment saved = repository.save(existing);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
+        return mapper.toDTO(saved);
     }
 
     @Override
@@ -79,5 +96,8 @@ public class MinimumCommitmentServiceImpl implements MinimumCommitmentService {
         MinimumCommitment entity = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Minimum Commitment not found"));
         repository.delete(entity);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
     }
 }

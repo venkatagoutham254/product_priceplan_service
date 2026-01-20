@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.volumepricing;
 
+import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.exception.ResourceNotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
@@ -23,6 +24,7 @@ public class VolumePricingServiceImpl implements VolumePricingService {
     private final TieredPricingRepository tieredPricingRepository;
     private final UsageBasedPricingRepository usageBasedPricingRepository;
     private final StairStepPricingRepository stairStepPricingRepository;
+    private final CacheInvalidationService cacheInvalidationService;
 
     @Override
     public VolumePricingDTO create(Long ratePlanId, VolumePricingCreateUpdateDTO dto) {
@@ -52,7 +54,7 @@ public class VolumePricingServiceImpl implements VolumePricingService {
 
         // ✅ Save parent with cascade (tiers saved automatically)
         VolumePricing saved = repository.save(entity);
-
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
         return mapper.toDTO(saved);
     }
 
@@ -74,7 +76,7 @@ public class VolumePricingServiceImpl implements VolumePricingService {
 
         // ✅ Save updated entity
         VolumePricing updated = repository.save(existing);
-
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
         return mapper.toDTO(updated);
     }
 

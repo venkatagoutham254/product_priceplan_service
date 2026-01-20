@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.freemium;
 
+import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -16,6 +17,7 @@ public class FreemiumServiceImpl implements FreemiumService {
     private final FreemiumRepository freemiumRepository;
     private final RatePlanRepository ratePlanRepository;
     private final FreemiumMapper freemiumMapper;
+    private final CacheInvalidationService cacheInvalidationService;
 
     @Override
 public FreemiumDTO create(Long ratePlanId, FreemiumCreateUpdateDTO dto) {
@@ -31,7 +33,12 @@ public FreemiumDTO create(Long ratePlanId, FreemiumCreateUpdateDTO dto) {
     Freemium freemium = new Freemium();
     freemium.setRatePlan(ratePlan);
     freemiumMapper.update(freemium, dto);
-    return freemiumMapper.toDTO(freemiumRepository.save(freemium));
+    Freemium saved = freemiumRepository.save(freemium);
+    
+    // Invalidate rate plan caches
+    cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+    
+    return freemiumMapper.toDTO(saved);
 }
 
 
@@ -39,20 +46,33 @@ public FreemiumDTO create(Long ratePlanId, FreemiumCreateUpdateDTO dto) {
     public FreemiumDTO update(Long ratePlanId, Long id, FreemiumCreateUpdateDTO dto) {
         Freemium freemium = getFreemiumById(id, ratePlanId);
         freemiumMapper.update(freemium, dto);
-        return freemiumMapper.toDTO(freemiumRepository.save(freemium));
+        Freemium saved = freemiumRepository.save(freemium);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
+        return freemiumMapper.toDTO(saved);
     }
 
     @Override
     public FreemiumDTO partialUpdate(Long ratePlanId, Long id, FreemiumCreateUpdateDTO dto) {
         Freemium freemium = getFreemiumById(id, ratePlanId);
         freemiumMapper.update(freemium, dto); // You can add null checks if needed
-        return freemiumMapper.toDTO(freemiumRepository.save(freemium));
+        Freemium saved = freemiumRepository.save(freemium);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
+        return freemiumMapper.toDTO(saved);
     }
 
     @Override
     public void delete(Long ratePlanId, Long id) {
         Freemium freemium = getFreemiumById(id, ratePlanId);
         freemiumRepository.delete(freemium);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
     }
 
     @Override

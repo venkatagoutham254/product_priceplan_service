@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.discount;
 
+import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.exception.NotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
@@ -16,6 +17,7 @@ public class DiscountServiceImpl implements DiscountService {
     private final DiscountRepository discountRepository;
     private final DiscountMapper discountMapper;
     private final RatePlanRepository ratePlanRepository;
+    private final CacheInvalidationService cacheInvalidationService;
 
     @Override
 public DiscountDTO create(Long ratePlanId, DiscountCreateUpdateDTO dto) {
@@ -29,7 +31,12 @@ public DiscountDTO create(Long ratePlanId, DiscountCreateUpdateDTO dto) {
     }
 
     Discount discount = discountMapper.toEntity(dto, ratePlan);
-    return discountMapper.toDTO(discountRepository.save(discount));
+    Discount saved = discountRepository.save(discount);
+    
+    // Invalidate rate plan caches
+    cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+    
+    return discountMapper.toDTO(saved);
 }
 
 
@@ -63,7 +70,12 @@ public DiscountDTO create(Long ratePlanId, DiscountCreateUpdateDTO dto) {
         Discount existing = discountRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Discount not found"));
         discountMapper.updateEntity(existing, dto);
-        return discountMapper.toDTO(discountRepository.save(existing));
+        Discount saved = discountRepository.save(existing);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
+        return discountMapper.toDTO(saved);
     }
 
     @Override
@@ -71,7 +83,12 @@ public DiscountDTO create(Long ratePlanId, DiscountCreateUpdateDTO dto) {
         Discount existing = discountRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Discount not found"));
         discountMapper.partialUpdate(existing, dto);
-        return discountMapper.toDTO(discountRepository.save(existing));
+        Discount saved = discountRepository.save(existing);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        
+        return discountMapper.toDTO(saved);
     }
 
     @Override
@@ -79,5 +96,8 @@ public DiscountDTO create(Long ratePlanId, DiscountCreateUpdateDTO dto) {
         Discount discount = discountRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Discount not found"));
         discountRepository.delete(discount);
+        
+        // Invalidate rate plan caches
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
     }
 }

@@ -1,5 +1,6 @@
 package aforo.productrateplanservice.tieredpricing;
 
+import aforo.productrateplanservice.cache.CacheInvalidationService;
 import aforo.productrateplanservice.exception.ResourceNotFoundException;
 import aforo.productrateplanservice.rate_plan.RatePlan;
 import aforo.productrateplanservice.rate_plan.RatePlanRepository;
@@ -24,6 +25,7 @@ public class TieredPricingServiceImpl implements TieredPricingService {
     private final VolumePricingRepository volumePricingRepository;
     private final UsageBasedPricingRepository usageBasedPricingRepository;
     private final StairStepPricingRepository stairStepPricingRepository;
+    private final CacheInvalidationService cacheInvalidationService;
 
     @Override
     @Transactional
@@ -55,7 +57,9 @@ public class TieredPricingServiceImpl implements TieredPricingService {
                 tier.setTieredPricing(entity);
             }
         }
-        return tieredPricingMapper.toDTO(tieredPricingRepository.save(entity));
+        TieredPricing saved = tieredPricingRepository.save(entity);
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        return tieredPricingMapper.toDTO(saved);
     }
 
     @Override
@@ -75,7 +79,9 @@ public class TieredPricingServiceImpl implements TieredPricingService {
                 tier.setTieredPricing(existing);
             }
         }
-        return tieredPricingMapper.toDTO(tieredPricingRepository.save(existing));
+        TieredPricing saved = tieredPricingRepository.save(existing);
+        cacheInvalidationService.invalidateRatePlanCaches(ratePlanId);
+        return tieredPricingMapper.toDTO(saved);
     }
 
     @Override

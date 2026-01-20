@@ -55,6 +55,7 @@ public class RatePlanCoreService {
     private final FreemiumRepository freemiumRepository;
     private final MinimumCommitmentRepository minimumCommitmentRepository;
     private final SetupFeeRepository setupFeeRepository;
+    private final RatePlanPricingAggregationService pricingAggregationService;
 
     /**
      * Create a new rate plan (without pricing configurations)
@@ -155,11 +156,13 @@ public class RatePlanCoreService {
         Long orgId = TenantContext.require();
         
         
-        return ratePlanRepository.findByProduct_ProductIdAndOrganizationId(productId, orgId)
+        List<RatePlan> ratePlans = ratePlanRepository.findByProduct_ProductIdAndOrganizationId(productId, orgId)
                 .stream()
                 .map(this::ensureMetricStillExists)
-                .map(ratePlanMapper::toDTO)
                 .collect(Collectors.toList());
+        
+        // Use aggregation service to include pricing configurations and extras
+        return pricingAggregationService.toDetailedDTOsBatch(ratePlans);
     }
 
     /**
@@ -297,7 +300,9 @@ public class RatePlanCoreService {
         cacheInvalidationService.invalidateAllTenantCaches(orgId);
         
         log.info("✅ Rate plan confirmed and activated: {} (ID: {})", ratePlan.getRatePlanName(), ratePlan.getRatePlanId());
-        return ratePlanMapper.toDTO(savedRatePlan);
+        
+        // Use aggregation service to include pricing configurations and extras
+        return pricingAggregationService.toDetailedDTO(savedRatePlan);
     }
     
     /**
