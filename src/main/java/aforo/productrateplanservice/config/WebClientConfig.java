@@ -24,10 +24,10 @@ public class WebClientConfig {
 
 
     @Bean
-public WebClient ratePlanServiceWebClient() {
-    // Update this line - change /rate-plans to /rateplans
-    return WebClient.builder()
-            .baseUrl("http://3.208.93.68:8080/api/rateplans")  // Fixed path
-            .build();
-}
+    public WebClient ratePlanServiceWebClient() {
+        // Using Route53 domain for product service
+        return WebClient.builder()
+                .baseUrl("http://product.dev.aforo.space:8080/api/rateplans")
+                .build();
+    }
 }

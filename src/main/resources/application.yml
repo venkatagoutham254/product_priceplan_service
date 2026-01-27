@@ -41,18 +41,18 @@ aforo:
     secret: ${JWT_SECRET:change-me-please-change-me-32-bytes-min}  # env var or fallback
     expiryMinutes: 120
   cors:
-    allowed-origins: "http://13.115.248.133,http://54.221.164.5,http://localhost:3000,http://aforo.space,https://aforo.space"
+    allowed-origins: "http://13.115.248.133,http://54.221.164.5,http://localhost:3000,http://aforo.space,https://aforo.space,http://ui.dev.aforo.space,http://product.dev.aforo.space:8080,http://metering.dev.aforo.space:8092,http://usage.dev.aforo.space:8081,http://ingestion.dev.aforo.space:8088,http://kong.dev.aforo.space:8086,http://org.dev.aforo.space:8081,http://quickbooks.dev.aforo.space:8095,http://subscription.dev.aforo.space:8084"
     allowed-methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
     allowed-headers: "Authorization,Content-Type,X-Organization-Id"
     allow-credentials: true
 
 customer:
   service:
-    url: http://44.201.19.187:8081  #customer client
+    url: http://org.dev.aforo.space:8081  #customer client (Route53)
 
 billableMetrics:
   service:
-    url: http://54.146.189.144:8081  #billable metrics client
+    url: http://usage.dev.aforo.space:8081  #billable metrics client (Route53)
 
 ---
 # PostgreSQL-specific configurations

@@ -103,7 +103,21 @@ public class SecurityConfig {
         // Origins: support patterns for AWS/frontends from configuration
         List<String> originPatterns;
         if (corsAllowedOrigins == null || corsAllowedOrigins.isBlank()) {
-            originPatterns = List.of("http://13.115.248.133", "http://54.221.164.5");
+            originPatterns = List.of(
+                "http://13.115.248.133",
+                "http://54.221.164.5",
+                "http://ui.dev.aforo.space",
+                "http://product.dev.aforo.space:8080",
+                "http://metering.dev.aforo.space:8092",
+                "http://usage.dev.aforo.space:8081",
+                "http://ingestion.dev.aforo.space:8088",
+                "http://kong.dev.aforo.space:8086",
+                "http://org.dev.aforo.space:8081",
+                "http://quickbooks.dev.aforo.space:8095",
+                "http://subscription.dev.aforo.space:8084",
+                "http://*.dev.aforo.space",
+                "http://*.dev.aforo.space:*"
+            );
         } else {
             originPatterns = Arrays.stream(corsAllowedOrigins.split(","))
                     .map(String::trim)
