@@ -36,6 +36,7 @@ public class RatePlanMapper {
                 .billingFrequency(ratePlan.getBillingFrequency())
                 .productId(ratePlan.getProduct() != null ? ratePlan.getProduct().getProductId() : null)
                 .productName(ratePlan.getProduct() != null ? ratePlan.getProduct().getProductName() : null)
+                .icon(ratePlan.getProduct() != null ? ratePlan.getProduct().getIcon() : null)
                 .status(ratePlan.getStatus())
                 .paymentType(ratePlan.getPaymentType())
                 .billableMetricId(ratePlan.getBillableMetricId())

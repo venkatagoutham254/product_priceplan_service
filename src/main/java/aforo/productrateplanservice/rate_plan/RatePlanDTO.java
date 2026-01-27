@@ -34,6 +34,7 @@ public class RatePlanDTO {
     private BillingFrequency billingFrequency;
     private Long productId;
     private String productName;
+    private String icon;
     private PaymentType paymentType;
     private Long billableMetricId;
 
